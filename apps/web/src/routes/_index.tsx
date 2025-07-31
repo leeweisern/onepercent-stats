@@ -9,5 +9,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Index() {
-	return <Navigate to="/public-dashboard" replace />;
+	return <Navigate to="/dashboard" replace />;
 }

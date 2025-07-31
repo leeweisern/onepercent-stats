@@ -69,8 +69,7 @@ This directory contains the frontend application.
     - **`utils.ts`**: Utility functions including `cn()` for className merging
     - **`auth-client.ts`**: Authentication client configuration
   - **`routes/`**: The pages of the application.
-    - **`dashboard.tsx`**: Main authenticated dashboard with leads table
-    - **`public-dashboard.tsx`**: Public version of the dashboard
+    - **`dashboard.tsx`**: Main dashboard with leads table and analytics
     - **`login.tsx`**: Authentication page
   - **`index.css`**: The main stylesheet with Tailwind CSS and custom properties.
   - **`root.tsx`**: The root component of the application.
