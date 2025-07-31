@@ -59,10 +59,11 @@ export default function Dashboard() {
 	};
 
 	const formatCurrency = (amount: number | null) => {
-		if (!amount) return "₹0";
-		return `₹${amount.toLocaleString()}`;
+		if (!amount) return "RM 0";
+		return `RM ${amount.toLocaleString()}`;
 	};
 
+	
 	const formatDate = (dateString: string | null) => {
 		if (!dateString) return "N/A";
 		return new Date(dateString).toLocaleDateString();
