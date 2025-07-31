@@ -9,7 +9,14 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import {
 	BarChart3,
 	Users,
@@ -18,6 +25,8 @@ import {
 	Phone,
 	CheckCircle,
 	XCircle,
+	Copy,
+	Eye,
 } from "lucide-react";
 
 interface Lead {
@@ -41,6 +50,8 @@ export default function PublicDashboard() {
 	const [leads, setLeads] = useState<Lead[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState("leads");
+	const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
 
 	useEffect(() => {
 		fetchLeads();
@@ -59,13 +70,44 @@ export default function PublicDashboard() {
 	};
 
 	const formatCurrency = (amount: number | null) => {
-		if (!amount) return "RM0";
-		return `RM${amount.toLocaleString()}`;
+		if (!amount) return "RM 0";
+		return `RM ${amount.toLocaleString()}`;
 	};
 
 	const formatDate = (dateString: string | null) => {
 		if (!dateString) return "N/A";
 		return new Date(dateString).toLocaleDateString();
+	};
+
+	const getPlatformVariant = (platform: string | null) => {
+		switch (platform?.toLowerCase()) {
+			case "facebook":
+				return "default";
+			case "google":
+				return "secondary";
+			case "flyer":
+				return "outline";
+			default:
+				return "secondary";
+		}
+	};
+
+	const getStatusVariant = (status: string | null) => {
+		if (!status || status === "N/A") return "outline";
+		return "secondary";
+	};
+
+	const copyToClipboard = async (text: string) => {
+		try {
+			await navigator.clipboard.writeText(text);
+		} catch (err) {
+			console.error("Failed to copy text: ", err);
+		}
+	};
+
+	const handleRowClick = (lead: Lead) => {
+		setSelectedLead(lead);
+		setIsDialogOpen(true);
 	};
 
 	return (
@@ -178,73 +220,186 @@ export default function PublicDashboard() {
 							{/* Leads Table */}
 							<Card>
 								<CardHeader>
-									<CardTitle>All Leads</CardTitle>
+									<CardTitle className="flex items-center gap-2">
+										<Users className="h-5 w-5" />
+										All Leads
+										<Badge variant="secondary" className="ml-auto">
+											{leads.length} total
+										</Badge>
+									</CardTitle>
 								</CardHeader>
-								<CardContent>
+								<CardContent className="p-0">
 									{loading ? (
-										<div className="space-y-2">
+										<div className="space-y-2 p-6">
 											{[...Array(5)].map((_, i) => (
 												<Skeleton key={i} className="h-12 w-full" />
 											))}
 										</div>
 									) : (
-										<div className="overflow-x-auto">
+										<div className="rounded-md border">
 											<Table>
 												<TableHeader>
-													<TableRow>
-														<TableHead>Name</TableHead>
-														<TableHead>Phone</TableHead>
-														<TableHead>Platform</TableHead>
-														<TableHead>Status</TableHead>
-														<TableHead>Closed</TableHead>
-														<TableHead>Sales</TableHead>
-														<TableHead>Trainer</TableHead>
-														<TableHead>Date</TableHead>
-														<TableHead>Follow Up</TableHead>
-														<TableHead>Appointment</TableHead>
-														<TableHead>Remark</TableHead>
+													<TableRow className="hover:bg-transparent">
+														<TableHead className="w-[120px]">Name</TableHead>
+														<TableHead className="w-[140px]">Phone</TableHead>
+														<TableHead className="w-[100px]">
+															Platform
+														</TableHead>
+														<TableHead className="w-[100px]">Status</TableHead>
+														<TableHead className="w-[80px] text-center">
+															Closed
+														</TableHead>
+														<TableHead className="w-[100px] text-right">
+															Sales
+														</TableHead>
+														<TableHead className="w-[80px]">Trainer</TableHead>
+														<TableHead className="w-[100px]">Date</TableHead>
+														<TableHead className="w-[80px]">
+															Follow Up
+														</TableHead>
+														<TableHead className="w-[80px]">
+															Appointment
+														</TableHead>
+														<TableHead className="w-[100px]">Remark</TableHead>
+														<TableHead className="w-[60px]"></TableHead>
 													</TableRow>
 												</TableHeader>
 												<TableBody>
 													{leads.map((lead) => (
-														<TableRow key={lead.id}>
+														<TableRow
+															key={lead.id}
+															className="group cursor-pointer hover:bg-muted/50"
+															onClick={() => handleRowClick(lead)}
+														>
 															<TableCell className="font-medium">
-																{lead.name || "N/A"}
-															</TableCell>
-															<TableCell>
-																<div className="flex items-center">
-																	<Phone className="mr-1 h-3 w-3" />
-																	{lead.phoneNumber || "N/A"}
+																<div className="flex items-center gap-2">
+																	<div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+																		{(lead.name || "N")[0].toUpperCase()}
+																	</div>
+																	<span className="truncate">
+																		{lead.name || "N/A"}
+																	</span>
 																</div>
 															</TableCell>
 															<TableCell>
-																<span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+																<div className="flex items-center gap-2">
+																	<Phone className="h-3 w-3 text-muted-foreground" />
+																	<span className="font-mono text-sm">
+																		{lead.phoneNumber || "N/A"}
+																	</span>
+																	{lead.phoneNumber && (
+																		<Button
+																			variant="ghost"
+																			size="sm"
+																			className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				copyToClipboard(lead.phoneNumber || "");
+																			}}
+																		>
+																			<Copy className="h-3 w-3" />
+																		</Button>
+																	)}
+																</div>
+															</TableCell>
+															<TableCell>
+																<Badge
+																	variant={getPlatformVariant(lead.platform)}
+																>
 																	{lead.platform || "N/A"}
-																</span>
+																</Badge>
 															</TableCell>
 															<TableCell>
-																<span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+																<Badge variant={getStatusVariant(lead.status)}>
 																	{lead.status || "N/A"}
+																</Badge>
+															</TableCell>
+															<TableCell className="text-center">
+																<div className="flex justify-center">
+																	{lead.isClosed ? (
+																		<div className="flex items-center gap-1">
+																			<CheckCircle className="h-4 w-4 text-green-600" />
+																			<span className="text-xs text-green-600 font-medium">
+																				Yes
+																			</span>
+																		</div>
+																	) : (
+																		<div className="flex items-center gap-1">
+																			<XCircle className="h-4 w-4 text-red-600" />
+																			<span className="text-xs text-red-600 font-medium">
+																				No
+																			</span>
+																		</div>
+																	)}
+																</div>
+															</TableCell>
+															<TableCell className="text-right font-medium">
+																<span
+																	className={
+																		lead.sales && lead.sales > 0
+																			? "text-green-600"
+																			: "text-muted-foreground"
+																	}
+																>
+																	{formatCurrency(lead.sales)}
 																</span>
 															</TableCell>
 															<TableCell>
-																{lead.isClosed ? (
-																	<CheckCircle className="h-4 w-4 text-green-600" />
-																) : (
-																	<XCircle className="h-4 w-4 text-red-600" />
-																)}
-															</TableCell>
-															<TableCell className="font-medium">
-																{formatCurrency(lead.sales)}
+																<div className="max-w-[80px] truncate">
+																	<span
+																		className={`text-sm ${lead.trainerHandle && lead.trainerHandle !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																	>
+																		{lead.trainerHandle || "N/A"}
+																	</span>
+																</div>
 															</TableCell>
 															<TableCell>
-																{lead.trainerHandle || "N/A"}
+																<div className="flex items-center gap-1">
+																	<Calendar className="h-3 w-3 text-muted-foreground" />
+																	<span className="text-sm">
+																		{formatDate(lead.date)}
+																	</span>
+																</div>
 															</TableCell>
-															<TableCell>{formatDate(lead.date)}</TableCell>
-															<TableCell>{lead.followUp || "N/A"}</TableCell>
-															<TableCell>{lead.appointment || "N/A"}</TableCell>
-															<TableCell className="max-w-xs truncate">
-																{lead.remark || "N/A"}
+															<TableCell>
+																<div className="max-w-[80px] truncate">
+																	<span
+																		className={`text-sm ${lead.followUp && lead.followUp !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																	>
+																		{lead.followUp || "N/A"}
+																	</span>
+																</div>
+															</TableCell>
+															<TableCell>
+																<div className="max-w-[80px] truncate">
+																	<span
+																		className={`text-sm ${lead.appointment && lead.appointment !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																	>
+																		{lead.appointment || "N/A"}
+																	</span>
+																</div>
+															</TableCell>
+															<TableCell>
+																<div className="max-w-[100px] truncate">
+																	<span
+																		className={`text-sm ${lead.remark && lead.remark !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																	>
+																		{lead.remark || "N/A"}
+																	</span>
+																</div>
+															</TableCell>
+															<TableCell>
+																<Button
+																	variant="ghost"
+																	size="sm"
+																	className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		handleRowClick(lead);
+																	}}
+																>
+																	<Eye className="h-4 w-4" />
+																</Button>
 															</TableCell>
 														</TableRow>
 													))}
@@ -282,6 +437,166 @@ export default function PublicDashboard() {
 					)}
 				</div>
 			</div>
+
+			{/* Lead Details Dialog */}
+			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+				<DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2">
+							<div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+								{(selectedLead?.name || "N")[0].toUpperCase()}
+							</div>
+							Lead Details - {selectedLead?.name || "N/A"}
+						</DialogTitle>
+					</DialogHeader>
+					{selectedLead && (
+						<div className="space-y-6">
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Name
+									</label>
+									<p className="text-sm font-medium">
+										{selectedLead.name || "N/A"}
+									</p>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Phone Number
+									</label>
+									<div className="flex items-center gap-2">
+										<Phone className="h-4 w-4 text-muted-foreground" />
+										<p className="text-sm font-mono">
+											{selectedLead.phoneNumber || "N/A"}
+										</p>
+										{selectedLead.phoneNumber && (
+											<Button
+												variant="ghost"
+												size="sm"
+												className="h-6 w-6 p-0"
+												onClick={() =>
+													copyToClipboard(selectedLead.phoneNumber || "")
+												}
+											>
+												<Copy className="h-3 w-3" />
+											</Button>
+										)}
+									</div>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Platform
+									</label>
+									<Badge variant={getPlatformVariant(selectedLead.platform)}>
+										{selectedLead.platform || "N/A"}
+									</Badge>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Status
+									</label>
+									<Badge variant={getStatusVariant(selectedLead.status)}>
+										{selectedLead.status || "N/A"}
+									</Badge>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Closed
+									</label>
+									<div className="flex items-center gap-2">
+										{selectedLead.isClosed ? (
+											<>
+												<CheckCircle className="h-4 w-4 text-green-600" />
+												<span className="text-sm text-green-600 font-medium">
+													Yes
+												</span>
+											</>
+										) : (
+											<>
+												<XCircle className="h-4 w-4 text-red-600" />
+												<span className="text-sm text-red-600 font-medium">
+													No
+												</span>
+											</>
+										)}
+									</div>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Sales
+									</label>
+									<p
+										className={`text-sm font-medium ${selectedLead.sales && selectedLead.sales > 0 ? "text-green-600" : "text-muted-foreground"}`}
+									>
+										{formatCurrency(selectedLead.sales)}
+									</p>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Trainer
+									</label>
+									<div className="flex items-center gap-2">
+										{selectedLead.trainerHandle ? (
+											<>
+												<div className="h-6 w-6 rounded-full bg-orange-100 flex items-center justify-center">
+													<span className="text-xs font-medium text-orange-600">
+														{selectedLead.trainerHandle[0].toUpperCase()}
+													</span>
+												</div>
+												<p className="text-sm">{selectedLead.trainerHandle}</p>
+											</>
+										) : (
+											<p className="text-sm text-muted-foreground">N/A</p>
+										)}
+									</div>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Date
+									</label>
+									<div className="flex items-center gap-2">
+										<Calendar className="h-4 w-4 text-muted-foreground" />
+										<p className="text-sm">{formatDate(selectedLead.date)}</p>
+									</div>
+								</div>
+							</div>
+
+							<div className="space-y-4">
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Follow Up
+									</label>
+									<p
+										className={`text-sm ${selectedLead.followUp && selectedLead.followUp !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+									>
+										{selectedLead.followUp || "N/A"}
+									</p>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Appointment
+									</label>
+									<p
+										className={`text-sm ${selectedLead.appointment && selectedLead.appointment !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+									>
+										{selectedLead.appointment || "N/A"}
+									</p>
+								</div>
+								<div className="space-y-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Remark
+									</label>
+									<p
+										className={`text-sm ${selectedLead.remark && selectedLead.remark !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+									>
+										{selectedLead.remark || "N/A"}
+									</p>
+								</div>
+							</div>
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
