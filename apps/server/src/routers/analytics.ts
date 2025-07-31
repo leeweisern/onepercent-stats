@@ -53,7 +53,7 @@ app.get("/leads/platform-breakdown", async (c) => {
 		.from(leads);
 
 	if (month) {
-		query = query.where(eq(leads.month, month));
+		query = query.where(sql`strftime('%Y-%m', ${leads.date}) = ${month}`);
 	}
 
 	const breakdown = await query.groupBy(leads.platform);
@@ -83,10 +83,11 @@ app.get("/leads/platform-breakdown", async (c) => {
 
 app.get("/leads/months", async (c) => {
 	const months = await db
-		.select({ month: leads.month })
+		.select({ month: sql<string>`strftime('%Y-%m', ${leads.date})` })
 		.from(leads)
-		.groupBy(leads.month)
-		.orderBy(desc(leads.month));
+		.where(sql`${leads.date} IS NOT NULL`)
+		.groupBy(sql`strftime('%Y-%m', ${leads.date})`)
+		.orderBy(desc(sql`strftime('%Y-%m', ${leads.date})`));
 
 	return c.json(months.map((m) => m.month).filter(Boolean));
 });
@@ -105,7 +106,7 @@ app.get("/leads/funnel", async (c) => {
 		.from(leads);
 
 	if (month) {
-		query = query.where(eq(leads.month, month));
+		query = query.where(sql`strftime('%Y-%m', ${leads.date}) = ${month}`);
 	}
 
 	if (platform) {
@@ -167,7 +168,11 @@ app.get("/leads/options", async (c) => {
 		await Promise.all([
 			db.select({ value: leads.status }).from(leads).groupBy(leads.status),
 			db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
-			db.select({ value: leads.month }).from(leads).groupBy(leads.month),
+			db
+				.select({ value: sql<string>`strftime('%Y-%m', ${leads.date})` })
+				.from(leads)
+				.where(sql`${leads.date} IS NOT NULL`)
+				.groupBy(sql`strftime('%Y-%m', ${leads.date})`),
 			db
 				.select({ value: leads.trainerHandle })
 				.from(leads)
@@ -193,7 +198,11 @@ app.get("/leads/filter-options", async (c) => {
 	] = await Promise.all([
 		db.select({ value: leads.status }).from(leads).groupBy(leads.status),
 		db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
-		db.select({ value: leads.month }).from(leads).groupBy(leads.month),
+		db
+			.select({ value: sql<string>`strftime('%Y-%m', ${leads.date})` })
+			.from(leads)
+			.where(sql`${leads.date} IS NOT NULL`)
+			.groupBy(sql`strftime('%Y-%m', ${leads.date})`),
 		db
 			.select({ value: leads.trainerHandle })
 			.from(leads)
@@ -248,7 +257,6 @@ app.post("/leads", async (c) => {
 		status: body.status || "",
 		isClosed: body.isClosed || false,
 		sales: body.sales || 0,
-		month: body.month || "",
 		date: body.date || "",
 		followUp: body.followUp || "",
 		appointment: body.appointment || "",
@@ -278,7 +286,6 @@ app.put("/leads/:id", async (c) => {
 	if (body.status !== undefined) updateData.status = body.status;
 	if (body.isClosed !== undefined) updateData.isClosed = body.isClosed;
 	if (body.sales !== undefined) updateData.sales = body.sales;
-	if (body.month !== undefined) updateData.month = body.month;
 	if (body.date !== undefined) updateData.date = body.date;
 	if (body.followUp !== undefined) updateData.followUp = body.followUp;
 	if (body.appointment !== undefined) updateData.appointment = body.appointment;

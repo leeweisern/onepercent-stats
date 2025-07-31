@@ -27,6 +27,7 @@ import {
 	XCircle,
 	Copy,
 	Edit,
+	Trash2,
 } from "lucide-react";
 import PlatformBreakdown from "@/components/platform-breakdown";
 import FunnelChart from "@/components/funnel-chart";
@@ -35,7 +36,6 @@ import { LeadsFilters, type FilterState } from "@/components/leads-filters";
 
 interface Lead {
 	id: number;
-	month: string | null;
 	date: string | null;
 	name: string | null;
 	phoneNumber: string | null;
@@ -76,6 +76,8 @@ export default function Dashboard() {
 	const [activeTab, setActiveTab] = useState("leads");
 	const [editLead, setEditLead] = useState<Lead | null>(null);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+	const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 	const [platformData, setPlatformData] =
 		useState<PlatformBreakdownResponse | null>(null);
 	const [availableMonths, setAvailableMonths] = useState<string[]>([]);
@@ -120,7 +122,11 @@ export default function Dashboard() {
 
 		// Filter by month
 		if (filters.month) {
-			filtered = filtered.filter((lead) => lead.month === filters.month);
+			filtered = filtered.filter((lead) => {
+				if (!lead.date) return false;
+				const leadMonth = new Date(lead.date).toISOString().slice(0, 7); // YYYY-MM format
+				return leadMonth === filters.month;
+			});
 		}
 
 		// Filter by year
@@ -266,6 +272,47 @@ export default function Dashboard() {
 	const handleFiltersChange = useCallback((newFilters: FilterState) => {
 		setFilters(newFilters);
 	}, []);
+
+	const handleDeleteClick = (lead: Lead) => {
+		setLeadToDelete(lead);
+		setDeleteConfirmOpen(true);
+	};
+
+	const handleDeleteConfirm = async () => {
+		if (!leadToDelete) return;
+
+		try {
+			const response = await fetch(`/api/analytics/leads/${leadToDelete.id}`, {
+				method: "DELETE",
+			});
+
+			if (response.ok) {
+				setLeads(leads.filter((lead) => lead.id !== leadToDelete.id));
+				setDeleteConfirmOpen(false);
+				setLeadToDelete(null);
+			} else {
+				console.error("Failed to delete lead");
+			}
+		} catch (error) {
+			console.error("Error deleting lead:", error);
+		}
+	};
+
+	const handleDeleteLead = async (leadId: number) => {
+		try {
+			const response = await fetch(`/api/analytics/leads/${leadId}`, {
+				method: "DELETE",
+			});
+
+			if (response.ok) {
+				setLeads(leads.filter((lead) => lead.id !== leadId));
+			} else {
+				console.error("Failed to delete lead");
+			}
+		} catch (error) {
+			console.error("Error deleting lead:", error);
+		}
+	};
 
 	return (
 		<div className="flex h-screen bg-gray-50">
@@ -569,6 +616,17 @@ export default function Dashboard() {
 																	>
 																		<Edit className="h-4 w-4" />
 																	</Button>
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleDeleteClick(lead);
+																		}}
+																	>
+																		<Trash2 className="h-4 w-4" />
+																	</Button>
 																</div>
 															</TableCell>
 														</TableRow>
@@ -626,7 +684,37 @@ export default function Dashboard() {
 				open={isEditDialogOpen}
 				onOpenChange={setIsEditDialogOpen}
 				onSave={handleSaveLead}
+				onDelete={handleDeleteLead}
 			/>
+
+			{/* Delete Confirmation Dialog */}
+			<Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+				<DialogContent className="sm:max-w-[425px]">
+					<DialogHeader>
+						<DialogTitle>Delete Lead</DialogTitle>
+					</DialogHeader>
+					<div className="py-4">
+						<p className="text-sm text-muted-foreground">
+							Are you sure you want to delete the lead for{" "}
+							<span className="font-medium text-foreground">
+								{leadToDelete?.name || "N/A"}
+							</span>
+							? This action cannot be undone.
+						</p>
+					</div>
+					<div className="flex justify-end gap-2">
+						<Button
+							variant="outline"
+							onClick={() => setDeleteConfirmOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button variant="destructive" onClick={handleDeleteConfirm}>
+							Delete
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

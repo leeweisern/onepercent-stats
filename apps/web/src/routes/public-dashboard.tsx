@@ -27,11 +27,11 @@ import {
 	XCircle,
 	Copy,
 	Eye,
+	Trash2,
 } from "lucide-react";
 
 interface Lead {
 	id: number;
-	month: string | null;
 	date: string | null;
 	name: string | null;
 	phoneNumber: string | null;
@@ -52,6 +52,8 @@ export default function PublicDashboard() {
 	const [activeTab, setActiveTab] = useState("leads");
 	const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+	const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
 	useEffect(() => {
 		fetchLeads();
@@ -108,6 +110,31 @@ export default function PublicDashboard() {
 	const handleRowClick = (lead: Lead) => {
 		setSelectedLead(lead);
 		setIsDialogOpen(true);
+	};
+
+	const handleDeleteClick = (lead: Lead) => {
+		setLeadToDelete(lead);
+		setDeleteConfirmOpen(true);
+	};
+
+	const handleDeleteConfirm = async () => {
+		if (!leadToDelete) return;
+
+		try {
+			const response = await fetch(`/api/analytics/leads/${leadToDelete.id}`, {
+				method: "DELETE",
+			});
+
+			if (response.ok) {
+				setLeads(leads.filter((lead) => lead.id !== leadToDelete.id));
+				setDeleteConfirmOpen(false);
+				setLeadToDelete(null);
+			} else {
+				console.error("Failed to delete lead");
+			}
+		} catch (error) {
+			console.error("Error deleting lead:", error);
+		}
 	};
 
 	return (
@@ -389,17 +416,30 @@ export default function PublicDashboard() {
 																</div>
 															</TableCell>
 															<TableCell>
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		handleRowClick(lead);
-																	}}
-																>
-																	<Eye className="h-4 w-4" />
-																</Button>
+																<div className="flex gap-1">
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleRowClick(lead);
+																		}}
+																	>
+																		<Eye className="h-4 w-4" />
+																	</Button>
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleDeleteClick(lead);
+																		}}
+																	>
+																		<Trash2 className="h-4 w-4" />
+																	</Button>
+																</div>
 															</TableCell>
 														</TableRow>
 													))}
@@ -595,6 +635,35 @@ export default function PublicDashboard() {
 							</div>
 						</div>
 					)}
+				</DialogContent>
+			</Dialog>
+
+			{/* Delete Confirmation Dialog */}
+			<Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+				<DialogContent className="sm:max-w-[425px]">
+					<DialogHeader>
+						<DialogTitle>Delete Lead</DialogTitle>
+					</DialogHeader>
+					<div className="py-4">
+						<p className="text-sm text-muted-foreground">
+							Are you sure you want to delete the lead for{" "}
+							<span className="font-medium text-foreground">
+								{leadToDelete?.name || "N/A"}
+							</span>
+							? This action cannot be undone.
+						</p>
+					</div>
+					<div className="flex justify-end gap-2">
+						<Button
+							variant="outline"
+							onClick={() => setDeleteConfirmOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button variant="destructive" onClick={handleDeleteConfirm}>
+							Delete
+						</Button>
+					</div>
 				</DialogContent>
 			</Dialog>
 		</div>
