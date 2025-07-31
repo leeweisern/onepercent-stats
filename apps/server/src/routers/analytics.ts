@@ -5,6 +5,10 @@ import { desc, count, sum, eq, sql } from "drizzle-orm";
 
 const app = new Hono();
 
+// Helper function to extract YYYY-MM from M/D/YYYY format
+const extractYearMonth = (dateField: any) =>
+	sql<string>`substr(${dateField}, -4) || '-' || printf('%02d', CASE WHEN instr(${dateField}, '/') > 0 THEN substr(${dateField}, 1, instr(${dateField}, '/') - 1) ELSE 1 END)`;
+
 app.get("/leads", async (c) => {
 	const allLeads = await db.select().from(leads).orderBy(desc(leads.createdAt));
 	return c.json(allLeads);
@@ -53,7 +57,7 @@ app.get("/leads/platform-breakdown", async (c) => {
 		.from(leads);
 
 	if (month) {
-		query = query.where(sql`strftime('%Y-%m', ${leads.date}) = ${month}`);
+		query = query.where(sql`${extractYearMonth(leads.date)} = ${month}`);
 	}
 
 	const breakdown = await query.groupBy(leads.platform);
@@ -83,11 +87,13 @@ app.get("/leads/platform-breakdown", async (c) => {
 
 app.get("/leads/months", async (c) => {
 	const months = await db
-		.select({ month: sql<string>`strftime('%Y-%m', ${leads.date})` })
+		.select({ month: extractYearMonth(leads.date) })
 		.from(leads)
-		.where(sql`${leads.date} IS NOT NULL`)
-		.groupBy(sql`strftime('%Y-%m', ${leads.date})`)
-		.orderBy(desc(sql`strftime('%Y-%m', ${leads.date})`));
+		.where(
+			sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND instr(${leads.date}, '/') > 0`,
+		)
+		.groupBy(extractYearMonth(leads.date))
+		.orderBy(desc(extractYearMonth(leads.date)));
 
 	return c.json(months.map((m) => m.month).filter(Boolean));
 });
@@ -106,7 +112,7 @@ app.get("/leads/funnel", async (c) => {
 		.from(leads);
 
 	if (month) {
-		query = query.where(sql`strftime('%Y-%m', ${leads.date}) = ${month}`);
+		query = query.where(sql`${extractYearMonth(leads.date)} = ${month}`);
 	}
 
 	if (platform) {
@@ -169,10 +175,12 @@ app.get("/leads/options", async (c) => {
 			db.select({ value: leads.status }).from(leads).groupBy(leads.status),
 			db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
 			db
-				.select({ value: sql<string>`strftime('%Y-%m', ${leads.date})` })
+				.select({ value: extractYearMonth(leads.date) })
 				.from(leads)
-				.where(sql`${leads.date} IS NOT NULL`)
-				.groupBy(sql`strftime('%Y-%m', ${leads.date})`),
+				.where(
+					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND instr(${leads.date}, '/') > 0`,
+				)
+				.groupBy(extractYearMonth(leads.date)),
 			db
 				.select({ value: leads.trainerHandle })
 				.from(leads)
@@ -199,10 +207,12 @@ app.get("/leads/filter-options", async (c) => {
 		db.select({ value: leads.status }).from(leads).groupBy(leads.status),
 		db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
 		db
-			.select({ value: sql<string>`strftime('%Y-%m', ${leads.date})` })
+			.select({ value: extractYearMonth(leads.date) })
 			.from(leads)
-			.where(sql`${leads.date} IS NOT NULL`)
-			.groupBy(sql`strftime('%Y-%m', ${leads.date})`),
+			.where(
+				sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND instr(${leads.date}, '/') > 0`,
+			)
+			.groupBy(extractYearMonth(leads.date)),
 		db
 			.select({ value: leads.trainerHandle })
 			.from(leads)

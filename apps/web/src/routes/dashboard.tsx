@@ -298,22 +298,6 @@ export default function Dashboard() {
 		}
 	};
 
-	const handleDeleteLead = async (leadId: number) => {
-		try {
-			const response = await fetch(`/api/analytics/leads/${leadId}`, {
-				method: "DELETE",
-			});
-
-			if (response.ok) {
-				setLeads(leads.filter((lead) => lead.id !== leadId));
-			} else {
-				console.error("Failed to delete lead");
-			}
-		} catch (error) {
-			console.error("Error deleting lead:", error);
-		}
-	};
-
 	return (
 		<div className="flex h-screen bg-gray-50">
 			{/* Sidebar */}
@@ -684,7 +668,6 @@ export default function Dashboard() {
 				open={isEditDialogOpen}
 				onOpenChange={setIsEditDialogOpen}
 				onSave={handleSaveLead}
-				onDelete={handleDeleteLead}
 			/>
 
 			{/* Delete Confirmation Dialog */}

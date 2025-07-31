@@ -15,10 +15,10 @@ import {
 	SelectItem,
 	SelectTrigger,
 } from "@/components/ui/select";
-import { Trash2 } from "lucide-react";
 
 interface Lead {
 	id: number;
+	month: string | null;
 	date: string | null;
 	name: string | null;
 	phoneNumber: string | null;
@@ -38,12 +38,12 @@ interface EditLeadDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSave: (leadId: number, updates: Partial<Lead>) => void;
-	onDelete?: (leadId: number) => void;
 }
 
 interface Options {
 	status: string[];
 	platform: string[];
+	month: string[];
 	trainerHandle: string[];
 	isClosed: boolean[];
 }
@@ -53,7 +53,6 @@ export function EditLeadDialog({
 	open,
 	onOpenChange,
 	onSave,
-	onDelete,
 }: EditLeadDialogProps) {
 	const [name, setName] = useState("");
 	const [phoneNumber, setPhoneNumber] = useState("");
@@ -70,11 +69,11 @@ export function EditLeadDialog({
 	const [options, setOptions] = useState<Options>({
 		status: [],
 		platform: [],
+		month: [],
 		trainerHandle: [],
 		isClosed: [true, false],
 	});
 	const [loading, setLoading] = useState(false);
-	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
 	useEffect(() => {
 		if (lead) {
@@ -138,130 +137,117 @@ export function EditLeadDialog({
 		}
 	};
 
-	const handleDeleteClick = () => {
-		setDeleteConfirmOpen(true);
-	};
-
-	const handleDeleteConfirm = async () => {
-		if (!lead || !onDelete) return;
-
-		try {
-			await onDelete(lead.id);
-			setDeleteConfirmOpen(false);
-			onOpenChange(false);
-		} catch (error) {
-			console.error("Failed to delete:", error);
-		}
-	};
-
 	if (!lead) return null;
 
 	return (
-		<>
-			<Dialog open={open} onOpenChange={onOpenChange}>
-				<DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle className="flex items-center justify-between">
-							<span>Edit Lead: {lead.name}</span>
-							{onDelete && (
-								<Button
-									variant="ghost"
-									size="sm"
-									className="text-red-600 hover:text-red-700 hover:bg-red-50"
-									onClick={handleDeleteClick}
-								>
-									<Trash2 className="h-4 w-4" />
-								</Button>
-							)}
-						</DialogTitle>
-					</DialogHeader>
-					<div className="grid gap-4 py-4">
-						{/* Basic Information */}
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="name">Name</Label>
-								<Input
-									id="name"
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									placeholder="Enter name"
-								/>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="phone">Phone Number</Label>
-								<Input
-									id="phone"
-									value={phoneNumber}
-									onChange={(e) => setPhoneNumber(e.target.value)}
-									placeholder="60161111111"
-								/>
-							</div>
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+				<DialogHeader>
+					<DialogTitle>Edit Lead: {lead.name}</DialogTitle>
+				</DialogHeader>
+				<div className="grid gap-4 py-4">
+					{/* Basic Information */}
+					<div className="grid grid-cols-2 gap-4">
+						<div className="space-y-2">
+							<Label htmlFor="name">Name</Label>
+							<Input
+								id="name"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								placeholder="Enter name"
+							/>
 						</div>
-
-						{/* Platform and Status */}
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="platform">Platform</Label>
-								<Select value={platform} onValueChange={setPlatform}>
-									<SelectTrigger>
-										<span>{platform || "Select platform"}</span>
-									</SelectTrigger>
-									<SelectContent>
-										{options.platform.map((p) => (
-											<SelectItem key={p} value={p}>
-												{p}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="status">Status</Label>
-								<Select value={status} onValueChange={setStatus}>
-									<SelectTrigger>
-										<span>{status || "Select status"}</span>
-									</SelectTrigger>
-									<SelectContent>
-										{options.status.map((s) => (
-											<SelectItem key={s} value={s}>
-												{s}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
+						<div className="space-y-2">
+							<Label htmlFor="phone">Phone Number</Label>
+							<Input
+								id="phone"
+								value={phoneNumber}
+								onChange={(e) => setPhoneNumber(e.target.value)}
+								placeholder="60161111111"
+							/>
 						</div>
+					</div>
 
-						{/* Closed and Sales */}
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="closed">Closed</Label>
-								<Select
-									value={isClosed.toString()}
-									onValueChange={(value) => setIsClosed(value === "true")}
-								>
-									<SelectTrigger>
-										<span>{isClosed ? "Yes" : "No"}</span>
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="true">Yes</SelectItem>
-										<SelectItem value="false">No</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="sales">Sales (RM)</Label>
-								<Input
-									id="sales"
-									type="number"
-									value={sales}
-									onChange={(e) => setSales(e.target.value)}
-									placeholder="Enter sales amount"
-								/>
-							</div>
+					{/* Platform and Status */}
+					<div className="grid grid-cols-2 gap-4">
+						<div className="space-y-2">
+							<Label htmlFor="platform">Platform</Label>
+							<Select value={platform} onValueChange={setPlatform}>
+								<SelectTrigger>
+									<span>{platform || "Select platform"}</span>
+								</SelectTrigger>
+								<SelectContent>
+									{options.platform.map((p) => (
+										<SelectItem key={p} value={p}>
+											{p}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
+						<div className="space-y-2">
+							<Label htmlFor="status">Status</Label>
+							<Select value={status} onValueChange={setStatus}>
+								<SelectTrigger>
+									<span>{status || "Select status"}</span>
+								</SelectTrigger>
+								<SelectContent>
+									{options.status.map((s) => (
+										<SelectItem key={s} value={s}>
+											{s}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
 
-						{/* Date */}
+					{/* Closed and Sales */}
+					<div className="grid grid-cols-2 gap-4">
+						<div className="space-y-2">
+							<Label htmlFor="closed">Closed</Label>
+							<Select
+								value={isClosed.toString()}
+								onValueChange={(value) => setIsClosed(value === "true")}
+							>
+								<SelectTrigger>
+									<span>{isClosed ? "Yes" : "No"}</span>
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="true">Yes</SelectItem>
+									<SelectItem value="false">No</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="sales">Sales (RM)</Label>
+							<Input
+								id="sales"
+								type="number"
+								value={sales}
+								onChange={(e) => setSales(e.target.value)}
+								placeholder="Enter sales amount"
+							/>
+						</div>
+					</div>
+
+					{/* Month and Date */}
+					<div className="grid grid-cols-2 gap-4">
+						<div className="space-y-2">
+							<Label htmlFor="month">Month</Label>
+							<Select value={month} onValueChange={setMonth}>
+								<SelectTrigger>
+									<span>{month || "Select month"}</span>
+								</SelectTrigger>
+								<SelectContent>
+									{options.month.map((m) => (
+										<SelectItem key={m} value={m}>
+											{m}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 						<div className="space-y-2">
 							<Label htmlFor="date">Date</Label>
 							<Input
@@ -271,100 +257,71 @@ export function EditLeadDialog({
 								onChange={(e) => setDate(e.target.value)}
 							/>
 						</div>
+					</div>
 
-						{/* Trainer */}
+					{/* Trainer */}
+					<div className="space-y-2">
+						<Label htmlFor="trainer">Trainer Handle</Label>
+						<Select value={trainerHandle} onValueChange={setTrainerHandle}>
+							<SelectTrigger>
+								<span>{trainerHandle || "Select trainer"}</span>
+							</SelectTrigger>
+							<SelectContent>
+								{options.trainerHandle.map((t) => (
+									<SelectItem key={t} value={t}>
+										{t}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					{/* Follow Up and Appointment */}
+					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
-							<Label htmlFor="trainer">Trainer Handle</Label>
-							<Select value={trainerHandle} onValueChange={setTrainerHandle}>
-								<SelectTrigger>
-									<span>{trainerHandle || "Select trainer"}</span>
-								</SelectTrigger>
-								<SelectContent>
-									{options.trainerHandle.map((t) => (
-										<SelectItem key={t} value={t}>
-											{t}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-
-						{/* Follow Up and Appointment */}
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="followUp">Follow Up</Label>
-								<Textarea
-									id="followUp"
-									value={followUp}
-									onChange={(e) => setFollowUp(e.target.value)}
-									placeholder="Enter follow up details"
-									rows={3}
-								/>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="appointment">Appointment</Label>
-								<Textarea
-									id="appointment"
-									value={appointment}
-									onChange={(e) => setAppointment(e.target.value)}
-									placeholder="Enter appointment details"
-									rows={3}
-								/>
-							</div>
-						</div>
-
-						{/* Remark */}
-						<div className="space-y-2">
-							<Label htmlFor="remark">Remark</Label>
+							<Label htmlFor="followUp">Follow Up</Label>
 							<Textarea
-								id="remark"
-								value={remark}
-								onChange={(e) => setRemark(e.target.value)}
-								placeholder="Enter remarks"
+								id="followUp"
+								value={followUp}
+								onChange={(e) => setFollowUp(e.target.value)}
+								placeholder="Enter follow up details"
+								rows={3}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="appointment">Appointment</Label>
+							<Textarea
+								id="appointment"
+								value={appointment}
+								onChange={(e) => setAppointment(e.target.value)}
+								placeholder="Enter appointment details"
 								rows={3}
 							/>
 						</div>
 					</div>
 
-					<div className="flex justify-end gap-2">
-						<Button variant="outline" onClick={() => onOpenChange(false)}>
-							Cancel
-						</Button>
-						<Button onClick={handleSave} disabled={loading}>
-							{loading ? "Saving..." : "Save"}
-						</Button>
+					{/* Remark */}
+					<div className="space-y-2">
+						<Label htmlFor="remark">Remark</Label>
+						<Textarea
+							id="remark"
+							value={remark}
+							onChange={(e) => setRemark(e.target.value)}
+							placeholder="Enter remarks"
+							rows={3}
+						/>
 					</div>
-				</DialogContent>
-			</Dialog>
+				</div>
 
-			{/* Delete Confirmation Dialog */}
-			<Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-				<DialogContent className="sm:max-w-[425px]">
-					<DialogHeader>
-						<DialogTitle>Delete Lead</DialogTitle>
-					</DialogHeader>
-					<div className="py-4">
-						<p className="text-sm text-muted-foreground">
-							Are you sure you want to delete the lead for{" "}
-							<span className="font-medium text-foreground">
-								{lead?.name || "N/A"}
-							</span>
-							? This action cannot be undone.
-						</p>
-					</div>
-					<div className="flex justify-end gap-2">
-						<Button
-							variant="outline"
-							onClick={() => setDeleteConfirmOpen(false)}
-						>
-							Cancel
-						</Button>
-						<Button variant="destructive" onClick={handleDeleteConfirm}>
-							Delete
-						</Button>
-					</div>
-				</DialogContent>
-			</Dialog>
-		</>
+				<div className="flex justify-end gap-2">
+					<Button variant="outline" onClick={() => onOpenChange(false)}>
+						Cancel
+					</Button>
+					<Button onClick={handleSave} disabled={loading}>
+						{loading ? "Saving..." : "Save"}
+					</Button>
+				</div>
+			</DialogContent>
+		</Dialog>
 	);
 }

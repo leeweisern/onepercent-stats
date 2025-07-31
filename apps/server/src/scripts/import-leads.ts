@@ -12,7 +12,6 @@ const cleanData = (row: any) => {
 	const sales = parseInt(salesString.replace(/[^0-9.-]+/g, "")) || 0;
 
 	return {
-		month: row["Month"],
 		date: row["Date"],
 		name: row["Name "],
 		phoneNumber: row["Phone number"],
