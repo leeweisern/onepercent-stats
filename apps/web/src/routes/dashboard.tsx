@@ -31,9 +31,12 @@ import {
 	ChevronUp,
 	ChevronDown,
 	Plus,
+	DollarSign,
 } from "lucide-react";
 import PlatformBreakdown from "@/components/platform-breakdown";
 import FunnelChart from "@/components/funnel-chart";
+import AdvertisingCosts from "@/components/advertising-costs";
+import AdvertisingCostsManagement from "@/components/advertising-costs-management";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { CreateLeadDialog } from "@/components/create-lead-dialog";
 import { LeadsFilters, type FilterState } from "@/components/leads-filters";
@@ -435,12 +438,12 @@ export default function Dashboard() {
 							Analytics
 						</Button>
 						<Button
-							variant={activeTab === "reports" ? "default" : "ghost"}
+							variant={activeTab === "advertising" ? "default" : "ghost"}
 							className="w-full justify-start mb-2"
-							onClick={() => setActiveTab("reports")}
+							onClick={() => setActiveTab("advertising")}
 						>
-							<TrendingUp className="mr-2 h-4 w-4" />
-							Reports
+							<DollarSign className="mr-2 h-4 w-4" />
+							Advertising Costs
 						</Button>
 					</div>
 				</nav>
@@ -827,6 +830,10 @@ export default function Dashboard() {
 								</div>
 							</div>
 
+							<AdvertisingCosts
+								selectedMonth={selectedMonth}
+								selectedYear={selectedYear}
+							/>
 							<PlatformBreakdown
 								selectedMonth={selectedMonth}
 								selectedYear={selectedYear}
@@ -838,17 +845,7 @@ export default function Dashboard() {
 						</div>
 					)}
 
-					{activeTab === "reports" && (
-						<div className="text-center py-12">
-							<TrendingUp className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-							<h3 className="text-lg font-medium text-gray-900 mb-2">
-								Reports Coming Soon
-							</h3>
-							<p className="text-gray-600">
-								Detailed reports and exports will be available here.
-							</p>
-						</div>
-					)}
+					{activeTab === "advertising" && <AdvertisingCostsManagement />}
 				</div>
 			</div>
 

@@ -148,6 +148,16 @@ export function CreateLeadDialog({
 			return;
 		}
 
+		if (!platform && !customPlatform.trim()) {
+			alert("Platform is required");
+			return;
+		}
+
+		if (!date) {
+			alert("Date is required");
+			return;
+		}
+
 		setLoading(true);
 		try {
 			const leadData = {
@@ -209,7 +219,7 @@ export function CreateLeadDialog({
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
 							<div className="flex items-center justify-between">
-								<Label htmlFor="platform">Platform</Label>
+								<Label htmlFor="platform">Platform *</Label>
 								<Button
 									type="button"
 									variant="ghost"
@@ -298,7 +308,7 @@ export function CreateLeadDialog({
 
 					{/* Date */}
 					<div className="space-y-2">
-						<Label htmlFor="date">Date</Label>
+						<Label htmlFor="date">Date *</Label>
 						<Input
 							id="date"
 							type="date"
@@ -365,7 +375,15 @@ export function CreateLeadDialog({
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						Cancel
 					</Button>
-					<Button onClick={handleSave} disabled={loading || !name.trim()}>
+					<Button
+						onClick={handleSave}
+						disabled={
+							loading ||
+							!name.trim() ||
+							(!platform && !customPlatform.trim()) ||
+							!date
+						}
+					>
 						{loading ? "Creating..." : "Create Lead"}
 					</Button>
 				</div>
