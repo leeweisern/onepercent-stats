@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db";
-import { leads } from "../db/schema/leads";
-import { desc, count, sum, eq, sql } from "drizzle-orm";
+import { leads, advertisingCosts } from "../db/schema/leads";
+import { desc, count, sum, eq, sql, and } from "drizzle-orm";
 
 const app = new Hono();
 
@@ -389,6 +389,181 @@ app.delete("/leads/:id", async (c) => {
 	} catch (error) {
 		console.error("Error deleting lead:", error);
 		return c.json({ error: "Failed to delete lead" }, 500);
+	}
+});
+
+// Advertising Costs CRUD endpoints
+
+// GET all advertising costs
+app.get("/advertising-costs", async (c) => {
+	const costs = await db
+		.select()
+		.from(advertisingCosts)
+		.orderBy(desc(advertisingCosts.year), desc(advertisingCosts.month));
+	return c.json(costs);
+});
+
+// GET advertising cost by month and year
+app.get("/advertising-costs/:year/:month", async (c) => {
+	const year = parseInt(c.req.param("year"));
+	const month = parseInt(c.req.param("month"));
+
+	if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+		return c.json({ error: "Invalid year or month" }, 400);
+	}
+
+	const cost = await db
+		.select()
+		.from(advertisingCosts)
+		.where(
+			and(eq(advertisingCosts.year, year), eq(advertisingCosts.month, month)),
+		);
+
+	if (cost.length === 0) {
+		return c.json({ error: "Advertising cost not found" }, 404);
+	}
+
+	return c.json(cost[0]);
+});
+
+// POST create new advertising cost
+app.post("/advertising-costs", async (c) => {
+	const body = await c.req.json();
+
+	// Validate required fields
+	if (!body.month || !body.year || body.cost === undefined) {
+		return c.json({ error: "Month, year, and cost are required" }, 400);
+	}
+
+	const month = parseInt(body.month);
+	const year = parseInt(body.year);
+	const cost = parseFloat(body.cost);
+
+	if (isNaN(month) || isNaN(year) || isNaN(cost) || month < 1 || month > 12) {
+		return c.json({ error: "Invalid month, year, or cost value" }, 400);
+	}
+
+	// Check if entry already exists for this month/year
+	const existing = await db
+		.select()
+		.from(advertisingCosts)
+		.where(
+			and(eq(advertisingCosts.year, year), eq(advertisingCosts.month, month)),
+		);
+
+	if (existing.length > 0) {
+		return c.json(
+			{ error: "Advertising cost already exists for this month and year" },
+			409,
+		);
+	}
+
+	const costData = {
+		month,
+		year,
+		cost,
+		currency: body.currency || "RM",
+	};
+
+	try {
+		const newCost = await db
+			.insert(advertisingCosts)
+			.values(costData)
+			.returning();
+		return c.json(newCost[0], 201);
+	} catch (error) {
+		console.error("Error creating advertising cost:", error);
+		return c.json({ error: "Failed to create advertising cost" }, 500);
+	}
+});
+
+// PUT update advertising cost
+app.put("/advertising-costs/:id", async (c) => {
+	const id = parseInt(c.req.param("id"));
+	const body = await c.req.json();
+
+	if (isNaN(id)) {
+		return c.json({ error: "Invalid advertising cost ID" }, 400);
+	}
+
+	const updateData: any = {
+		updatedAt: sql`CURRENT_TIMESTAMP`,
+	};
+
+	// Only update fields that are provided
+	if (body.month !== undefined) {
+		const month = parseInt(body.month);
+		if (isNaN(month) || month < 1 || month > 12) {
+			return c.json({ error: "Invalid month value" }, 400);
+		}
+		updateData.month = month;
+	}
+	if (body.year !== undefined) {
+		const year = parseInt(body.year);
+		if (isNaN(year)) {
+			return c.json({ error: "Invalid year value" }, 400);
+		}
+		updateData.year = year;
+	}
+	if (body.cost !== undefined) {
+		const cost = parseFloat(body.cost);
+		if (isNaN(cost)) {
+			return c.json({ error: "Invalid cost value" }, 400);
+		}
+		updateData.cost = cost;
+	}
+	if (body.currency !== undefined) updateData.currency = body.currency;
+
+	try {
+		const updatedCost = await db
+			.update(advertisingCosts)
+			.set(updateData)
+			.where(eq(advertisingCosts.id, id))
+			.returning();
+
+		if (updatedCost.length === 0) {
+			return c.json({ error: "Advertising cost not found" }, 404);
+		}
+
+		return c.json(updatedCost[0]);
+	} catch (error) {
+		console.error("Error updating advertising cost:", error);
+		return c.json({ error: "Failed to update advertising cost" }, 500);
+	}
+});
+
+// DELETE advertising cost
+app.delete("/advertising-costs/:id", async (c) => {
+	const id = parseInt(c.req.param("id"));
+
+	if (isNaN(id)) {
+		return c.json({ error: "Invalid advertising cost ID" }, 400);
+	}
+
+	try {
+		// Check if cost exists first
+		const existingCost = await db
+			.select()
+			.from(advertisingCosts)
+			.where(eq(advertisingCosts.id, id));
+
+		if (existingCost.length === 0) {
+			return c.json({ error: "Advertising cost not found" }, 404);
+		}
+
+		// Delete the cost
+		const deletedCost = await db
+			.delete(advertisingCosts)
+			.where(eq(advertisingCosts.id, id))
+			.returning();
+
+		return c.json({
+			message: "Advertising cost deleted successfully",
+			deletedCost: deletedCost[0],
+		});
+	} catch (error) {
+		console.error("Error deleting advertising cost:", error);
+		return c.json({ error: "Failed to delete advertising cost" }, 500);
 	}
 });
 

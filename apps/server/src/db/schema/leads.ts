@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
+import { text, integer, real, sqliteTable } from "drizzle-orm/sqlite-core";
 
 export const leads = sqliteTable("leads", {
 	id: integer("id").primaryKey(),
@@ -16,4 +16,14 @@ export const leads = sqliteTable("leads", {
 	remark: text("remark"),
 	trainerHandle: text("trainer_handle"),
 	createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const advertisingCosts = sqliteTable("advertising_costs", {
+	id: integer("id").primaryKey(),
+	month: integer("month").notNull(),
+	year: integer("year").notNull(),
+	cost: real("cost").notNull(),
+	currency: text("currency").default("RM"),
+	createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
