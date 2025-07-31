@@ -126,7 +126,7 @@ app.get("/leads/platform-breakdown", async (c) => {
 	}
 	if (year) {
 		conditions.push(
-			sql`${leads.date} IS NOT NULL AND substr(${leads.date}, -4) = ${year}`,
+			sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
 		);
 	}
 
@@ -191,7 +191,7 @@ app.get("/leads/funnel", async (c) => {
 	}
 	if (year) {
 		conditions.push(
-			sql`${leads.date} IS NOT NULL AND substr(${leads.date}, -4) = ${year}`,
+			sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
 		);
 	}
 	if (platform) {
@@ -649,7 +649,7 @@ app.get("/roas", async (c) => {
 		}
 		if (year) {
 			leadConditions.push(
-				sql`${leads.date} IS NOT NULL AND substr(${leads.date}, -4) = ${year}`,
+				sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
 			);
 		}
 		if (platform) {
@@ -695,7 +695,7 @@ app.get("/roas", async (c) => {
 						),
 					);
 
-				totalAdCost = costResult[0]?.cost || 0;
+				totalAdCost = Number(costResult[0]?.cost) || 0;
 			}
 		} else if (year) {
 			// All months in a specific year
@@ -705,7 +705,7 @@ app.get("/roas", async (c) => {
 				.from(advertisingCosts)
 				.where(eq(advertisingCosts.year, yearNumber));
 
-			totalAdCost = costResult[0]?.totalCost || 0;
+			totalAdCost = Number(costResult[0]?.totalCost) || 0;
 		} else if (month) {
 			// Specific month across all years
 			const monthNumber = getMonthNumber(month);
@@ -716,7 +716,7 @@ app.get("/roas", async (c) => {
 					.from(advertisingCosts)
 					.where(eq(advertisingCosts.month, monthNumber));
 
-				totalAdCost = costResult[0]?.totalCost || 0;
+				totalAdCost = Number(costResult[0]?.totalCost) || 0;
 			}
 		} else {
 			// All time
@@ -724,7 +724,7 @@ app.get("/roas", async (c) => {
 				.select({ totalCost: sum(advertisingCosts.cost) })
 				.from(advertisingCosts);
 
-			totalAdCost = costResult[0]?.totalCost || 0;
+			totalAdCost = Number(costResult[0]?.totalCost) || 0;
 		}
 
 		console.log("Final totals:", {
