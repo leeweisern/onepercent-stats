@@ -11,7 +11,20 @@ This repository contains the source code for the One Percent Stats application, 
 - **Database**: D1, Cloudflare's serverless database.
 - **ORM**: Drizzle ORM.
 - **Authentication**: better-auth.
+- **UI Components**: shadcn/ui with Tailwind CSS.
 - **Linting and Formatting**: Biome.
+
+## UI Component Guidelines
+
+- **Component Library**: Use shadcn/ui components for consistent design system
+- **Available Components**: Badge, Button, Card, Dialog, Table, Skeleton, and more in `src/components/ui/`
+- **Styling**: Tailwind CSS with custom CSS variables for theming
+- **Patterns**:
+  - Use Badge components for status indicators (platform, status, etc.)
+  - Implement Dialog components for detailed views and modals
+  - Apply proper truncation with clickable rows for data tables
+  - Include hover states and transitions for better UX
+  - Use proper event handling with `stopPropagation()` for nested interactive elements
 
 ## Codebase Layout
 
@@ -50,9 +63,16 @@ This directory contains the frontend application.
 - **`public/`**: Public assets for the web application.
 - **`src/`**: The source code for the frontend.
   - **`components/`**: Reusable React components.
+    - **`ui/`**: shadcn/ui components (Badge, Button, Card, Dialog, Table, etc.)
+    - **`header.tsx`**, **`theme-provider.tsx`**, etc.: Custom application components
   - **`lib/`**: Shared libraries and utilities for the frontend.
+    - **`utils.ts`**: Utility functions including `cn()` for className merging
+    - **`auth-client.ts`**: Authentication client configuration
   - **`routes/`**: The pages of the application.
-  - **`index.css`**: The main stylesheet.
+    - **`dashboard.tsx`**: Main authenticated dashboard with leads table
+    - **`public-dashboard.tsx`**: Public version of the dashboard
+    - **`login.tsx`**: Authentication page
+  - **`index.css`**: The main stylesheet with Tailwind CSS and custom properties.
   - **`root.tsx`**: The root component of the application.
   - **`routes.ts`**: The route definitions for the application.
 - **`.env.example`**: An example environment file.
