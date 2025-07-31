@@ -163,29 +163,32 @@ app.get("/leads/funnel", async (c) => {
 });
 
 app.get("/leads/options", async (c) => {
-	const [statusOptions, platformOptions, monthOptions, trainerOptions] = await Promise.all([
-		db.select({ value: leads.status }).from(leads).groupBy(leads.status),
-		db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
-		db.select({ value: leads.month }).from(leads).groupBy(leads.month),
-		db.select({ value: leads.trainerHandle }).from(leads).groupBy(leads.trainerHandle),
-	]);
+	const [statusOptions, platformOptions, monthOptions, trainerOptions] =
+		await Promise.all([
+			db.select({ value: leads.status }).from(leads).groupBy(leads.status),
+			db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
+			db.select({ value: leads.month }).from(leads).groupBy(leads.month),
+			db
+				.select({ value: leads.trainerHandle })
+				.from(leads)
+				.groupBy(leads.trainerHandle),
+		]);
 
 	return c.json({
-		status: statusOptions.map(s => s.value).filter(Boolean),
-		platform: platformOptions.map(p => p.value).filter(Boolean),
-		month: monthOptions.map(m => m.value).filter(Boolean),
-		trainerHandle: trainerOptions.map(t => t.value).filter(Boolean),
-		isClosed: [true, false]
+		status: statusOptions.map((s) => s.value).filter(Boolean),
+		platform: platformOptions.map((p) => p.value).filter(Boolean),
+		month: monthOptions.map((m) => m.value).filter(Boolean),
+		trainerHandle: trainerOptions.map((t) => t.value).filter(Boolean),
+		isClosed: [true, false],
 	});
-});
 });
 
 app.put("/leads/:id", async (c) => {
 	const id = parseInt(c.req.param("id"));
 	const body = await c.req.json();
-	
+
 	const updateData: any = {};
-	
+
 	// Only update fields that are provided
 	if (body.name !== undefined) updateData.name = body.name;
 	if (body.phoneNumber !== undefined) updateData.phoneNumber = body.phoneNumber;
@@ -198,8 +201,9 @@ app.put("/leads/:id", async (c) => {
 	if (body.followUp !== undefined) updateData.followUp = body.followUp;
 	if (body.appointment !== undefined) updateData.appointment = body.appointment;
 	if (body.remark !== undefined) updateData.remark = body.remark;
-	if (body.trainerHandle !== undefined) updateData.trainerHandle = body.trainerHandle;
-	
+	if (body.trainerHandle !== undefined)
+		updateData.trainerHandle = body.trainerHandle;
+
 	const updatedLead = await db
 		.update(leads)
 		.set(updateData)
