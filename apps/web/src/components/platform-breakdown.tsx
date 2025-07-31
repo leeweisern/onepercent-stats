@@ -21,26 +21,33 @@ import { ChevronDown, Calendar, BarChart3 } from "lucide-react";
 
 // Helper function to format month display
 const formatMonthDisplay = (monthString: string) => {
-	if (monthString === "All months") return monthString;
+	if (monthString === "All months" || !monthString)
+		return monthString || "All months";
 
-	const [year, month] = monthString.split("-");
-	const monthNames = [
-		"January",
-		"February",
-		"March",
-		"April",
-		"May",
-		"June",
-		"July",
-		"August",
-		"September",
-		"October",
-		"November",
-		"December",
-	];
-	const monthIndex = parseInt(month) - 1;
-	const monthName = monthNames[monthIndex] || month;
-	return `${monthName} ${year}`;
+	// If it's already a month name (like "May"), return it as is
+	if (monthString.includes("-")) {
+		const [year, month] = monthString.split("-");
+		const monthNames = [
+			"January",
+			"February",
+			"March",
+			"April",
+			"May",
+			"June",
+			"July",
+			"August",
+			"September",
+			"October",
+			"November",
+			"December",
+		];
+		const monthIndex = parseInt(month) - 1;
+		const monthName = monthNames[monthIndex] || month;
+		return `${monthName} ${year}`;
+	}
+
+	// If it's just a month name, return it as is
+	return monthString;
 };
 
 interface PlatformBreakdownData {
@@ -60,27 +67,31 @@ interface PlatformBreakdownResponse {
 		totalSales: number;
 	};
 	month: string;
+	year: string;
 }
 
 interface PlatformBreakdownProps {
 	selectedMonth?: string;
+	selectedYear?: string;
 }
 
 export default function PlatformBreakdown({
 	selectedMonth,
+	selectedYear,
 }: PlatformBreakdownProps) {
 	const [data, setData] = useState<PlatformBreakdownResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		fetchBreakdown();
-	}, [selectedMonth]);
+	}, [selectedMonth, selectedYear]);
 
 	const fetchBreakdown = async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
 			if (selectedMonth) params.append("month", selectedMonth);
+			if (selectedYear) params.append("year", selectedYear);
 
 			const response = await fetch(
 				`/api/analytics/leads/platform-breakdown?${params}`,
@@ -118,7 +129,8 @@ export default function PlatformBreakdown({
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<BarChart3 className="h-5 w-5" />
-					Platform Breakdown - {formatMonthDisplay(data?.month || "All months")}
+					Platform Breakdown - {data?.month || "All months"}
+					{data?.year && data.year !== "All years" ? ` ${data.year}` : ""}
 					{data && (
 						<Badge variant="secondary" className="ml-auto">
 							Total Sales: {formatCurrency(data.totals.totalSales)}

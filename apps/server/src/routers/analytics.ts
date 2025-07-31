@@ -53,6 +53,25 @@ const getMonthFromDate = (dateString: string): string => {
 	return "";
 };
 
+// Helper function to get year from date string
+const getYearFromDate = (dateString: string): string => {
+	if (!dateString) return "";
+
+	// Handle DD/MM/YYYY format (database format)
+	const parts = dateString.split("/");
+	if (parts.length === 3) {
+		return parts[2]; // Year is the third part
+	}
+
+	// Handle YYYY-MM-DD format (ISO format)
+	const date = new Date(dateString);
+	if (!isNaN(date.getTime())) {
+		return date.getFullYear().toString();
+	}
+
+	return "";
+};
+
 app.get("/leads", async (c) => {
 	const allLeads = await db.select().from(leads).orderBy(desc(leads.createdAt));
 	return c.json(allLeads);
@@ -87,6 +106,7 @@ app.get("/leads/by-platform", async (c) => {
 
 app.get("/leads/platform-breakdown", async (c) => {
 	const month = c.req.query("month");
+	const year = c.req.query("year");
 
 	let query = db
 		.select({
@@ -100,8 +120,16 @@ app.get("/leads/platform-breakdown", async (c) => {
 		})
 		.from(leads);
 
+	const conditions = [];
 	if (month) {
-		query = query.where(eq(leads.month, month));
+		conditions.push(eq(leads.month, month));
+	}
+	if (year) {
+		conditions.push(sql`substr(${leads.date}, -4) = ${year}`);
+	}
+
+	if (conditions.length > 0) {
+		query = query.where(and(...conditions));
 	}
 
 	const breakdown = await query.groupBy(leads.platform);
@@ -126,6 +154,7 @@ app.get("/leads/platform-breakdown", async (c) => {
 		})),
 		totals,
 		month: month || "All months",
+		year: year || "All years",
 	});
 });
 
@@ -142,6 +171,7 @@ app.get("/leads/months", async (c) => {
 
 app.get("/leads/funnel", async (c) => {
 	const month = c.req.query("month");
+	const year = c.req.query("year");
 	const platform = c.req.query("platform");
 
 	let query = db
@@ -153,12 +183,19 @@ app.get("/leads/funnel", async (c) => {
 		})
 		.from(leads);
 
+	const conditions = [];
 	if (month) {
-		query = query.where(eq(leads.month, month));
+		conditions.push(eq(leads.month, month));
+	}
+	if (year) {
+		conditions.push(sql`substr(${leads.date}, -4) = ${year}`);
+	}
+	if (platform) {
+		conditions.push(eq(leads.platform, platform));
 	}
 
-	if (platform) {
-		query = query.where(eq(leads.platform, platform));
+	if (conditions.length > 0) {
+		query = query.where(and(...conditions));
 	}
 
 	const statusData = await query.groupBy(leads.status, leads.platform);
@@ -207,6 +244,7 @@ app.get("/leads/funnel", async (c) => {
 	return c.json({
 		funnel: sortedFunnel,
 		month: month || "All months",
+		year: year || "All years",
 		platform: platform || "All platforms",
 	});
 });
@@ -264,7 +302,8 @@ app.get("/leads/filter-options", async (c) => {
 			dateOptions
 				.map((d) => d.value)
 				.filter(Boolean)
-				.map((date) => new Date(date).getFullYear().toString()),
+				.map((date) => getYearFromDate(date))
+				.filter(Boolean), // Filter out empty strings
 		),
 	).sort((a, b) => b.localeCompare(a)); // Sort descending
 

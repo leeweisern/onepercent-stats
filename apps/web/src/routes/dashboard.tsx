@@ -28,10 +28,14 @@ import {
 	Copy,
 	Edit,
 	Trash2,
+	ChevronUp,
+	ChevronDown,
+	Plus,
 } from "lucide-react";
 import PlatformBreakdown from "@/components/platform-breakdown";
 import FunnelChart from "@/components/funnel-chart";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
+import { CreateLeadDialog } from "@/components/create-lead-dialog";
 import { LeadsFilters, type FilterState } from "@/components/leads-filters";
 
 interface Lead {
@@ -77,12 +81,15 @@ export default function Dashboard() {
 	const [activeTab, setActiveTab] = useState("leads");
 	const [editLead, setEditLead] = useState<Lead | null>(null);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 	const [platformData, setPlatformData] =
 		useState<PlatformBreakdownResponse | null>(null);
 	const [availableMonths, setAvailableMonths] = useState<string[]>([]);
+	const [availableYears, setAvailableYears] = useState<string[]>([]);
 	const [selectedMonth, setSelectedMonth] = useState<string>("");
+	const [selectedYear, setSelectedYear] = useState<string>("");
 	const [filters, setFilters] = useState<FilterState>({
 		search: "",
 		month: "",
@@ -92,10 +99,13 @@ export default function Dashboard() {
 		trainer: "",
 		isClosed: "",
 	});
+	const [sortField, setSortField] = useState<string>("");
+	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
 	useEffect(() => {
 		console.log("Dashboard component mounted");
 		fetchAvailableMonths();
+		fetchAvailableYears();
 		fetchLeads();
 		if (activeTab === "analytics") {
 			fetchPlatformBreakdown();
@@ -106,11 +116,11 @@ export default function Dashboard() {
 		if (activeTab === "analytics") {
 			fetchPlatformBreakdown();
 		}
-	}, [selectedMonth]);
+	}, [selectedMonth, selectedYear]);
 
 	useEffect(() => {
 		applyFilters();
-	}, [leads, filters]);
+	}, [leads, filters, sortField, sortDirection]);
 
 	const applyFilters = useCallback(() => {
 		let filtered = [...leads];
@@ -134,7 +144,7 @@ export default function Dashboard() {
 		if (filters.year) {
 			filtered = filtered.filter((lead) => {
 				if (!lead.date) return false;
-				// Parse M/D/YYYY format to extract year
+				// Parse DD/MM/YYYY format to extract year
 				const parts = lead.date.split("/");
 				if (parts.length === 3) {
 					const year = parts[2];
@@ -167,8 +177,45 @@ export default function Dashboard() {
 			filtered = filtered.filter((lead) => lead.isClosed === isClosed);
 		}
 
+		// Apply sorting
+		if (sortField) {
+			filtered.sort((a, b) => {
+				let aValue: any;
+				let bValue: any;
+
+				switch (sortField) {
+					case "name":
+						aValue = a.name?.toLowerCase() || "";
+						bValue = b.name?.toLowerCase() || "";
+						break;
+					case "date":
+						// Parse DD/MM/YYYY format for proper date comparison
+						aValue = a.date ? parseDate(a.date) : new Date(0);
+						bValue = b.date ? parseDate(b.date) : new Date(0);
+						break;
+					case "sales":
+						aValue = a.sales || 0;
+						bValue = b.sales || 0;
+						break;
+					default:
+						return 0;
+				}
+
+				if (sortField === "date") {
+					// For dates, compare as Date objects
+					const comparison = aValue.getTime() - bValue.getTime();
+					return sortDirection === "asc" ? comparison : -comparison;
+				} else {
+					// For strings and numbers
+					if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+					if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+					return 0;
+				}
+			});
+		}
+
 		setFilteredLeads(filtered);
-	}, [leads, filters]);
+	}, [leads, filters, sortField, sortDirection]);
 
 	const fetchLeads = async () => {
 		try {
@@ -196,10 +243,21 @@ export default function Dashboard() {
 		}
 	};
 
+	const fetchAvailableYears = async () => {
+		try {
+			const response = await fetch("/api/analytics/leads/filter-options");
+			const data = await response.json();
+			setAvailableYears(data.years || []);
+		} catch (error) {
+			console.error("Error fetching years:", error);
+		}
+	};
+
 	const fetchPlatformBreakdown = async () => {
 		try {
 			const params = new URLSearchParams();
 			if (selectedMonth) params.append("month", selectedMonth);
+			if (selectedYear) params.append("year", selectedYear);
 
 			const response = await fetch(
 				`/api/analytics/leads/platform-breakdown?${params}`,
@@ -214,6 +272,18 @@ export default function Dashboard() {
 	const formatCurrency = (amount: number | null) => {
 		if (!amount) return "RM 0";
 		return `RM ${amount.toLocaleString()}`;
+	};
+
+	const parseDate = (dateString: string) => {
+		// Parse DD/MM/YYYY format
+		const parts = dateString.split("/");
+		if (parts.length === 3) {
+			const day = parseInt(parts[0], 10);
+			const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+			const year = parseInt(parts[2], 10);
+			return new Date(year, month, day);
+		}
+		return new Date(0);
 	};
 
 	const formatDate = (dateString: string | null) => {
@@ -277,9 +347,42 @@ export default function Dashboard() {
 		}
 	};
 
+	const handleCreateLead = async (leadData: any) => {
+		try {
+			const response = await fetch("/api/analytics/leads", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(leadData),
+			});
+
+			if (response.ok) {
+				const newLead = await response.json();
+				setLeads([newLead, ...leads]);
+			} else {
+				throw new Error("Failed to create lead");
+			}
+		} catch (error) {
+			console.error("Failed to create lead:", error);
+			throw error;
+		}
+	};
+
 	const handleFiltersChange = useCallback((newFilters: FilterState) => {
 		setFilters(newFilters);
 	}, []);
+
+	const handleSort = (field: string) => {
+		if (sortField === field) {
+			// Toggle direction if same field
+			setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+		} else {
+			// Set new field with ascending direction
+			setSortField(field);
+			setSortDirection("asc");
+		}
+	};
 
 	const handleDeleteClick = (lead: Lead) => {
 		setLeadToDelete(lead);
@@ -435,6 +538,14 @@ export default function Dashboard() {
 										<Badge variant="secondary" className="ml-auto">
 											{filteredLeads.length} total
 										</Badge>
+										<Button
+											onClick={() => setIsCreateDialogOpen(true)}
+											size="sm"
+											className="ml-2"
+										>
+											<Plus className="h-4 w-4 mr-1" />
+											Add Lead
+										</Button>
 									</CardTitle>
 								</CardHeader>
 								<CardContent className="p-0">
@@ -449,7 +560,23 @@ export default function Dashboard() {
 											<Table>
 												<TableHeader>
 													<TableRow className="hover:bg-transparent">
-														<TableHead className="w-[120px]">Name</TableHead>
+														<TableHead className="w-[120px] p-0">
+															<Button
+																variant="ghost"
+																className="h-full w-full justify-start px-4 py-3 font-medium hover:bg-muted/50 text-left"
+																onClick={() => handleSort("name")}
+															>
+																<span className="flex items-center">
+																	Name
+																	{sortField === "name" &&
+																		(sortDirection === "asc" ? (
+																			<ChevronUp className="ml-1 h-4 w-4" />
+																		) : (
+																			<ChevronDown className="ml-1 h-4 w-4" />
+																		))}
+																</span>
+															</Button>
+														</TableHead>
 														<TableHead className="w-[140px]">Phone</TableHead>
 														<TableHead className="w-[100px]">
 															Platform
@@ -458,11 +585,41 @@ export default function Dashboard() {
 														<TableHead className="w-[80px] text-center">
 															Closed
 														</TableHead>
-														<TableHead className="w-[100px] text-right">
-															Sales
+														<TableHead className="w-[100px] p-0">
+															<Button
+																variant="ghost"
+																className="h-full w-full justify-end px-4 py-3 font-medium hover:bg-muted/50 text-right"
+																onClick={() => handleSort("sales")}
+															>
+																<span className="flex items-center">
+																	Sales
+																	{sortField === "sales" &&
+																		(sortDirection === "asc" ? (
+																			<ChevronUp className="ml-1 h-4 w-4" />
+																		) : (
+																			<ChevronDown className="ml-1 h-4 w-4" />
+																		))}
+																</span>
+															</Button>
 														</TableHead>
 														<TableHead className="w-[80px]">Trainer</TableHead>
-														<TableHead className="w-[100px]">Date</TableHead>
+														<TableHead className="w-[100px] p-0">
+															<Button
+																variant="ghost"
+																className="h-full w-full justify-start px-4 py-3 font-medium hover:bg-muted/50 text-left"
+																onClick={() => handleSort("date")}
+															>
+																<span className="flex items-center">
+																	Date
+																	{sortField === "date" &&
+																		(sortDirection === "asc" ? (
+																			<ChevronUp className="ml-1 h-4 w-4" />
+																		) : (
+																			<ChevronDown className="ml-1 h-4 w-4" />
+																		))}
+																</span>
+															</Button>
+														</TableHead>
 														<TableHead className="w-[80px]">
 															Follow Up
 														</TableHead>
@@ -636,25 +793,48 @@ export default function Dashboard() {
 
 					{activeTab === "analytics" && (
 						<div className="space-y-6">
-							{/* Global Month Filter */}
-							<div className="flex items-center gap-2 mb-6">
-								<span className="text-sm font-medium">Filter by month:</span>
-								<select
-									value={selectedMonth}
-									onChange={(e) => setSelectedMonth(e.target.value)}
-									className="px-3 py-2 border rounded-md text-sm bg-white"
-								>
-									<option value="">All months</option>
-									{availableMonths.map((month) => (
-										<option key={month} value={month}>
-											{month}
-										</option>
-									))}
-								</select>
+							{/* Global Month and Year Filters */}
+							<div className="flex items-center gap-4 mb-6">
+								<div className="flex items-center gap-2">
+									<span className="text-sm font-medium">Filter by month:</span>
+									<select
+										value={selectedMonth}
+										onChange={(e) => setSelectedMonth(e.target.value)}
+										className="px-3 py-2 border rounded-md text-sm bg-white"
+									>
+										<option value="">All months</option>
+										{availableMonths.map((month) => (
+											<option key={month} value={month}>
+												{month}
+											</option>
+										))}
+									</select>
+								</div>
+								<div className="flex items-center gap-2">
+									<span className="text-sm font-medium">Filter by year:</span>
+									<select
+										value={selectedYear}
+										onChange={(e) => setSelectedYear(e.target.value)}
+										className="px-3 py-2 border rounded-md text-sm bg-white"
+									>
+										<option value="">All years</option>
+										{availableYears.map((year) => (
+											<option key={year} value={year}>
+												{year}
+											</option>
+										))}
+									</select>
+								</div>
 							</div>
 
-							<PlatformBreakdown selectedMonth={selectedMonth} />
-							<FunnelChart selectedMonth={selectedMonth} />
+							<PlatformBreakdown
+								selectedMonth={selectedMonth}
+								selectedYear={selectedYear}
+							/>
+							<FunnelChart
+								selectedMonth={selectedMonth}
+								selectedYear={selectedYear}
+							/>
 						</div>
 					)}
 
@@ -678,6 +858,13 @@ export default function Dashboard() {
 				open={isEditDialogOpen}
 				onOpenChange={setIsEditDialogOpen}
 				onSave={handleSaveLead}
+			/>
+
+			{/* Create Lead Dialog */}
+			<CreateLeadDialog
+				open={isCreateDialogOpen}
+				onOpenChange={setIsCreateDialogOpen}
+				onSave={handleCreateLead}
 			/>
 
 			{/* Delete Confirmation Dialog */}

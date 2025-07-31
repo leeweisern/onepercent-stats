@@ -39,16 +39,19 @@ interface FunnelStage {
 interface FunnelData {
 	funnel: FunnelStage[];
 	month: string;
+	year: string;
 	platform: string;
 }
 
 interface FunnelChartProps {
 	selectedMonth?: string;
+	selectedYear?: string;
 	selectedPlatform?: string;
 }
 
 export default function FunnelChart({
 	selectedMonth,
+	selectedYear,
 	selectedPlatform,
 }: FunnelChartProps) {
 	const [funnelData, setFunnelData] = useState<FunnelData | null>(null);
@@ -59,13 +62,14 @@ export default function FunnelChart({
 
 	useEffect(() => {
 		fetchFunnelData();
-	}, [selectedMonth, currentPlatform]);
+	}, [selectedMonth, selectedYear, currentPlatform]);
 
 	const fetchFunnelData = async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
 			if (selectedMonth) params.append("month", selectedMonth);
+			if (selectedYear) params.append("year", selectedYear);
 			if (currentPlatform) params.append("platform", currentPlatform);
 
 			const response = await fetch(`/api/analytics/leads/funnel?${params}`);
@@ -135,7 +139,11 @@ export default function FunnelChart({
 					<TrendingDown className="h-5 w-5" />
 					Sales Funnel
 					<Badge variant="outline" className="ml-auto">
-						{formatMonthDisplay(funnelData.month)} • {funnelData.platform}
+						{funnelData.month}
+						{funnelData.year && funnelData.year !== "All years"
+							? ` ${funnelData.year}`
+							: ""}{" "}
+						• {funnelData.platform}
 					</Badge>
 				</CardTitle>
 				<div className="flex gap-2 flex-wrap">
