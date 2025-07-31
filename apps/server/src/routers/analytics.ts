@@ -9,10 +9,10 @@ const app = new Hono();
 const getMonthFromDate = (dateString: string): string => {
 	if (!dateString) return "";
 
-	// Handle M/D/YYYY format (database format)
+	// Handle DD/MM/YYYY format (database format)
 	const parts = dateString.split("/");
 	if (parts.length === 3) {
-		const monthIndex = parseInt(parts[0]) - 1; // Month is 0-indexed
+		const monthIndex = parseInt(parts[1]) - 1; // Month is the second part (0-indexed)
 		const monthNames = [
 			"January",
 			"February",

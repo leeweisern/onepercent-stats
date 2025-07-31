@@ -16,15 +16,15 @@ import {
 	SelectTrigger,
 } from "@/components/ui/select";
 
-// Helper functions to convert between M/D/YYYY and YYYY-MM-DD formats
+// Helper functions to convert between DD/MM/YYYY and YYYY-MM-DD formats
 const convertToDateInputFormat = (dateString: string | null): string => {
 	if (!dateString) return "";
 
-	// Parse M/D/YYYY format and convert to YYYY-MM-DD
+	// Parse DD/MM/YYYY format and convert to YYYY-MM-DD
 	const parts = dateString.split("/");
 	if (parts.length === 3) {
-		const month = parts[0].padStart(2, "0");
-		const day = parts[1].padStart(2, "0");
+		const day = parts[0].padStart(2, "0");
+		const month = parts[1].padStart(2, "0");
 		const year = parts[2];
 		return `${year}-${month}-${day}`;
 	}
@@ -35,13 +35,13 @@ const convertToDateInputFormat = (dateString: string | null): string => {
 const convertFromDateInputFormat = (dateString: string): string => {
 	if (!dateString) return "";
 
-	// Parse YYYY-MM-DD format and convert to M/D/YYYY
+	// Parse YYYY-MM-DD format and convert to DD/MM/YYYY
 	const parts = dateString.split("-");
 	if (parts.length === 3) {
 		const year = parts[0];
 		const month = parseInt(parts[1]).toString(); // Remove leading zero
 		const day = parseInt(parts[2]).toString(); // Remove leading zero
-		return `${month}/${day}/${year}`;
+		return `${day}/${month}/${year}`;
 	}
 
 	return dateString;

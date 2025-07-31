@@ -94,6 +94,7 @@ export default function Dashboard() {
 	});
 
 	useEffect(() => {
+		console.log("Dashboard component mounted");
 		fetchAvailableMonths();
 		fetchLeads();
 		if (activeTab === "analytics") {
@@ -218,15 +219,7 @@ export default function Dashboard() {
 	const formatDate = (dateString: string | null) => {
 		if (!dateString) return "N/A";
 
-		// Parse MM/DD/YYYY format and display as DD/MM/YYYY
-		const parts = dateString.split("/");
-		if (parts.length === 3) {
-			const month = parts[0].padStart(2, "0");
-			const day = parts[1].padStart(2, "0");
-			const year = parts[2];
-			return `${day}/${month}/${year}`;
-		}
-
+		// Database stores DD/MM/YYYY format, display as-is
 		return dateString;
 	};
 
@@ -363,10 +356,12 @@ export default function Dashboard() {
 					{activeTab === "leads" && (
 						<div>
 							{/* Filters */}
-							<LeadsFilters
-								onFiltersChange={handleFiltersChange}
-								totalResults={filteredLeads.length}
-							/>
+							<div className="mb-6">
+								<LeadsFilters
+									onFiltersChange={handleFiltersChange}
+									totalResults={filteredLeads.length}
+								/>
+							</div>
 
 							{/* Summary Cards */}
 							<div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">

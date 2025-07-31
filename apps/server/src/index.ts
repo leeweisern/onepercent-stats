@@ -23,13 +23,7 @@ import analyticsRouter from "./routers/analytics";
 
 app.route("/api/analytics", analyticsRouter);
 
-// Serve static assets for non-API routes
-app.get("*", async (c) => {
-	// For non-API routes, serve static assets
-	if (!c.req.url.includes("/api/")) {
-		return c.env.ASSETS.fetch(c.req.raw);
-	}
-	return c.text("Not Found", 404);
-});
+// Serve static assets for all non-API routes
+app.get("*", (c) => c.env.ASSETS.fetch(c.req.raw));
 
 export default app;
