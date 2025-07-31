@@ -28,6 +28,8 @@ import {
 	Copy,
 	Eye,
 } from "lucide-react";
+import PlatformBreakdown from "@/components/platform-breakdown";
+import PlatformChart from "@/components/platform-chart";
 
 interface Lead {
 	id: number;
@@ -46,16 +48,40 @@ interface Lead {
 	createdAt: string | null;
 }
 
+interface PlatformBreakdownData {
+	platform: string | null;
+	totalLeads: number;
+	closedLeads: number;
+	notClosedLeads: number;
+	totalSales: number;
+}
+
+interface PlatformBreakdownResponse {
+	breakdown: PlatformBreakdownData[];
+	totals: {
+		totalLeads: number;
+		closedLeads: number;
+		notClosedLeads: number;
+		totalSales: number;
+	};
+	month: string;
+}
+
 export default function Dashboard() {
 	const [leads, setLeads] = useState<Lead[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState("leads");
 	const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [platformData, setPlatformData] =
+		useState<PlatformBreakdownResponse | null>(null);
 
 	useEffect(() => {
 		fetchLeads();
-	}, []);
+		if (activeTab === "analytics") {
+			fetchPlatformBreakdown();
+		}
+	}, [activeTab]);
 
 	const fetchLeads = async () => {
 		try {
@@ -66,6 +92,16 @@ export default function Dashboard() {
 			console.error("Error fetching leads:", error);
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const fetchPlatformBreakdown = async () => {
+		try {
+			const response = await fetch("/api/analytics/leads/platform-breakdown");
+			const data = await response.json();
+			setPlatformData(data);
+		} catch (error) {
+			console.error("Error fetching platform breakdown:", error);
 		}
 	};
 
@@ -413,14 +449,15 @@ export default function Dashboard() {
 					)}
 
 					{activeTab === "analytics" && (
-						<div className="text-center py-12">
-							<BarChart3 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-							<h3 className="text-lg font-medium text-gray-900 mb-2">
-								Analytics Coming Soon
-							</h3>
-							<p className="text-gray-600">
-								Advanced analytics and insights will be available here.
-							</p>
+						<div className="space-y-6">
+							<PlatformBreakdown />
+							{platformData && (
+								<PlatformChart
+									data={platformData.breakdown}
+									totalSales={platformData.totals.totalSales}
+									month={platformData.month}
+								/>
+							)}
 						</div>
 					)}
 
