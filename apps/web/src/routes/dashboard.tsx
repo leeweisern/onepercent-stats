@@ -37,6 +37,7 @@ import PlatformBreakdown from "@/components/platform-breakdown";
 import FunnelChart from "@/components/funnel-chart";
 import AdvertisingCosts from "@/components/advertising-costs";
 import AdvertisingCostsManagement from "@/components/advertising-costs-management";
+import ROASMetrics from "@/components/roas-metrics";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { CreateLeadDialog } from "@/components/create-lead-dialog";
 import { LeadsFilters, type FilterState } from "@/components/leads-filters";
@@ -830,6 +831,10 @@ export default function Dashboard() {
 								</div>
 							</div>
 
+							<ROASMetrics
+								selectedMonth={selectedMonth}
+								selectedYear={selectedYear}
+							/>
 							<AdvertisingCosts
 								selectedMonth={selectedMonth}
 								selectedYear={selectedYear}

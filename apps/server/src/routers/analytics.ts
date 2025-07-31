@@ -125,7 +125,9 @@ app.get("/leads/platform-breakdown", async (c) => {
 		conditions.push(eq(leads.month, month));
 	}
 	if (year) {
-		conditions.push(sql`substr(${leads.date}, -4) = ${year}`);
+		conditions.push(
+			sql`${leads.date} IS NOT NULL AND substr(${leads.date}, -4) = ${year}`,
+		);
 	}
 
 	if (conditions.length > 0) {
@@ -188,7 +190,9 @@ app.get("/leads/funnel", async (c) => {
 		conditions.push(eq(leads.month, month));
 	}
 	if (year) {
-		conditions.push(sql`substr(${leads.date}, -4) = ${year}`);
+		conditions.push(
+			sql`${leads.date} IS NOT NULL AND substr(${leads.date}, -4) = ${year}`,
+		);
 	}
 	if (platform) {
 		conditions.push(eq(leads.platform, platform));
@@ -603,6 +607,162 @@ app.delete("/advertising-costs/:id", async (c) => {
 	} catch (error) {
 		console.error("Error deleting advertising cost:", error);
 		return c.json({ error: "Failed to delete advertising cost" }, 500);
+	}
+});
+
+// Helper function to convert month name to number
+const getMonthNumber = (monthName: string): number => {
+	if (!monthName) return 0;
+
+	const monthNames = [
+		"January",
+		"February",
+		"March",
+		"April",
+		"May",
+		"June",
+		"July",
+		"August",
+		"September",
+		"October",
+		"November",
+		"December",
+	];
+
+	const index = monthNames.indexOf(monthName);
+	return index >= 0 ? index + 1 : 0;
+};
+
+// ROAS calculation endpoint
+app.get("/roas", async (c) => {
+	try {
+		const month = c.req.query("month");
+		const year = c.req.query("year");
+		const platform = c.req.query("platform");
+
+		console.log("ROAS request params:", { month, year, platform });
+
+		// Build conditions for leads query
+		const leadConditions = [];
+		if (month) {
+			leadConditions.push(eq(leads.month, month));
+		}
+		if (year) {
+			leadConditions.push(
+				sql`${leads.date} IS NOT NULL AND substr(${leads.date}, -4) = ${year}`,
+			);
+		}
+		if (platform) {
+			leadConditions.push(eq(leads.platform, platform));
+		}
+
+		// Get total sales from leads
+		let salesQuery = db
+			.select({
+				totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
+				totalLeads: count(),
+				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`),
+			})
+			.from(leads);
+
+		if (leadConditions.length > 0) {
+			salesQuery = salesQuery.where(and(...leadConditions));
+		}
+
+		const salesResult = await salesQuery;
+		const totalSales = salesResult[0]?.totalSales || 0;
+		const totalLeads = salesResult[0]?.totalLeads || 0;
+		const closedLeads = salesResult[0]?.closedLeads || 0;
+
+		console.log("Sales query result:", { totalSales, totalLeads, closedLeads });
+
+		// Get advertising costs
+		let totalAdCost = 0;
+		if (month && year) {
+			// Specific month and year
+			const monthNumber = getMonthNumber(month);
+			const yearNumber = parseInt(year);
+
+			if (monthNumber > 0) {
+				// Validate month number
+				const costResult = await db
+					.select({ cost: advertisingCosts.cost })
+					.from(advertisingCosts)
+					.where(
+						and(
+							eq(advertisingCosts.month, monthNumber),
+							eq(advertisingCosts.year, yearNumber),
+						),
+					);
+
+				totalAdCost = costResult[0]?.cost || 0;
+			}
+		} else if (year) {
+			// All months in a specific year
+			const yearNumber = parseInt(year);
+			const costResult = await db
+				.select({ totalCost: sum(advertisingCosts.cost) })
+				.from(advertisingCosts)
+				.where(eq(advertisingCosts.year, yearNumber));
+
+			totalAdCost = costResult[0]?.totalCost || 0;
+		} else if (month) {
+			// Specific month across all years
+			const monthNumber = getMonthNumber(month);
+			if (monthNumber > 0) {
+				// Validate month number
+				const costResult = await db
+					.select({ totalCost: sum(advertisingCosts.cost) })
+					.from(advertisingCosts)
+					.where(eq(advertisingCosts.month, monthNumber));
+
+				totalAdCost = costResult[0]?.totalCost || 0;
+			}
+		} else {
+			// All time
+			const costResult = await db
+				.select({ totalCost: sum(advertisingCosts.cost) })
+				.from(advertisingCosts);
+
+			totalAdCost = costResult[0]?.totalCost || 0;
+		}
+
+		console.log("Final totals:", {
+			totalSales,
+			totalAdCost,
+			totalLeads,
+			closedLeads,
+		});
+
+		// Calculate ROAS
+		const roas = totalAdCost > 0 ? totalSales / totalAdCost : 0;
+		const costPerLead = totalLeads > 0 ? totalAdCost / totalLeads : 0;
+		const costPerAcquisition = closedLeads > 0 ? totalAdCost / closedLeads : 0;
+		const conversionRate =
+			totalLeads > 0 ? (closedLeads / totalLeads) * 100 : 0;
+
+		return c.json({
+			roas: Number(roas.toFixed(2)),
+			totalSales,
+			totalAdCost: Number(totalAdCost.toFixed(2)),
+			totalLeads,
+			closedLeads,
+			costPerLead: Number(costPerLead.toFixed(2)),
+			costPerAcquisition: Number(costPerAcquisition.toFixed(2)),
+			conversionRate: Number(conversionRate.toFixed(2)),
+			period: {
+				month: month || "All months",
+				year: year || "All years",
+				platform: platform || "All platforms",
+			},
+		});
+	} catch (error) {
+		console.error("Error calculating ROAS:", error);
+		console.error("Error details:", error.message, error.stack);
+		return c.json(
+			{ error: "Failed to calculate ROAS", details: error.message },
+			500,
+		);
 	}
 });
 
