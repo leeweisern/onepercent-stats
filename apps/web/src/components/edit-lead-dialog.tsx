@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	Select,
 	SelectContent,
@@ -162,7 +163,7 @@ export function EditLeadDialog({
 								id="phone"
 								value={phoneNumber}
 								onChange={(e) => setPhoneNumber(e.target.value)}
-								placeholder="Enter phone number"
+								placeholder="60161111111"
 							/>
 						</div>
 					</div>
@@ -279,20 +280,22 @@ export function EditLeadDialog({
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
 							<Label htmlFor="followUp">Follow Up</Label>
-							<Input
+							<Textarea
 								id="followUp"
 								value={followUp}
 								onChange={(e) => setFollowUp(e.target.value)}
 								placeholder="Enter follow up details"
+								rows={3}
 							/>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="appointment">Appointment</Label>
-							<Input
+							<Textarea
 								id="appointment"
 								value={appointment}
 								onChange={(e) => setAppointment(e.target.value)}
 								placeholder="Enter appointment details"
+								rows={3}
 							/>
 						</div>
 					</div>
@@ -300,11 +303,12 @@ export function EditLeadDialog({
 					{/* Remark */}
 					<div className="space-y-2">
 						<Label htmlFor="remark">Remark</Label>
-						<Input
+						<Textarea
 							id="remark"
 							value={remark}
 							onChange={(e) => setRemark(e.target.value)}
 							placeholder="Enter remarks"
+							rows={3}
 						/>
 					</div>
 				</div>

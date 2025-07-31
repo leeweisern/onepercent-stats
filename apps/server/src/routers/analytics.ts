@@ -183,6 +183,88 @@ app.get("/leads/options", async (c) => {
 	});
 });
 
+app.get("/leads/filter-options", async (c) => {
+	const [
+		statusOptions,
+		platformOptions,
+		monthOptions,
+		trainerOptions,
+		dateOptions,
+	] = await Promise.all([
+		db.select({ value: leads.status }).from(leads).groupBy(leads.status),
+		db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
+		db.select({ value: leads.month }).from(leads).groupBy(leads.month),
+		db
+			.select({ value: leads.trainerHandle })
+			.from(leads)
+			.groupBy(leads.trainerHandle),
+		db.select({ value: leads.date }).from(leads).groupBy(leads.date),
+	]);
+
+	// Extract unique years from dates
+	const years = Array.from(
+		new Set(
+			dateOptions
+				.map((d) => d.value)
+				.filter(Boolean)
+				.map((date) => new Date(date).getFullYear().toString()),
+		),
+	).sort((a, b) => b.localeCompare(a)); // Sort descending
+
+	return c.json({
+		months: monthOptions
+			.map((m) => m.value)
+			.filter(Boolean)
+			.sort(),
+		years: years,
+		platforms: platformOptions
+			.map((p) => p.value)
+			.filter(Boolean)
+			.sort(),
+		statuses: statusOptions
+			.map((s) => s.value)
+			.filter(Boolean)
+			.sort(),
+		trainers: trainerOptions
+			.map((t) => t.value)
+			.filter(Boolean)
+			.sort(),
+	});
+});
+
+app.post("/leads", async (c) => {
+	const body = await c.req.json();
+
+	// Validate required fields
+	if (!body.name) {
+		return c.json({ error: "Name is required" }, 400);
+	}
+
+	// Prepare lead data with defaults
+	const leadData = {
+		name: body.name,
+		phoneNumber: body.phoneNumber || "",
+		platform: body.platform || "",
+		status: body.status || "",
+		isClosed: body.isClosed || false,
+		sales: body.sales || 0,
+		month: body.month || "",
+		date: body.date || "",
+		followUp: body.followUp || "",
+		appointment: body.appointment || "",
+		remark: body.remark || "",
+		trainerHandle: body.trainerHandle || "",
+	};
+
+	try {
+		const newLead = await db.insert(leads).values(leadData).returning();
+		return c.json(newLead[0], 201);
+	} catch (error) {
+		console.error("Error creating lead:", error);
+		return c.json({ error: "Failed to create lead" }, 500);
+	}
+});
+
 app.put("/leads/:id", async (c) => {
 	const id = parseInt(c.req.param("id"));
 	const body = await c.req.json();
@@ -212,4 +294,36 @@ app.put("/leads/:id", async (c) => {
 
 	return c.json(updatedLead[0]);
 });
+
+app.delete("/leads/:id", async (c) => {
+	const id = parseInt(c.req.param("id"));
+
+	if (isNaN(id)) {
+		return c.json({ error: "Invalid lead ID" }, 400);
+	}
+
+	try {
+		// Check if lead exists first
+		const existingLead = await db.select().from(leads).where(eq(leads.id, id));
+
+		if (existingLead.length === 0) {
+			return c.json({ error: "Lead not found" }, 404);
+		}
+
+		// Delete the lead
+		const deletedLead = await db
+			.delete(leads)
+			.where(eq(leads.id, id))
+			.returning();
+
+		return c.json({
+			message: "Lead deleted successfully",
+			deletedLead: deletedLead[0],
+		});
+	} catch (error) {
+		console.error("Error deleting lead:", error);
+		return c.json({ error: "Failed to delete lead" }, 500);
+	}
+});
+
 export default app;

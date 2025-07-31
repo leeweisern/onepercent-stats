@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,12 +26,12 @@ import {
 	CheckCircle,
 	XCircle,
 	Copy,
-	Eye,
 	Edit,
 } from "lucide-react";
 import PlatformBreakdown from "@/components/platform-breakdown";
 import FunnelChart from "@/components/funnel-chart";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
+import { LeadsFilters, type FilterState } from "@/components/leads-filters";
 
 interface Lead {
 	id: number;
@@ -71,16 +71,24 @@ interface PlatformBreakdownResponse {
 
 export default function Dashboard() {
 	const [leads, setLeads] = useState<Lead[]>([]);
+	const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState("leads");
-	const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editLead, setEditLead] = useState<Lead | null>(null);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [platformData, setPlatformData] =
 		useState<PlatformBreakdownResponse | null>(null);
 	const [availableMonths, setAvailableMonths] = useState<string[]>([]);
 	const [selectedMonth, setSelectedMonth] = useState<string>("");
+	const [filters, setFilters] = useState<FilterState>({
+		search: "",
+		month: "",
+		year: "",
+		platform: "",
+		status: "",
+		trainer: "",
+		isClosed: "",
+	});
 
 	useEffect(() => {
 		fetchAvailableMonths();
@@ -96,11 +104,66 @@ export default function Dashboard() {
 		}
 	}, [selectedMonth]);
 
+	useEffect(() => {
+		applyFilters();
+	}, [leads, filters]);
+
+	const applyFilters = useCallback(() => {
+		let filtered = [...leads];
+
+		// Search by name
+		if (filters.search) {
+			filtered = filtered.filter((lead) =>
+				lead.name?.toLowerCase().includes(filters.search.toLowerCase()),
+			);
+		}
+
+		// Filter by month
+		if (filters.month) {
+			filtered = filtered.filter((lead) => lead.month === filters.month);
+		}
+
+		// Filter by year
+		if (filters.year) {
+			filtered = filtered.filter((lead) => {
+				if (!lead.date) return false;
+				const leadYear = new Date(lead.date).getFullYear().toString();
+				return leadYear === filters.year;
+			});
+		}
+
+		// Filter by platform
+		if (filters.platform) {
+			filtered = filtered.filter((lead) => lead.platform === filters.platform);
+		}
+
+		// Filter by status
+		if (filters.status) {
+			filtered = filtered.filter((lead) => lead.status === filters.status);
+		}
+
+		// Filter by trainer
+		if (filters.trainer) {
+			filtered = filtered.filter(
+				(lead) => lead.trainerHandle === filters.trainer,
+			);
+		}
+
+		// Filter by closed status
+		if (filters.isClosed !== "") {
+			const isClosed = filters.isClosed === "true";
+			filtered = filtered.filter((lead) => lead.isClosed === isClosed);
+		}
+
+		setFilteredLeads(filtered);
+	}, [leads, filters]);
+
 	const fetchLeads = async () => {
 		try {
 			const response = await fetch("/api/analytics/leads");
 			const data = await response.json();
 			setLeads(data);
+			setFilteredLeads(data);
 		} catch (error) {
 			console.error("Error fetching leads:", error);
 		} finally {
@@ -173,11 +236,6 @@ export default function Dashboard() {
 	};
 
 	const handleRowClick = (lead: Lead) => {
-		setSelectedLead(lead);
-		setIsDialogOpen(true);
-	};
-
-	const handleEditClick = (lead: Lead) => {
 		setEditLead(lead);
 		setIsEditDialogOpen(true);
 	};
@@ -204,6 +262,10 @@ export default function Dashboard() {
 			console.error("Failed to update lead:", error);
 		}
 	};
+
+	const handleFiltersChange = useCallback((newFilters: FilterState) => {
+		setFilters(newFilters);
+	}, []);
 
 	return (
 		<div className="flex h-screen bg-gray-50">
@@ -254,6 +316,12 @@ export default function Dashboard() {
 
 					{activeTab === "leads" && (
 						<div>
+							{/* Filters */}
+							<LeadsFilters
+								onFiltersChange={handleFiltersChange}
+								totalResults={filteredLeads.length}
+							/>
+
 							{/* Summary Cards */}
 							<div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
 								<Card>
@@ -264,7 +332,9 @@ export default function Dashboard() {
 										<Users className="h-4 w-4 text-muted-foreground" />
 									</CardHeader>
 									<CardContent>
-										<div className="text-2xl font-bold">{leads.length}</div>
+										<div className="text-2xl font-bold">
+											{filteredLeads.length}
+										</div>
 									</CardContent>
 								</Card>
 								<Card>
@@ -276,7 +346,7 @@ export default function Dashboard() {
 									</CardHeader>
 									<CardContent>
 										<div className="text-2xl font-bold">
-											{leads.filter((lead) => lead.isClosed).length}
+											{filteredLeads.filter((lead) => lead.isClosed).length}
 										</div>
 									</CardContent>
 								</Card>
@@ -290,7 +360,10 @@ export default function Dashboard() {
 									<CardContent>
 										<div className="text-2xl font-bold">
 											{formatCurrency(
-												leads.reduce((sum, lead) => sum + (lead.sales || 0), 0),
+												filteredLeads.reduce(
+													(sum, lead) => sum + (lead.sales || 0),
+													0,
+												),
 											)}
 										</div>
 									</CardContent>
@@ -304,8 +377,8 @@ export default function Dashboard() {
 									</CardHeader>
 									<CardContent>
 										<div className="text-2xl font-bold">
-											{leads.length > 0
-												? `${Math.round((leads.filter((lead) => lead.isClosed).length / leads.length) * 100)}%`
+											{filteredLeads.length > 0
+												? `${Math.round((filteredLeads.filter((lead) => lead.isClosed).length / filteredLeads.length) * 100)}%`
 												: "0%"}
 										</div>
 									</CardContent>
@@ -319,7 +392,7 @@ export default function Dashboard() {
 										<Users className="h-5 w-5" />
 										All Leads
 										<Badge variant="secondary" className="ml-auto">
-											{leads.length} total
+											{filteredLeads.length} total
 										</Badge>
 									</CardTitle>
 								</CardHeader>
@@ -360,7 +433,7 @@ export default function Dashboard() {
 													</TableRow>
 												</TableHeader>
 												<TableBody>
-													{leads.map((lead) => (
+													{filteredLeads.map((lead) => (
 														<TableRow
 															key={lead.id}
 															className="group cursor-pointer hover:bg-muted/50"
@@ -494,17 +567,6 @@ export default function Dashboard() {
 																			handleRowClick(lead);
 																		}}
 																	>
-																		<Eye className="h-4 w-4" />
-																	</Button>
-																	<Button
-																		variant="ghost"
-																		size="sm"
-																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			handleEditClick(lead);
-																		}}
-																	>
 																		<Edit className="h-4 w-4" />
 																	</Button>
 																</div>
@@ -565,166 +627,6 @@ export default function Dashboard() {
 				onOpenChange={setIsEditDialogOpen}
 				onSave={handleSaveLead}
 			/>
-
-			{/* Lead Details Dialog */}
-			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-				<DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle className="flex items-center gap-2">
-							<div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
-								{(selectedLead?.name || "N")[0].toUpperCase()}
-							</div>
-							Lead Details - {selectedLead?.name || "N/A"}
-						</DialogTitle>
-					</DialogHeader>
-					{selectedLead && (
-						<div className="space-y-6">
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Name
-									</label>
-									<p className="text-sm font-medium">
-										{selectedLead.name || "N/A"}
-									</p>
-								</div>
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Phone Number
-									</label>
-									<div className="flex items-center gap-2">
-										<Phone className="h-4 w-4 text-muted-foreground" />
-										<p className="text-sm font-mono">
-											{selectedLead.phoneNumber || "N/A"}
-										</p>
-										{selectedLead.phoneNumber && (
-											<Button
-												variant="ghost"
-												size="sm"
-												className="h-6 w-6 p-0"
-												onClick={() =>
-													copyToClipboard(selectedLead.phoneNumber || "")
-												}
-											>
-												<Copy className="h-3 w-3" />
-											</Button>
-										)}
-									</div>
-								</div>
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Platform
-									</label>
-									<Badge variant={getPlatformVariant(selectedLead.platform)}>
-										{selectedLead.platform || "N/A"}
-									</Badge>
-								</div>
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Status
-									</label>
-									<Badge variant={getStatusVariant(selectedLead.status)}>
-										{selectedLead.status || "N/A"}
-									</Badge>
-								</div>
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Closed
-									</label>
-									<div className="flex items-center gap-2">
-										{selectedLead.isClosed ? (
-											<>
-												<CheckCircle className="h-4 w-4 text-green-600" />
-												<span className="text-sm text-green-600 font-medium">
-													Yes
-												</span>
-											</>
-										) : (
-											<>
-												<XCircle className="h-4 w-4 text-red-600" />
-												<span className="text-sm text-red-600 font-medium">
-													No
-												</span>
-											</>
-										)}
-									</div>
-								</div>
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Sales
-									</label>
-									<p
-										className={`text-sm font-medium ${selectedLead.sales && selectedLead.sales > 0 ? "text-green-600" : "text-muted-foreground"}`}
-									>
-										{formatCurrency(selectedLead.sales)}
-									</p>
-								</div>
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Trainer
-									</label>
-									<div className="flex items-center gap-2">
-										{selectedLead.trainerHandle ? (
-											<>
-												<div className="h-6 w-6 rounded-full bg-orange-100 flex items-center justify-center">
-													<span className="text-xs font-medium text-orange-600">
-														{selectedLead.trainerHandle[0].toUpperCase()}
-													</span>
-												</div>
-												<p className="text-sm">{selectedLead.trainerHandle}</p>
-											</>
-										) : (
-											<p className="text-sm text-muted-foreground">N/A</p>
-										)}
-									</div>
-								</div>
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Date
-									</label>
-									<div className="flex items-center gap-2">
-										<Calendar className="h-4 w-4 text-muted-foreground" />
-										<p className="text-sm">{formatDate(selectedLead.date)}</p>
-									</div>
-								</div>
-							</div>
-
-							<div className="space-y-4">
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Follow Up
-									</label>
-									<p
-										className={`text-sm ${selectedLead.followUp && selectedLead.followUp !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-									>
-										{selectedLead.followUp || "N/A"}
-									</p>
-								</div>
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Appointment
-									</label>
-									<p
-										className={`text-sm ${selectedLead.appointment && selectedLead.appointment !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-									>
-										{selectedLead.appointment || "N/A"}
-									</p>
-								</div>
-								<div className="space-y-2">
-									<label className="text-sm font-medium text-muted-foreground">
-										Remark
-									</label>
-									<p
-										className={`text-sm ${selectedLead.remark && selectedLead.remark !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-									>
-										{selectedLead.remark || "N/A"}
-									</p>
-								</div>
-							</div>
-						</div>
-					)}
-				</DialogContent>
-			</Dialog>
 		</div>
 	);
 }
