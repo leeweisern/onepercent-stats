@@ -11,31 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Filter, X } from "lucide-react";
 
-// Helper function to convert YYYY-MM to month name
-const getMonthName = (yearMonth: string) => {
-	const [year, month] = yearMonth.split("-");
-	const monthNames = [
-		"January",
-		"February",
-		"March",
-		"April",
-		"May",
-		"June",
-		"July",
-		"August",
-		"September",
-		"October",
-		"November",
-		"December",
-	];
-	const monthIndex = parseInt(month) - 1;
-	return monthNames[monthIndex] || month;
-};
-
 // Helper function to get display text for month filter
-const getMonthDisplayText = (yearMonth: string | null) => {
-	if (!yearMonth) return "All months";
-	return getMonthName(yearMonth);
+const getMonthDisplayText = (month: string | null) => {
+	if (!month) return "All months";
+	return month; // Month names are stored directly in the database
 };
 
 interface FilterOptions {
@@ -176,7 +155,7 @@ export function LeadsFilters({
 								<SelectItem value="all">All months</SelectItem>
 								{options.months.map((month) => (
 									<SelectItem key={month} value={month}>
-										{getMonthName(month)}
+										{month}
 									</SelectItem>
 								))}
 							</SelectContent>

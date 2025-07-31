@@ -1,32 +1,38 @@
 {
-  "name": "onepercent-stats",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "scripts": {
-    "check": "biome check --write .",
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "check-types": "turbo check-types",
-    "dev:native": "turbo -F native dev",
-    "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F server dev",
-    "db:push": "turbo -F server db:push",
-    "db:studio": "turbo -F server db:studio",
-    "db:generate": "turbo -F server db:generate",
-    "db:migrate": "turbo -F server db:migrate"
-  },
-  "dependencies": {
-    "better-sqlite3": "^12.2.0",
-    "papaparse": "^5.5.3",
-    "wrangler": "^4.27.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.1.2",
-    "@types/papaparse": "^5.3.16",
-    "turbo": "^2.5.4"
-  },
-  "packageManager": "bun@1.2.19"
+	"name": "onepercent-stats",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"check": "biome check --write .",
+		"dev": "turbo dev",
+		"build": "turbo build",
+		"check-types": "turbo check-types",
+		"dev:native": "turbo -F native dev",
+		"dev:web": "turbo -F web dev",
+		"dev:server": "turbo -F server dev",
+		"db:push": "turbo -F server db:push",
+		"db:studio": "turbo -F server db:studio",
+		"db:generate": "turbo -F server db:generate",
+		"db:migrate": "turbo -F server db:migrate",
+		"db:sync": "bun sync-db.js",
+		"deploy": "bun deploy.js",
+		"deploy:advanced": "bun deploy-advanced.js",
+		"deploy:dry-run": "bun deploy-advanced.js --dry-run",
+		"deploy:quick": "bun deploy-advanced.js --skip-migrations",
+		"deploy:no-build": "bun deploy-advanced.js --skip-build"
+	},
+	"dependencies": {
+		"better-sqlite3": "^12.2.0",
+		"papaparse": "^5.5.3",
+		"wrangler": "^4.27.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.1.2",
+		"@types/papaparse": "^5.3.16",
+		"turbo": "^2.5.4"
+	},
+	"packageManager": "bun@1.2.19"
 }

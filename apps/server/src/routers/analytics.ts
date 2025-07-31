@@ -5,16 +5,53 @@ import { desc, count, sum, eq, sql } from "drizzle-orm";
 
 const app = new Hono();
 
-// Helper function to extract YYYY-MM from MM/DD/YYYY format (database stores MM/DD/YYYY)
-const extractYearMonth = (dateField: any) => sql<string>`
-  CASE 
-    WHEN instr(${dateField}, '/') > 0 THEN
-      substr(${dateField}, -4) || '-' || printf('%02d', 
-        CAST(substr(${dateField}, 1, instr(${dateField}, '/') - 1) AS INTEGER)
-      )
-    ELSE '1900-01'
-  END
-`;
+// Helper function to get month name from date string
+const getMonthFromDate = (dateString: string): string => {
+	if (!dateString) return "";
+
+	// Handle M/D/YYYY format (database format)
+	const parts = dateString.split("/");
+	if (parts.length === 3) {
+		const monthIndex = parseInt(parts[0]) - 1; // Month is 0-indexed
+		const monthNames = [
+			"January",
+			"February",
+			"March",
+			"April",
+			"May",
+			"June",
+			"July",
+			"August",
+			"September",
+			"October",
+			"November",
+			"December",
+		];
+		return monthNames[monthIndex] || "";
+	}
+
+	// Handle YYYY-MM-DD format (ISO format)
+	const date = new Date(dateString);
+	if (!isNaN(date.getTime())) {
+		const monthNames = [
+			"January",
+			"February",
+			"March",
+			"April",
+			"May",
+			"June",
+			"July",
+			"August",
+			"September",
+			"October",
+			"November",
+			"December",
+		];
+		return monthNames[date.getMonth()];
+	}
+
+	return "";
+};
 
 app.get("/leads", async (c) => {
 	const allLeads = await db.select().from(leads).orderBy(desc(leads.createdAt));
@@ -64,7 +101,7 @@ app.get("/leads/platform-breakdown", async (c) => {
 		.from(leads);
 
 	if (month) {
-		query = query.where(sql`${extractYearMonth(leads.date)} = ${month}`);
+		query = query.where(eq(leads.month, month));
 	}
 
 	const breakdown = await query.groupBy(leads.platform);
@@ -94,13 +131,11 @@ app.get("/leads/platform-breakdown", async (c) => {
 
 app.get("/leads/months", async (c) => {
 	const months = await db
-		.select({ month: extractYearMonth(leads.date) })
+		.select({ month: leads.month })
 		.from(leads)
-		.where(
-			sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND instr(${leads.date}, '/') > 0`,
-		)
-		.groupBy(extractYearMonth(leads.date))
-		.orderBy(desc(extractYearMonth(leads.date)));
+		.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
+		.groupBy(leads.month)
+		.orderBy(desc(leads.month));
 
 	return c.json(months.map((m) => m.month).filter(Boolean));
 });
@@ -119,7 +154,7 @@ app.get("/leads/funnel", async (c) => {
 		.from(leads);
 
 	if (month) {
-		query = query.where(sql`${extractYearMonth(leads.date)} = ${month}`);
+		query = query.where(eq(leads.month, month));
 	}
 
 	if (platform) {
@@ -182,12 +217,10 @@ app.get("/leads/options", async (c) => {
 			db.select({ value: leads.status }).from(leads).groupBy(leads.status),
 			db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
 			db
-				.select({ value: extractYearMonth(leads.date) })
+				.select({ value: leads.month })
 				.from(leads)
-				.where(
-					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND instr(${leads.date}, '/') > 0`,
-				)
-				.groupBy(extractYearMonth(leads.date)),
+				.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
+				.groupBy(leads.month),
 			db
 				.select({ value: leads.trainerHandle })
 				.from(leads)
@@ -214,12 +247,10 @@ app.get("/leads/filter-options", async (c) => {
 		db.select({ value: leads.status }).from(leads).groupBy(leads.status),
 		db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
 		db
-			.select({ value: extractYearMonth(leads.date) })
+			.select({ value: leads.month })
 			.from(leads)
-			.where(
-				sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND instr(${leads.date}, '/') > 0`,
-			)
-			.groupBy(extractYearMonth(leads.date)),
+			.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
+			.groupBy(leads.month),
 		db
 			.select({ value: leads.trainerHandle })
 			.from(leads)
@@ -267,6 +298,9 @@ app.post("/leads", async (c) => {
 	}
 
 	// Prepare lead data with defaults
+	const dateValue = body.date || "";
+	const monthValue = body.month || getMonthFromDate(dateValue);
+
 	const leadData = {
 		name: body.name,
 		phoneNumber: body.phoneNumber || "",
@@ -274,7 +308,8 @@ app.post("/leads", async (c) => {
 		status: body.status || "",
 		isClosed: body.isClosed || false,
 		sales: body.sales || 0,
-		date: body.date || "",
+		date: dateValue,
+		month: monthValue,
 		followUp: body.followUp || "",
 		appointment: body.appointment || "",
 		remark: body.remark || "",
@@ -303,7 +338,14 @@ app.put("/leads/:id", async (c) => {
 	if (body.status !== undefined) updateData.status = body.status;
 	if (body.isClosed !== undefined) updateData.isClosed = body.isClosed;
 	if (body.sales !== undefined) updateData.sales = body.sales;
-	if (body.date !== undefined) updateData.date = body.date;
+	if (body.date !== undefined) {
+		updateData.date = body.date;
+		// Auto-update month when date is provided (unless month is explicitly provided)
+		if (body.month === undefined && body.date) {
+			updateData.month = getMonthFromDate(body.date);
+		}
+	}
+	if (body.month !== undefined) updateData.month = body.month;
 	if (body.followUp !== undefined) updateData.followUp = body.followUp;
 	if (body.appointment !== undefined) updateData.appointment = body.appointment;
 	if (body.remark !== undefined) updateData.remark = body.remark;

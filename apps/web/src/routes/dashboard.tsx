@@ -36,6 +36,7 @@ import { LeadsFilters, type FilterState } from "@/components/leads-filters";
 
 interface Lead {
 	id: number;
+	month: string | null;
 	date: string | null;
 	name: string | null;
 	phoneNumber: string | null;
@@ -123,16 +124,8 @@ export default function Dashboard() {
 		// Filter by month
 		if (filters.month) {
 			filtered = filtered.filter((lead) => {
-				if (!lead.date) return false;
-				// Parse M/D/YYYY format to extract YYYY-MM
-				const parts = lead.date.split("/");
-				if (parts.length === 3) {
-					const month = parts[0].padStart(2, "0");
-					const year = parts[2];
-					const leadMonth = `${year}-${month}`;
-					return leadMonth === filters.month;
-				}
-				return false;
+				// Use the month column directly from the database
+				return lead.month === filters.month;
 			});
 		}
 

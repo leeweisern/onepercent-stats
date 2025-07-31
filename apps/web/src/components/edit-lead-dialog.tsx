@@ -47,8 +47,34 @@ const convertFromDateInputFormat = (dateString: string): string => {
 	return dateString;
 };
 
+// Helper function to get month name from date
+const getMonthFromDate = (dateString: string): string => {
+	if (!dateString) return "";
+
+	const date = new Date(dateString);
+	if (isNaN(date.getTime())) return "";
+
+	const monthNames = [
+		"January",
+		"February",
+		"March",
+		"April",
+		"May",
+		"June",
+		"July",
+		"August",
+		"September",
+		"October",
+		"November",
+		"December",
+	];
+
+	return monthNames[date.getMonth()];
+};
+
 interface Lead {
 	id: number;
+	month: string | null;
 	date: string | null;
 	name: string | null;
 	phoneNumber: string | null;
@@ -92,6 +118,7 @@ export function EditLeadDialog({
 	const [isClosed, setIsClosed] = useState(false);
 	const [sales, setSales] = useState("");
 	const [date, setDate] = useState("");
+	const [month, setMonth] = useState("");
 	const [followUp, setFollowUp] = useState("");
 	const [appointment, setAppointment] = useState("");
 	const [remark, setRemark] = useState("");
@@ -114,7 +141,9 @@ export function EditLeadDialog({
 			setStatus(lead.status || "");
 			setIsClosed(lead.isClosed || false);
 			setSales(lead.sales?.toString() || "");
-			setDate(convertToDateInputFormat(lead.date));
+			const dateValue = convertToDateInputFormat(lead.date);
+			setDate(dateValue);
+			setMonth(lead.month || getMonthFromDate(dateValue));
 			setFollowUp(lead.followUp || "");
 			setAppointment(lead.appointment || "");
 			setRemark(lead.remark || "");
@@ -135,6 +164,16 @@ export function EditLeadDialog({
 			fetchOptions();
 		}
 	}, [open]);
+
+	// Auto-update month when date changes
+	useEffect(() => {
+		if (date) {
+			const monthName = getMonthFromDate(date);
+			if (monthName) {
+				setMonth(monthName);
+			}
+		}
+	}, [date]);
 
 	const fetchOptions = async () => {
 		try {
@@ -159,6 +198,7 @@ export function EditLeadDialog({
 				isClosed,
 				sales: sales ? parseInt(sales) : null,
 				date: convertFromDateInputFormat(date),
+				month,
 				followUp,
 				appointment,
 				remark,
