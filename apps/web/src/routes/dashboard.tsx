@@ -124,8 +124,15 @@ export default function Dashboard() {
 		if (filters.month) {
 			filtered = filtered.filter((lead) => {
 				if (!lead.date) return false;
-				const leadMonth = new Date(lead.date).toISOString().slice(0, 7); // YYYY-MM format
-				return leadMonth === filters.month;
+				// Parse M/D/YYYY format to extract YYYY-MM
+				const parts = lead.date.split("/");
+				if (parts.length === 3) {
+					const month = parts[0].padStart(2, "0");
+					const year = parts[2];
+					const leadMonth = `${year}-${month}`;
+					return leadMonth === filters.month;
+				}
+				return false;
 			});
 		}
 
@@ -133,8 +140,13 @@ export default function Dashboard() {
 		if (filters.year) {
 			filtered = filtered.filter((lead) => {
 				if (!lead.date) return false;
-				const leadYear = new Date(lead.date).getFullYear().toString();
-				return leadYear === filters.year;
+				// Parse M/D/YYYY format to extract year
+				const parts = lead.date.split("/");
+				if (parts.length === 3) {
+					const year = parts[2];
+					return year === filters.year;
+				}
+				return false;
 			});
 		}
 
@@ -212,7 +224,17 @@ export default function Dashboard() {
 
 	const formatDate = (dateString: string | null) => {
 		if (!dateString) return "N/A";
-		return new Date(dateString).toLocaleDateString();
+
+		// Parse MM/DD/YYYY format and display as DD/MM/YYYY
+		const parts = dateString.split("/");
+		if (parts.length === 3) {
+			const month = parts[0].padStart(2, "0");
+			const day = parts[1].padStart(2, "0");
+			const year = parts[2];
+			return `${day}/${month}/${year}`;
+		}
+
+		return dateString;
 	};
 
 	const getPlatformVariant = (platform: string | null) => {

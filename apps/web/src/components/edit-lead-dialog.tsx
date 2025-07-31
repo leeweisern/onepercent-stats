@@ -16,9 +16,39 @@ import {
 	SelectTrigger,
 } from "@/components/ui/select";
 
+// Helper functions to convert between M/D/YYYY and YYYY-MM-DD formats
+const convertToDateInputFormat = (dateString: string | null): string => {
+	if (!dateString) return "";
+
+	// Parse M/D/YYYY format and convert to YYYY-MM-DD
+	const parts = dateString.split("/");
+	if (parts.length === 3) {
+		const month = parts[0].padStart(2, "0");
+		const day = parts[1].padStart(2, "0");
+		const year = parts[2];
+		return `${year}-${month}-${day}`;
+	}
+
+	return dateString;
+};
+
+const convertFromDateInputFormat = (dateString: string): string => {
+	if (!dateString) return "";
+
+	// Parse YYYY-MM-DD format and convert to M/D/YYYY
+	const parts = dateString.split("-");
+	if (parts.length === 3) {
+		const year = parts[0];
+		const month = parseInt(parts[1]).toString(); // Remove leading zero
+		const day = parseInt(parts[2]).toString(); // Remove leading zero
+		return `${month}/${day}/${year}`;
+	}
+
+	return dateString;
+};
+
 interface Lead {
 	id: number;
-	month: string | null;
 	date: string | null;
 	name: string | null;
 	phoneNumber: string | null;
@@ -43,7 +73,6 @@ interface EditLeadDialogProps {
 interface Options {
 	status: string[];
 	platform: string[];
-	month: string[];
 	trainerHandle: string[];
 	isClosed: boolean[];
 }
@@ -57,10 +86,11 @@ export function EditLeadDialog({
 	const [name, setName] = useState("");
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [platform, setPlatform] = useState("");
+	const [customPlatform, setCustomPlatform] = useState("");
+	const [isCustomPlatform, setIsCustomPlatform] = useState(false);
 	const [status, setStatus] = useState("");
 	const [isClosed, setIsClosed] = useState(false);
 	const [sales, setSales] = useState("");
-	const [month, setMonth] = useState("");
 	const [date, setDate] = useState("");
 	const [followUp, setFollowUp] = useState("");
 	const [appointment, setAppointment] = useState("");
@@ -69,7 +99,6 @@ export function EditLeadDialog({
 	const [options, setOptions] = useState<Options>({
 		status: [],
 		platform: [],
-		month: [],
 		trainerHandle: [],
 		isClosed: [true, false],
 	});
@@ -79,18 +108,27 @@ export function EditLeadDialog({
 		if (lead) {
 			setName(lead.name || "");
 			setPhoneNumber(lead.phoneNumber || "");
-			setPlatform(lead.platform || "");
+			const leadPlatform = lead.platform || "";
+			setPlatform(leadPlatform);
+			setCustomPlatform(leadPlatform);
 			setStatus(lead.status || "");
 			setIsClosed(lead.isClosed || false);
 			setSales(lead.sales?.toString() || "");
-			setMonth(lead.month || "");
-			setDate(lead.date || "");
+			setDate(convertToDateInputFormat(lead.date));
 			setFollowUp(lead.followUp || "");
 			setAppointment(lead.appointment || "");
 			setRemark(lead.remark || "");
 			setTrainerHandle(lead.trainerHandle || "");
 		}
 	}, [lead]);
+
+	useEffect(() => {
+		if (lead && options.platform.length > 0) {
+			const leadPlatform = lead.platform || "";
+			const isExistingPlatform = options.platform.includes(leadPlatform);
+			setIsCustomPlatform(!isExistingPlatform && leadPlatform !== "");
+		}
+	}, [lead, options.platform]);
 
 	useEffect(() => {
 		if (open) {
@@ -116,12 +154,11 @@ export function EditLeadDialog({
 			const updates = {
 				name,
 				phoneNumber,
-				platform,
+				platform: isCustomPlatform ? customPlatform : platform,
 				status,
 				isClosed,
 				sales: sales ? parseInt(sales) : null,
-				month,
-				date,
+				date: convertFromDateInputFormat(date),
 				followUp,
 				appointment,
 				remark,
@@ -171,19 +208,46 @@ export function EditLeadDialog({
 					{/* Platform and Status */}
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
-							<Label htmlFor="platform">Platform</Label>
-							<Select value={platform} onValueChange={setPlatform}>
-								<SelectTrigger>
-									<span>{platform || "Select platform"}</span>
-								</SelectTrigger>
-								<SelectContent>
-									{options.platform.map((p) => (
-										<SelectItem key={p} value={p}>
-											{p}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+							<div className="flex items-center justify-between">
+								<Label htmlFor="platform">Platform</Label>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onClick={() => {
+										setIsCustomPlatform(!isCustomPlatform);
+										if (!isCustomPlatform) {
+											setCustomPlatform(platform);
+										} else {
+											setPlatform(customPlatform);
+										}
+									}}
+									className="text-xs h-6 px-2"
+								>
+									{isCustomPlatform ? "Select existing" : "Add new"}
+								</Button>
+							</div>
+							{isCustomPlatform ? (
+								<Input
+									id="custom-platform"
+									value={customPlatform}
+									onChange={(e) => setCustomPlatform(e.target.value)}
+									placeholder="Enter new platform name"
+								/>
+							) : (
+								<Select value={platform} onValueChange={setPlatform}>
+									<SelectTrigger>
+										<span>{platform || "Select platform"}</span>
+									</SelectTrigger>
+									<SelectContent>
+										{options.platform.map((p) => (
+											<SelectItem key={p} value={p}>
+												{p}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							)}
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="status">Status</Label>
@@ -231,32 +295,15 @@ export function EditLeadDialog({
 						</div>
 					</div>
 
-					{/* Month and Date */}
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-2">
-							<Label htmlFor="month">Month</Label>
-							<Select value={month} onValueChange={setMonth}>
-								<SelectTrigger>
-									<span>{month || "Select month"}</span>
-								</SelectTrigger>
-								<SelectContent>
-									{options.month.map((m) => (
-										<SelectItem key={m} value={m}>
-											{m}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="date">Date</Label>
-							<Input
-								id="date"
-								type="date"
-								value={date}
-								onChange={(e) => setDate(e.target.value)}
-							/>
-						</div>
+					{/* Date */}
+					<div className="space-y-2">
+						<Label htmlFor="date">Date</Label>
+						<Input
+							id="date"
+							type="date"
+							value={date}
+							onChange={(e) => setDate(e.target.value)}
+						/>
 					</div>
 
 					{/* Trainer */}

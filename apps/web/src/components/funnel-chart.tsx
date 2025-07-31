@@ -5,6 +5,30 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingDown, Users, DollarSign } from "lucide-react";
 
+// Helper function to format month display
+const formatMonthDisplay = (monthString: string) => {
+	if (monthString === "All months") return monthString;
+
+	const [year, month] = monthString.split("-");
+	const monthNames = [
+		"January",
+		"February",
+		"March",
+		"April",
+		"May",
+		"June",
+		"July",
+		"August",
+		"September",
+		"October",
+		"November",
+		"December",
+	];
+	const monthIndex = parseInt(month) - 1;
+	const monthName = monthNames[monthIndex] || month;
+	return `${monthName} ${year}`;
+};
+
 interface FunnelStage {
 	status: string;
 	count: number;
@@ -111,7 +135,7 @@ export default function FunnelChart({
 					<TrendingDown className="h-5 w-5" />
 					Sales Funnel
 					<Badge variant="outline" className="ml-auto">
-						{funnelData.month} • {funnelData.platform}
+						{formatMonthDisplay(funnelData.month)} • {funnelData.platform}
 					</Badge>
 				</CardTitle>
 				<div className="flex gap-2 flex-wrap">

@@ -5,9 +5,16 @@ import { desc, count, sum, eq, sql } from "drizzle-orm";
 
 const app = new Hono();
 
-// Helper function to extract YYYY-MM from M/D/YYYY format
-const extractYearMonth = (dateField: any) =>
-	sql<string>`substr(${dateField}, -4) || '-' || printf('%02d', CASE WHEN instr(${dateField}, '/') > 0 THEN substr(${dateField}, 1, instr(${dateField}, '/') - 1) ELSE 1 END)`;
+// Helper function to extract YYYY-MM from MM/DD/YYYY format (database stores MM/DD/YYYY)
+const extractYearMonth = (dateField: any) => sql<string>`
+  CASE 
+    WHEN instr(${dateField}, '/') > 0 THEN
+      substr(${dateField}, -4) || '-' || printf('%02d', 
+        CAST(substr(${dateField}, 1, instr(${dateField}, '/') - 1) AS INTEGER)
+      )
+    ELSE '1900-01'
+  END
+`;
 
 app.get("/leads", async (c) => {
 	const allLeads = await db.select().from(leads).orderBy(desc(leads.createdAt));

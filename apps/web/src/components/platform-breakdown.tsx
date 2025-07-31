@@ -19,6 +19,30 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, Calendar, BarChart3 } from "lucide-react";
 
+// Helper function to format month display
+const formatMonthDisplay = (monthString: string) => {
+	if (monthString === "All months") return monthString;
+
+	const [year, month] = monthString.split("-");
+	const monthNames = [
+		"January",
+		"February",
+		"March",
+		"April",
+		"May",
+		"June",
+		"July",
+		"August",
+		"September",
+		"October",
+		"November",
+		"December",
+	];
+	const monthIndex = parseInt(month) - 1;
+	const monthName = monthNames[monthIndex] || month;
+	return `${monthName} ${year}`;
+};
+
 interface PlatformBreakdownData {
 	platform: string | null;
 	totalLeads: number;
@@ -94,7 +118,7 @@ export default function PlatformBreakdown({
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<BarChart3 className="h-5 w-5" />
-					Platform Breakdown - {data?.month || "All months"}
+					Platform Breakdown - {formatMonthDisplay(data?.month || "All months")}
 					{data && (
 						<Badge variant="secondary" className="ml-auto">
 							Total Sales: {formatCurrency(data.totals.totalSales)}
