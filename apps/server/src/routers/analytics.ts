@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db";
 import { leads } from "../db/schema/leads";
-import { desc, count, sum } from "drizzle-orm";
+import { desc, count, sum, eq } from "drizzle-orm";
 
 const app = new Hono();
 
@@ -15,7 +15,7 @@ app.get("/leads/summary", async (c) => {
 	const totalClosed = await db
 		.select({ value: count() })
 		.from(leads)
-		.where({ isClosed: true });
+		.where(eq(leads.isClosed, true));
 	const totalSales = await db.select({ value: sum(leads.sales) }).from(leads);
 
 	return c.json({
