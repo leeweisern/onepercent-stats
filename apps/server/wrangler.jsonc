@@ -23,9 +23,9 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "onepercent-stats-db",
-			"database_id": "2ba02bd7-88fb-4cfd-a175-f884b92ed6ca",
-			"preview_database_id": "local-test-db",
+			"database_name": "onepercent-stats-new",
+			"database_id": "ab4a3dca-8c8f-4208-9f90-3cb7a2a78db4",
+			"preview_database_id": "ab4a3dca-8c8f-4208-9f90-3cb7a2a78db4",
 			"migrations_dir": "./src/db/migrations"
 		}
 	]

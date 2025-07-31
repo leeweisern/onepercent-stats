@@ -4,7 +4,9 @@ import fs from "fs";
 import path from "path";
 import Papa from "papaparse";
 
-const csvFilePath = path.resolve("./One Percent Enquiries Data.csv");
+const csvFilePath = path.resolve(
+	"../../One Percent Enquiries All Data (dd-mm-yyyy).csv",
+);
 const csvFile = fs.readFileSync(csvFilePath, "utf8");
 
 const cleanData = (row: any) => {
@@ -12,6 +14,7 @@ const cleanData = (row: any) => {
 	const sales = parseInt(salesString.replace(/[^0-9.-]+/g, "")) || 0;
 
 	return {
+		month: row["Month"],
 		date: row["Date"],
 		name: row["Name "],
 		phoneNumber: row["Phone number"],
@@ -30,12 +33,16 @@ Papa.parse(csvFile, {
 	header: true,
 	skipEmptyLines: true,
 	complete: async (results) => {
+		console.log("First row:", results.data[0]);
 		const cleanedData = results.data.map(cleanData);
+		console.log("First cleaned row:", cleanedData[0]);
 
 		for (const row of cleanedData) {
 			await db.insert(leads).values(row).onConflictDoNothing();
 		}
 
-		console.log("Data imported successfully!");
+		console.log(
+			`Data imported successfully! ${cleanedData.length} records processed.`,
+		);
 	},
 });
