@@ -91,4 +91,121 @@ app.get("/leads/months", async (c) => {
 	return c.json(months.map((m) => m.month).filter(Boolean));
 });
 
+app.get("/leads/funnel", async (c) => {
+	const month = c.req.query("month");
+	const platform = c.req.query("platform");
+
+	let query = db
+		.select({
+			status: leads.status,
+			platform: leads.platform,
+			count: count(),
+			totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
+		})
+		.from(leads);
+
+	if (month) {
+		query = query.where(eq(leads.month, month));
+	}
+
+	if (platform) {
+		query = query.where(eq(leads.platform, platform));
+	}
+
+	const statusData = await query.groupBy(leads.status, leads.platform);
+
+	// Group by status and aggregate across platforms
+	const funnelData = statusData.reduce(
+		(acc, row) => {
+			const status = row.status || "Unknown";
+			if (!acc[status]) {
+				acc[status] = {
+					status,
+					count: 0,
+					totalSales: 0,
+					platforms: {},
+				};
+			}
+			acc[status].count += row.count;
+			acc[status].totalSales += row.totalSales || 0;
+
+			const platformName = row.platform || "Unknown";
+			if (!acc[status].platforms[platformName]) {
+				acc[status].platforms[platformName] = {
+					count: 0,
+					totalSales: 0,
+				};
+			}
+			acc[status].platforms[platformName].count += row.count;
+			acc[status].platforms[platformName].totalSales += row.totalSales || 0;
+
+			return acc;
+		},
+		{} as Record<string, any>,
+	);
+
+	// Convert to array and sort by typical funnel order
+	const statusOrder = ["No reply", "Consulted", "Closed"];
+	const sortedFunnel = Object.values(funnelData).sort((a: any, b: any) => {
+		const aIndex = statusOrder.indexOf(a.status);
+		const bIndex = statusOrder.indexOf(b.status);
+		if (aIndex === -1 && bIndex === -1) return a.status.localeCompare(b.status);
+		if (aIndex === -1) return 1;
+		if (bIndex === -1) return -1;
+		return aIndex - bIndex;
+	});
+
+	return c.json({
+		funnel: sortedFunnel,
+		month: month || "All months",
+		platform: platform || "All platforms",
+	});
+});
+
+app.get("/leads/options", async (c) => {
+	const [statusOptions, platformOptions, monthOptions, trainerOptions] = await Promise.all([
+		db.select({ value: leads.status }).from(leads).groupBy(leads.status),
+		db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
+		db.select({ value: leads.month }).from(leads).groupBy(leads.month),
+		db.select({ value: leads.trainerHandle }).from(leads).groupBy(leads.trainerHandle),
+	]);
+
+	return c.json({
+		status: statusOptions.map(s => s.value).filter(Boolean),
+		platform: platformOptions.map(p => p.value).filter(Boolean),
+		month: monthOptions.map(m => m.value).filter(Boolean),
+		trainerHandle: trainerOptions.map(t => t.value).filter(Boolean),
+		isClosed: [true, false]
+	});
+});
+});
+
+app.put("/leads/:id", async (c) => {
+	const id = parseInt(c.req.param("id"));
+	const body = await c.req.json();
+	
+	const updateData: any = {};
+	
+	// Only update fields that are provided
+	if (body.name !== undefined) updateData.name = body.name;
+	if (body.phoneNumber !== undefined) updateData.phoneNumber = body.phoneNumber;
+	if (body.platform !== undefined) updateData.platform = body.platform;
+	if (body.status !== undefined) updateData.status = body.status;
+	if (body.isClosed !== undefined) updateData.isClosed = body.isClosed;
+	if (body.sales !== undefined) updateData.sales = body.sales;
+	if (body.month !== undefined) updateData.month = body.month;
+	if (body.date !== undefined) updateData.date = body.date;
+	if (body.followUp !== undefined) updateData.followUp = body.followUp;
+	if (body.appointment !== undefined) updateData.appointment = body.appointment;
+	if (body.remark !== undefined) updateData.remark = body.remark;
+	if (body.trainerHandle !== undefined) updateData.trainerHandle = body.trainerHandle;
+	
+	const updatedLead = await db
+		.update(leads)
+		.set(updateData)
+		.where(eq(leads.id, id))
+		.returning();
+
+	return c.json(updatedLead[0]);
+});
 export default app;

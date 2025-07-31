@@ -27,9 +27,11 @@ import {
 	XCircle,
 	Copy,
 	Eye,
+	Edit,
 } from "lucide-react";
 import PlatformBreakdown from "@/components/platform-breakdown";
-import PlatformChart from "@/components/platform-chart";
+import FunnelChart from "@/components/funnel-chart";
+import { EditLeadDialog } from "@/components/edit-lead-dialog";
 
 interface Lead {
 	id: number;
@@ -73,15 +75,26 @@ export default function Dashboard() {
 	const [activeTab, setActiveTab] = useState("leads");
 	const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [editLead, setEditLead] = useState<Lead | null>(null);
+	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [platformData, setPlatformData] =
 		useState<PlatformBreakdownResponse | null>(null);
+	const [availableMonths, setAvailableMonths] = useState<string[]>([]);
+	const [selectedMonth, setSelectedMonth] = useState<string>("");
 
 	useEffect(() => {
+		fetchAvailableMonths();
 		fetchLeads();
 		if (activeTab === "analytics") {
 			fetchPlatformBreakdown();
 		}
 	}, [activeTab]);
+
+	useEffect(() => {
+		if (activeTab === "analytics") {
+			fetchPlatformBreakdown();
+		}
+	}, [selectedMonth]);
 
 	const fetchLeads = async () => {
 		try {
@@ -95,9 +108,27 @@ export default function Dashboard() {
 		}
 	};
 
+	const fetchAvailableMonths = async () => {
+		try {
+			const response = await fetch("/api/analytics/leads/months");
+			const months = await response.json();
+			setAvailableMonths(months);
+			if (months.length > 0 && !selectedMonth) {
+				setSelectedMonth(months[0]);
+			}
+		} catch (error) {
+			console.error("Error fetching months:", error);
+		}
+	};
+
 	const fetchPlatformBreakdown = async () => {
 		try {
-			const response = await fetch("/api/analytics/leads/platform-breakdown");
+			const params = new URLSearchParams();
+			if (selectedMonth) params.append("month", selectedMonth);
+
+			const response = await fetch(
+				`/api/analytics/leads/platform-breakdown?${params}`,
+			);
 			const data = await response.json();
 			setPlatformData(data);
 		} catch (error) {
@@ -144,6 +175,34 @@ export default function Dashboard() {
 	const handleRowClick = (lead: Lead) => {
 		setSelectedLead(lead);
 		setIsDialogOpen(true);
+	};
+
+	const handleEditClick = (lead: Lead) => {
+		setEditLead(lead);
+		setIsEditDialogOpen(true);
+	};
+
+	const handleSaveLead = async (leadId: number, updates: Partial<Lead>) => {
+		try {
+			const response = await fetch(`/api/analytics/leads/${leadId}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(updates),
+			});
+
+			if (response.ok) {
+				const updatedLead = await response.json();
+				setLeads(
+					leads.map((lead) =>
+						lead.id === leadId ? { ...lead, ...updatedLead } : lead,
+					),
+				);
+			}
+		} catch (error) {
+			console.error("Failed to update lead:", error);
+		}
 	};
 
 	return (
@@ -425,17 +484,30 @@ export default function Dashboard() {
 																</div>
 															</TableCell>
 															<TableCell>
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		handleRowClick(lead);
-																	}}
-																>
-																	<Eye className="h-4 w-4" />
-																</Button>
+																<div className="flex gap-1">
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleRowClick(lead);
+																		}}
+																	>
+																		<Eye className="h-4 w-4" />
+																	</Button>
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleEditClick(lead);
+																		}}
+																	>
+																		<Edit className="h-4 w-4" />
+																	</Button>
+																</div>
 															</TableCell>
 														</TableRow>
 													))}
@@ -450,14 +522,25 @@ export default function Dashboard() {
 
 					{activeTab === "analytics" && (
 						<div className="space-y-6">
-							<PlatformBreakdown />
-							{platformData && (
-								<PlatformChart
-									data={platformData.breakdown}
-									totalSales={platformData.totals.totalSales}
-									month={platformData.month}
-								/>
-							)}
+							{/* Global Month Filter */}
+							<div className="flex items-center gap-2 mb-6">
+								<span className="text-sm font-medium">Filter by month:</span>
+								<select
+									value={selectedMonth}
+									onChange={(e) => setSelectedMonth(e.target.value)}
+									className="px-3 py-2 border rounded-md text-sm bg-white"
+								>
+									<option value="">All months</option>
+									{availableMonths.map((month) => (
+										<option key={month} value={month}>
+											{month}
+										</option>
+									))}
+								</select>
+							</div>
+
+							<PlatformBreakdown selectedMonth={selectedMonth} />
+							<FunnelChart selectedMonth={selectedMonth} />
 						</div>
 					)}
 
@@ -474,6 +557,14 @@ export default function Dashboard() {
 					)}
 				</div>
 			</div>
+
+			{/* Edit Lead Dialog */}
+			<EditLeadDialog
+				lead={editLead}
+				open={isEditDialogOpen}
+				onOpenChange={setIsEditDialogOpen}
+				onSave={handleSaveLead}
+			/>
 
 			{/* Lead Details Dialog */}
 			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
