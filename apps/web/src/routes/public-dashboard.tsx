@@ -37,7 +37,7 @@ interface Lead {
 	createdAt: string | null;
 }
 
-export default function Dashboard() {
+export default function PublicDashboard() {
 	const [leads, setLeads] = useState<Lead[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState("leads");
