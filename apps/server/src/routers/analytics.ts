@@ -73,7 +73,30 @@ const getYearFromDate = (dateString: string): string => {
 };
 
 app.get("/leads", async (c) => {
-	const allLeads = await db.select().from(leads).orderBy(desc(leads.createdAt));
+	const month = c.req.query("month");
+	const year = c.req.query("year");
+	const platform = c.req.query("platform");
+
+	let query = db.select().from(leads);
+
+	const conditions = [];
+	if (month) {
+		conditions.push(eq(leads.month, month));
+	}
+	if (year) {
+		conditions.push(
+			sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+		);
+	}
+	if (platform) {
+		conditions.push(eq(leads.platform, platform));
+	}
+
+	if (conditions.length > 0) {
+		query = query.where(and(...conditions));
+	}
+
+	const allLeads = await query.orderBy(desc(leads.createdAt));
 	return c.json(allLeads);
 });
 

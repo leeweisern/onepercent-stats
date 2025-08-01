@@ -88,9 +88,33 @@ export default function FunnelChart({
 
 	const fetchSummaryData = async () => {
 		try {
-			const response = await fetch("/api/analytics/leads/summary");
-			const data = await response.json();
-			setSummaryData(data);
+			// Build query params for filtering
+			const params = new URLSearchParams();
+			if (selectedMonth) params.append("month", selectedMonth);
+			if (selectedYear) params.append("year", selectedYear);
+			if (currentPlatform) params.append("platform", currentPlatform);
+
+			// Fetch filtered leads data to calculate our own summary
+			const response = await fetch(`/api/analytics/leads?${params}`);
+			const leads = await response.json();
+
+			// Calculate filtered summary
+			const totalLeads = leads.length;
+			const totalConsults = leads.filter(
+				(lead: any) => lead.status === "Consult",
+			).length;
+			const totalClosed = leads.filter((lead: any) => lead.isClosed).length;
+			const totalSales = leads.reduce(
+				(sum: number, lead: any) => sum + (lead.sales || 0),
+				0,
+			);
+
+			setSummaryData({
+				totalLeads,
+				totalConsults,
+				totalClosed,
+				totalSales: totalSales.toString(),
+			});
 		} catch (error) {
 			console.error("Error fetching summary data:", error);
 		}
@@ -192,10 +216,16 @@ export default function FunnelChart({
 
 							// Use the accurate summary data
 							const totalLeads = summaryData.totalLeads;
+							const totalConsults = summaryData.totalConsults || 0;
 							const totalSales = summaryData.totalClosed; // This is the actual closed leads count
 
 							const simplifiedFunnel = [
 								{ status: "leads", displayName: "Leads", count: totalLeads },
+								{
+									status: "consults",
+									displayName: "Consult",
+									count: totalConsults,
+								},
 								{ status: "sales", displayName: "Sales", count: totalSales },
 							];
 
@@ -219,7 +249,12 @@ export default function FunnelChart({
 											className="w-16 bg-blue-500 rounded-t-md transition-all duration-500 flex items-end justify-center"
 											style={{
 												height: `${Math.max(height, 20)}px`,
-												backgroundColor: index === 0 ? "#3b82f6" : "#1e40af",
+												backgroundColor:
+													index === 0
+														? "#3b82f6"
+														: index === 1
+															? "#93c5fd"
+															: "#1e40af",
 											}}
 										></div>
 										<div className="text-xs text-muted-foreground text-center">
@@ -253,10 +288,11 @@ export default function FunnelChart({
 				</div>
 
 				{/* Summary stats below chart */}
-				<div className="mt-8 grid grid-cols-2 gap-4">
+				<div className="mt-8 grid grid-cols-3 gap-4">
 					{summaryData &&
 						(() => {
 							const totalLeads = summaryData.totalLeads;
+							const consultCount = summaryData.totalConsults || 0;
 							const salesCount = summaryData.totalClosed;
 							const totalSalesAmount = summaryData.totalSales;
 
@@ -266,6 +302,14 @@ export default function FunnelChart({
 									displayName: "Leads",
 									count: totalLeads,
 									conversionRate: 100,
+									totalSales: 0,
+								},
+								{
+									status: "consults",
+									displayName: "Consult",
+									count: consultCount,
+									conversionRate:
+										totalLeads > 0 ? (consultCount / totalLeads) * 100 : 0,
 									totalSales: 0,
 								},
 								{
