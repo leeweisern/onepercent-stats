@@ -1,4 +1,5 @@
 import { BarChart3, Users, DollarSign } from "lucide-react";
+import { Link, useLocation } from "react-router";
 
 import {
 	Sidebar,
@@ -9,11 +10,10 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarRail,
 } from "@/components/ui/sidebar";
 
 interface AppSidebarProps {
-	activeTab: string;
-	onTabChange: (tab: string) => void;
 	variant?: "sidebar" | "floating" | "inset";
 }
 
@@ -21,47 +21,52 @@ const menuItems = [
 	{
 		title: "Leads",
 		icon: Users,
-		value: "leads",
+		url: "/leads",
 	},
 	{
 		title: "Analytics",
 		icon: BarChart3,
-		value: "analytics",
+		url: "/analytics",
 	},
 	{
 		title: "Advertising Costs",
 		icon: DollarSign,
-		value: "advertising",
+		url: "/advertising",
 	},
 ];
 
 export function AppSidebar({
-	activeTab,
-	onTabChange,
 	variant = "sidebar",
 	...props
 }: AppSidebarProps & React.ComponentProps<typeof Sidebar>) {
+	const location = useLocation();
+
 	return (
-		<Sidebar variant={variant} {...props}>
+		<Sidebar collapsible="icon" variant={variant} {...props}>
 			<SidebarHeader>
-				<div className="px-2 py-2">
-					<h2 className="text-lg font-semibold text-sidebar-foreground">
-						One Percent Stats
-					</h2>
+				<div className="px-2 py-2 flex items-center justify-center group-data-[collapsible=icon]:px-1">
+					<img
+						src="/One Percent Fitness Favicon.svg"
+						alt="One Percent Stats"
+						className="h-8 w-auto group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6"
+					/>
 				</div>
-			</SidebarHeader>
+			</SidebarHeader>{" "}
 			<SidebarContent>
 				<SidebarGroup>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							{menuItems.map((item) => (
-								<SidebarMenuItem key={item.value}>
+								<SidebarMenuItem key={item.url}>
 									<SidebarMenuButton
-										isActive={activeTab === item.value}
-										onClick={() => onTabChange(item.value)}
+										asChild
+										isActive={location.pathname === item.url}
+										tooltip={item.title}
 									>
-										<item.icon />
-										<span>{item.title}</span>
+										<Link to={item.url}>
+											<item.icon />
+											<span>{item.title}</span>
+										</Link>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 							))}
@@ -69,6 +74,7 @@ export function AppSidebar({
 					</SidebarGroupContent>
 				</SidebarGroup>
 			</SidebarContent>
+			<SidebarRail />
 		</Sidebar>
 	);
 }
