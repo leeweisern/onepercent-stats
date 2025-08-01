@@ -124,14 +124,14 @@ export function LeadsFilters({
 			</CardHeader>
 			<CardContent>
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-					{/* Search by Name */}
+					{/* Search by Name or Phone */}
 					<div className="space-y-2">
-						<Label htmlFor="search">Search by Name</Label>
+						<Label htmlFor="search">Search by Name or Phone</Label>
 						<div className="relative">
 							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 							<Input
 								id="search"
-								placeholder="Enter name..."
+								placeholder="Enter name or phone..."
 								value={filters.search}
 								onChange={(e) => updateFilter("search", e.target.value)}
 								className="pl-10"
