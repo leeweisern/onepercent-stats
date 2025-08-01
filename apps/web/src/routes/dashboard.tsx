@@ -32,10 +32,11 @@ import {
 	ChevronDown,
 	Plus,
 	DollarSign,
+	Menu,
+	X,
 } from "lucide-react";
 import PlatformBreakdown from "@/components/platform-breakdown";
 import FunnelChart from "@/components/funnel-chart";
-import AdvertisingCosts from "@/components/advertising-costs";
 import AdvertisingCostsManagement from "@/components/advertising-costs-management";
 import ROASMetrics from "@/components/roas-metrics";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
@@ -105,6 +106,7 @@ export default function Dashboard() {
 	});
 	const [sortField, setSortField] = useState<string>("");
 	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
 	useEffect(() => {
 		console.log("Dashboard component mounted");
@@ -416,35 +418,62 @@ export default function Dashboard() {
 	return (
 		<div className="flex h-screen bg-gray-50">
 			{/* Sidebar */}
-			<div className="w-64 bg-white shadow-sm border-r">
+			<div
+				className={`${sidebarCollapsed ? "w-16" : "w-64"} bg-white shadow-sm border-r transition-all duration-300`}
+			>
 				<div className="p-6">
-					<h2 className="text-xl font-bold text-gray-800">One Percent Stats</h2>
+					<div className="flex items-center justify-between">
+						{!sidebarCollapsed && (
+							<h2 className="text-xl font-bold text-gray-800">
+								One Percent Stats
+							</h2>
+						)}
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+							className="h-8 w-8 p-0"
+						>
+							{sidebarCollapsed ? (
+								<Menu className="h-4 w-4" />
+							) : (
+								<X className="h-4 w-4" />
+							)}
+						</Button>
+					</div>
 				</div>
 				<nav className="mt-6">
 					<div className="px-3">
 						<Button
 							variant={activeTab === "leads" ? "default" : "ghost"}
-							className="w-full justify-start mb-2"
+							className={`w-full mb-2 ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
 							onClick={() => setActiveTab("leads")}
+							title={sidebarCollapsed ? "Leads" : ""}
 						>
-							<Users className="mr-2 h-4 w-4" />
-							Leads
+							<Users className={`h-4 w-4 ${sidebarCollapsed ? "" : "mr-2"}`} />
+							{!sidebarCollapsed && "Leads"}
 						</Button>
 						<Button
 							variant={activeTab === "analytics" ? "default" : "ghost"}
-							className="w-full justify-start mb-2"
+							className={`w-full mb-2 ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
 							onClick={() => setActiveTab("analytics")}
+							title={sidebarCollapsed ? "Analytics" : ""}
 						>
-							<BarChart3 className="mr-2 h-4 w-4" />
-							Analytics
+							<BarChart3
+								className={`h-4 w-4 ${sidebarCollapsed ? "" : "mr-2"}`}
+							/>
+							{!sidebarCollapsed && "Analytics"}
 						</Button>
 						<Button
 							variant={activeTab === "advertising" ? "default" : "ghost"}
-							className="w-full justify-start mb-2"
+							className={`w-full mb-2 ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
 							onClick={() => setActiveTab("advertising")}
+							title={sidebarCollapsed ? "Advertising Costs" : ""}
 						>
-							<DollarSign className="mr-2 h-4 w-4" />
-							Advertising Costs
+							<DollarSign
+								className={`h-4 w-4 ${sidebarCollapsed ? "" : "mr-2"}`}
+							/>
+							{!sidebarCollapsed && "Advertising Costs"}
 						</Button>
 					</div>
 				</nav>
@@ -832,10 +861,6 @@ export default function Dashboard() {
 							</div>
 
 							<ROASMetrics
-								selectedMonth={selectedMonth}
-								selectedYear={selectedYear}
-							/>
-							<AdvertisingCosts
 								selectedMonth={selectedMonth}
 								selectedYear={selectedYear}
 							/>
