@@ -31,9 +31,6 @@ import {
 	ChevronUp,
 	ChevronDown,
 	Plus,
-	DollarSign,
-	Menu,
-	X,
 } from "lucide-react";
 import PlatformBreakdown from "@/components/platform-breakdown";
 import FunnelChart from "@/components/funnel-chart";
@@ -42,6 +39,9 @@ import ROASMetrics from "@/components/roas-metrics";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { CreateLeadDialog } from "@/components/create-lead-dialog";
 import { LeadsFilters, type FilterState } from "@/components/leads-filters";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 interface Lead {
 	id: number;
@@ -106,7 +106,6 @@ export default function Dashboard() {
 	});
 	const [sortField, setSortField] = useState<string>("");
 	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
 	useEffect(() => {
 		console.log("Dashboard component mounted");
@@ -416,468 +415,433 @@ export default function Dashboard() {
 	};
 
 	return (
-		<div className="flex h-screen bg-gray-50">
-			{/* Sidebar */}
-			<div
-				className={`${sidebarCollapsed ? "w-16" : "w-64"} bg-white shadow-sm border-r transition-all duration-300`}
-			>
-				<div className="p-6">
-					<div className="flex items-center justify-between">
-						{!sidebarCollapsed && (
-							<h2 className="text-xl font-bold text-gray-800">
-								One Percent Stats
-							</h2>
-						)}
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-							className="h-8 w-8 p-0"
-						>
-							{sidebarCollapsed ? (
-								<Menu className="h-4 w-4" />
-							) : (
-								<X className="h-4 w-4" />
-							)}
-						</Button>
-					</div>
-				</div>
-				<nav className="mt-6">
-					<div className="px-3">
-						<Button
-							variant={activeTab === "leads" ? "default" : "ghost"}
-							className={`w-full mb-2 ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
-							onClick={() => setActiveTab("leads")}
-							title={sidebarCollapsed ? "Leads" : ""}
-						>
-							<Users className={`h-4 w-4 ${sidebarCollapsed ? "" : "mr-2"}`} />
-							{!sidebarCollapsed && "Leads"}
-						</Button>
-						<Button
-							variant={activeTab === "analytics" ? "default" : "ghost"}
-							className={`w-full mb-2 ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
-							onClick={() => setActiveTab("analytics")}
-							title={sidebarCollapsed ? "Analytics" : ""}
-						>
-							<BarChart3
-								className={`h-4 w-4 ${sidebarCollapsed ? "" : "mr-2"}`}
-							/>
-							{!sidebarCollapsed && "Analytics"}
-						</Button>
-						<Button
-							variant={activeTab === "advertising" ? "default" : "ghost"}
-							className={`w-full mb-2 ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
-							onClick={() => setActiveTab("advertising")}
-							title={sidebarCollapsed ? "Advertising Costs" : ""}
-						>
-							<DollarSign
-								className={`h-4 w-4 ${sidebarCollapsed ? "" : "mr-2"}`}
-							/>
-							{!sidebarCollapsed && "Advertising Costs"}
-						</Button>
-					</div>
-				</nav>
-			</div>
-
-			{/* Main Content */}
-			<div className="flex-1 overflow-auto">
-				<div className="p-6">
-					<div className="mb-6">
-						<h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-						<p className="text-gray-600">
-							Overview of your leads and performance
-						</p>
-					</div>
-
-					{activeTab === "leads" && (
-						<div>
-							{/* Filters */}
+		<SidebarProvider>
+			<AppSidebar
+				variant="inset"
+				activeTab={activeTab}
+				onTabChange={setActiveTab}
+			/>
+			<SidebarInset>
+				<SiteHeader />
+				<div className="flex flex-1 flex-col">
+					<div className="flex flex-1 flex-col gap-2">
+						<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6">
 							<div className="mb-6">
-								<LeadsFilters
-									onFiltersChange={handleFiltersChange}
-									totalResults={filteredLeads.length}
-								/>
+								<h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+								<p className="text-gray-600">
+									Overview of your leads and performance
+								</p>
 							</div>
 
-							{/* Summary Cards */}
-							<div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-								<Card>
-									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium">
-											Total Leads
-										</CardTitle>
-										<Users className="h-4 w-4 text-muted-foreground" />
-									</CardHeader>
-									<CardContent>
-										<div className="text-2xl font-bold">
-											{filteredLeads.length}
-										</div>
-									</CardContent>
-								</Card>
-								<Card>
-									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium">
-											Closed Leads
-										</CardTitle>
-										<CheckCircle className="h-4 w-4 text-muted-foreground" />
-									</CardHeader>
-									<CardContent>
-										<div className="text-2xl font-bold">
-											{filteredLeads.filter((lead) => lead.isClosed).length}
-										</div>
-									</CardContent>
-								</Card>
-								<Card>
-									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium">
-											Total Sales
-										</CardTitle>
-										<TrendingUp className="h-4 w-4 text-muted-foreground" />
-									</CardHeader>
-									<CardContent>
-										<div className="text-2xl font-bold">
-											{formatCurrency(
-												filteredLeads.reduce(
-													(sum, lead) => sum + (lead.sales || 0),
-													0,
-												),
-											)}
-										</div>
-									</CardContent>
-								</Card>
-								<Card>
-									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium">
-											Conversion Rate
-										</CardTitle>
-										<BarChart3 className="h-4 w-4 text-muted-foreground" />
-									</CardHeader>
-									<CardContent>
-										<div className="text-2xl font-bold">
-											{filteredLeads.length > 0
-												? `${Math.round((filteredLeads.filter((lead) => lead.isClosed).length / filteredLeads.length) * 100)}%`
-												: "0%"}
-										</div>
-									</CardContent>
-								</Card>
-							</div>
+							{activeTab === "leads" && (
+								<div>
+									{/* Filters */}
+									<div className="mb-6">
+										<LeadsFilters
+											onFiltersChange={handleFiltersChange}
+											totalResults={filteredLeads.length}
+										/>
+									</div>
 
-							{/* Leads Table */}
-							<Card>
-								<CardHeader>
-									<CardTitle className="flex items-center gap-2">
-										<Users className="h-5 w-5" />
-										All Leads
-										<Badge variant="secondary" className="ml-auto">
-											{filteredLeads.length} total
-										</Badge>
-										<Button
-											onClick={() => setIsCreateDialogOpen(true)}
-											size="sm"
-											className="ml-2"
-										>
-											<Plus className="h-4 w-4 mr-1" />
-											Add Lead
-										</Button>
-									</CardTitle>
-								</CardHeader>
-								<CardContent className="p-0">
-									{loading ? (
-										<div className="space-y-2 p-6">
-											{[...Array(5)].map((_, i) => (
-												<Skeleton key={i} className="h-12 w-full" />
-											))}
-										</div>
-									) : (
-										<div className="rounded-md border">
-											<Table>
-												<TableHeader>
-													<TableRow className="hover:bg-transparent">
-														<TableHead className="w-[120px] p-0">
-															<Button
-																variant="ghost"
-																className="h-full w-full justify-start px-4 py-3 font-medium hover:bg-muted/50 text-left"
-																onClick={() => handleSort("name")}
-															>
-																<span className="flex items-center">
-																	Name
-																	{sortField === "name" &&
-																		(sortDirection === "asc" ? (
-																			<ChevronUp className="ml-1 h-4 w-4" />
-																		) : (
-																			<ChevronDown className="ml-1 h-4 w-4" />
-																		))}
-																</span>
-															</Button>
-														</TableHead>
-														<TableHead className="w-[140px]">Phone</TableHead>
-														<TableHead className="w-[100px]">
-															Platform
-														</TableHead>
-														<TableHead className="w-[100px]">Status</TableHead>
-														<TableHead className="w-[80px] text-center">
-															Closed
-														</TableHead>
-														<TableHead className="w-[100px] p-0">
-															<Button
-																variant="ghost"
-																className="h-full w-full justify-end px-4 py-3 font-medium hover:bg-muted/50 text-right"
-																onClick={() => handleSort("sales")}
-															>
-																<span className="flex items-center">
-																	Sales
-																	{sortField === "sales" &&
-																		(sortDirection === "asc" ? (
-																			<ChevronUp className="ml-1 h-4 w-4" />
-																		) : (
-																			<ChevronDown className="ml-1 h-4 w-4" />
-																		))}
-																</span>
-															</Button>
-														</TableHead>
-														<TableHead className="w-[80px]">Trainer</TableHead>
-														<TableHead className="w-[100px] p-0">
-															<Button
-																variant="ghost"
-																className="h-full w-full justify-start px-4 py-3 font-medium hover:bg-muted/50 text-left"
-																onClick={() => handleSort("date")}
-															>
-																<span className="flex items-center">
-																	Date
-																	{sortField === "date" &&
-																		(sortDirection === "asc" ? (
-																			<ChevronUp className="ml-1 h-4 w-4" />
-																		) : (
-																			<ChevronDown className="ml-1 h-4 w-4" />
-																		))}
-																</span>
-															</Button>
-														</TableHead>
-														<TableHead className="w-[80px]">
-															Follow Up
-														</TableHead>
-														<TableHead className="w-[80px]">
-															Appointment
-														</TableHead>
-														<TableHead className="w-[100px]">Remark</TableHead>
-														<TableHead className="w-[60px]"></TableHead>
-													</TableRow>
-												</TableHeader>
-												<TableBody>
-													{filteredLeads.map((lead) => (
-														<TableRow
-															key={lead.id}
-															className="group cursor-pointer hover:bg-muted/50"
-															onClick={() => handleRowClick(lead)}
-														>
-															<TableCell className="font-medium">
-																<div className="flex items-center gap-2">
-																	<div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
-																		{(lead.name || "N")[0].toUpperCase()}
-																	</div>
-																	<span className="truncate">
-																		{lead.name || "N/A"}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="flex items-center gap-2">
-																	<Phone className="h-3 w-3 text-muted-foreground" />
-																	<span className="font-mono text-sm">
-																		{lead.phoneNumber || "N/A"}
-																	</span>
-																	{lead.phoneNumber && (
-																		<Button
-																			variant="ghost"
-																			size="sm"
-																			className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-																			onClick={(e) => {
-																				e.stopPropagation();
-																				copyToClipboard(lead.phoneNumber || "");
-																			}}
-																		>
-																			<Copy className="h-3 w-3" />
-																		</Button>
-																	)}
-																</div>
-															</TableCell>
-															<TableCell>
-																<Badge
-																	variant={getPlatformVariant(lead.platform)}
-																>
-																	{lead.platform || "N/A"}
-																</Badge>
-															</TableCell>
-															<TableCell>
-																<Badge variant={getStatusVariant(lead.status)}>
-																	{lead.status || "N/A"}
-																</Badge>
-															</TableCell>
-															<TableCell className="text-center">
-																<div className="flex justify-center">
-																	{lead.isClosed ? (
-																		<div className="flex items-center gap-1">
-																			<CheckCircle className="h-4 w-4 text-green-600" />
-																			<span className="text-xs text-green-600 font-medium">
-																				Yes
-																			</span>
-																		</div>
-																	) : (
-																		<div className="flex items-center gap-1">
-																			<XCircle className="h-4 w-4 text-red-600" />
-																			<span className="text-xs text-red-600 font-medium">
-																				No
-																			</span>
-																		</div>
-																	)}
-																</div>
-															</TableCell>
-															<TableCell className="text-right font-medium">
-																<span
-																	className={
-																		lead.sales && lead.sales > 0
-																			? "text-green-600"
-																			: "text-muted-foreground"
-																	}
-																>
-																	{formatCurrency(lead.sales)}
-																</span>
-															</TableCell>
-															<TableCell>
-																<div className="max-w-[80px] truncate">
-																	<span
-																		className={`text-sm ${lead.trainerHandle && lead.trainerHandle !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-																	>
-																		{lead.trainerHandle || "N/A"}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="flex items-center gap-1">
-																	<Calendar className="h-3 w-3 text-muted-foreground" />
-																	<span className="text-sm">
-																		{formatDate(lead.date)}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="max-w-[80px] truncate">
-																	<span
-																		className={`text-sm ${lead.followUp && lead.followUp !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-																	>
-																		{lead.followUp || "N/A"}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="max-w-[80px] truncate">
-																	<span
-																		className={`text-sm ${lead.appointment && lead.appointment !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-																	>
-																		{lead.appointment || "N/A"}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="max-w-[100px] truncate">
-																	<span
-																		className={`text-sm ${lead.remark && lead.remark !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-																	>
-																		{lead.remark || "N/A"}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="flex gap-1">
-																	<Button
-																		variant="ghost"
-																		size="sm"
-																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			handleRowClick(lead);
-																		}}
-																	>
-																		<Edit className="h-4 w-4" />
-																	</Button>
-																	<Button
-																		variant="ghost"
-																		size="sm"
-																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			handleDeleteClick(lead);
-																		}}
-																	>
-																		<Trash2 className="h-4 w-4" />
-																	</Button>
-																</div>
-															</TableCell>
-														</TableRow>
+									{/* Summary Cards */}
+									<div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+										<Card>
+											<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+												<CardTitle className="text-sm font-medium">
+													Total Leads
+												</CardTitle>
+												<Users className="h-4 w-4 text-muted-foreground" />
+											</CardHeader>
+											<CardContent>
+												<div className="text-2xl font-bold">
+													{filteredLeads.length}
+												</div>
+											</CardContent>
+										</Card>
+										<Card>
+											<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+												<CardTitle className="text-sm font-medium">
+													Closed Leads
+												</CardTitle>
+												<CheckCircle className="h-4 w-4 text-muted-foreground" />
+											</CardHeader>
+											<CardContent>
+												<div className="text-2xl font-bold">
+													{filteredLeads.filter((lead) => lead.isClosed).length}
+												</div>
+											</CardContent>
+										</Card>
+										<Card>
+											<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+												<CardTitle className="text-sm font-medium">
+													Total Sales
+												</CardTitle>
+												<TrendingUp className="h-4 w-4 text-muted-foreground" />
+											</CardHeader>
+											<CardContent>
+												<div className="text-2xl font-bold">
+													{formatCurrency(
+														filteredLeads.reduce(
+															(sum, lead) => sum + (lead.sales || 0),
+															0,
+														),
+													)}
+												</div>
+											</CardContent>
+										</Card>
+										<Card>
+											<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+												<CardTitle className="text-sm font-medium">
+													Conversion Rate
+												</CardTitle>
+												<BarChart3 className="h-4 w-4 text-muted-foreground" />
+											</CardHeader>
+											<CardContent>
+												<div className="text-2xl font-bold">
+													{filteredLeads.length > 0
+														? `${Math.round((filteredLeads.filter((lead) => lead.isClosed).length / filteredLeads.length) * 100)}%`
+														: "0%"}
+												</div>
+											</CardContent>
+										</Card>
+									</div>
+
+									{/* Leads Table */}
+									<Card>
+										<CardHeader>
+											<CardTitle className="flex items-center gap-2">
+												<Users className="h-5 w-5" />
+												All Leads
+												<Badge variant="secondary" className="ml-auto">
+													{filteredLeads.length} total
+												</Badge>
+												<Button
+													onClick={() => setIsCreateDialogOpen(true)}
+													size="sm"
+													className="ml-2"
+												>
+													<Plus className="h-4 w-4 mr-1" />
+													Add Lead
+												</Button>
+											</CardTitle>
+										</CardHeader>
+										<CardContent className="p-0">
+											{loading ? (
+												<div className="space-y-2 p-6">
+													{[...Array(5)].map((_, i) => (
+														<Skeleton key={i} className="h-12 w-full" />
 													))}
-												</TableBody>
-											</Table>
+												</div>
+											) : (
+												<div className="rounded-md border">
+													<Table>
+														<TableHeader>
+															<TableRow className="hover:bg-transparent">
+																<TableHead className="w-[120px] p-0">
+																	<Button
+																		variant="ghost"
+																		className="h-full w-full justify-start px-4 py-3 font-medium hover:bg-muted/50 text-left"
+																		onClick={() => handleSort("name")}
+																	>
+																		<span className="flex items-center">
+																			Name
+																			{sortField === "name" &&
+																				(sortDirection === "asc" ? (
+																					<ChevronUp className="ml-1 h-4 w-4" />
+																				) : (
+																					<ChevronDown className="ml-1 h-4 w-4" />
+																				))}
+																		</span>
+																	</Button>
+																</TableHead>
+																<TableHead className="w-[140px]">
+																	Phone
+																</TableHead>
+																<TableHead className="w-[100px]">
+																	Platform
+																</TableHead>
+																<TableHead className="w-[100px]">
+																	Status
+																</TableHead>
+																<TableHead className="w-[80px] text-center">
+																	Closed
+																</TableHead>
+																<TableHead className="w-[100px] p-0">
+																	<Button
+																		variant="ghost"
+																		className="h-full w-full justify-end px-4 py-3 font-medium hover:bg-muted/50 text-right"
+																		onClick={() => handleSort("sales")}
+																	>
+																		<span className="flex items-center">
+																			Sales
+																			{sortField === "sales" &&
+																				(sortDirection === "asc" ? (
+																					<ChevronUp className="ml-1 h-4 w-4" />
+																				) : (
+																					<ChevronDown className="ml-1 h-4 w-4" />
+																				))}
+																		</span>
+																	</Button>
+																</TableHead>
+																<TableHead className="w-[80px]">
+																	Trainer
+																</TableHead>
+																<TableHead className="w-[100px] p-0">
+																	<Button
+																		variant="ghost"
+																		className="h-full w-full justify-start px-4 py-3 font-medium hover:bg-muted/50 text-left"
+																		onClick={() => handleSort("date")}
+																	>
+																		<span className="flex items-center">
+																			Date
+																			{sortField === "date" &&
+																				(sortDirection === "asc" ? (
+																					<ChevronUp className="ml-1 h-4 w-4" />
+																				) : (
+																					<ChevronDown className="ml-1 h-4 w-4" />
+																				))}
+																		</span>
+																	</Button>
+																</TableHead>
+																<TableHead className="w-[80px]">
+																	Follow Up
+																</TableHead>
+																<TableHead className="w-[80px]">
+																	Appointment
+																</TableHead>
+																<TableHead className="w-[100px]">
+																	Remark
+																</TableHead>
+																<TableHead className="w-[60px]"></TableHead>
+															</TableRow>
+														</TableHeader>
+														<TableBody>
+															{filteredLeads.map((lead) => (
+																<TableRow
+																	key={lead.id}
+																	className="group cursor-pointer hover:bg-muted/50"
+																	onClick={() => handleRowClick(lead)}
+																>
+																	<TableCell className="font-medium">
+																		<div className="flex items-center gap-2">
+																			<div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+																				{(lead.name || "N")[0].toUpperCase()}
+																			</div>
+																			<span className="truncate">
+																				{lead.name || "N/A"}
+																			</span>
+																		</div>
+																	</TableCell>
+																	<TableCell>
+																		<div className="flex items-center gap-2">
+																			<Phone className="h-3 w-3 text-muted-foreground" />
+																			<span className="font-mono text-sm">
+																				{lead.phoneNumber || "N/A"}
+																			</span>
+																			{lead.phoneNumber && (
+																				<Button
+																					variant="ghost"
+																					size="sm"
+																					className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+																					onClick={(e) => {
+																						e.stopPropagation();
+																						copyToClipboard(
+																							lead.phoneNumber || "",
+																						);
+																					}}
+																				>
+																					<Copy className="h-3 w-3" />
+																				</Button>
+																			)}
+																		</div>
+																	</TableCell>
+																	<TableCell>
+																		<Badge
+																			variant={getPlatformVariant(
+																				lead.platform,
+																			)}
+																		>
+																			{lead.platform || "N/A"}
+																		</Badge>
+																	</TableCell>
+																	<TableCell>
+																		<Badge
+																			variant={getStatusVariant(lead.status)}
+																		>
+																			{lead.status || "N/A"}
+																		</Badge>
+																	</TableCell>
+																	<TableCell className="text-center">
+																		<div className="flex justify-center">
+																			{lead.isClosed ? (
+																				<div className="flex items-center gap-1">
+																					<CheckCircle className="h-4 w-4 text-green-600" />
+																					<span className="text-xs text-green-600 font-medium">
+																						Yes
+																					</span>
+																				</div>
+																			) : (
+																				<div className="flex items-center gap-1">
+																					<XCircle className="h-4 w-4 text-red-600" />
+																					<span className="text-xs text-red-600 font-medium">
+																						No
+																					</span>
+																				</div>
+																			)}
+																		</div>
+																	</TableCell>
+																	<TableCell className="text-right font-medium">
+																		<span
+																			className={
+																				lead.sales && lead.sales > 0
+																					? "text-green-600"
+																					: "text-muted-foreground"
+																			}
+																		>
+																			{formatCurrency(lead.sales)}
+																		</span>
+																	</TableCell>
+																	<TableCell>
+																		<div className="max-w-[80px] truncate">
+																			<span
+																				className={`text-sm ${lead.trainerHandle && lead.trainerHandle !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																			>
+																				{lead.trainerHandle || "N/A"}
+																			</span>
+																		</div>
+																	</TableCell>
+																	<TableCell>
+																		<div className="flex items-center gap-1">
+																			<Calendar className="h-3 w-3 text-muted-foreground" />
+																			<span className="text-sm">
+																				{formatDate(lead.date)}
+																			</span>
+																		</div>
+																	</TableCell>
+																	<TableCell>
+																		<div className="max-w-[80px] truncate">
+																			<span
+																				className={`text-sm ${lead.followUp && lead.followUp !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																			>
+																				{lead.followUp || "N/A"}
+																			</span>
+																		</div>
+																	</TableCell>
+																	<TableCell>
+																		<div className="max-w-[80px] truncate">
+																			<span
+																				className={`text-sm ${lead.appointment && lead.appointment !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																			>
+																				{lead.appointment || "N/A"}
+																			</span>
+																		</div>
+																	</TableCell>
+																	<TableCell>
+																		<div className="max-w-[100px] truncate">
+																			<span
+																				className={`text-sm ${lead.remark && lead.remark !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																			>
+																				{lead.remark || "N/A"}
+																			</span>
+																		</div>
+																	</TableCell>
+																	<TableCell>
+																		<div className="flex gap-1">
+																			<Button
+																				variant="ghost"
+																				size="sm"
+																				className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+																				onClick={(e) => {
+																					e.stopPropagation();
+																					handleRowClick(lead);
+																				}}
+																			>
+																				<Edit className="h-4 w-4" />
+																			</Button>
+																			<Button
+																				variant="ghost"
+																				size="sm"
+																				className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+																				onClick={(e) => {
+																					e.stopPropagation();
+																					handleDeleteClick(lead);
+																				}}
+																			>
+																				<Trash2 className="h-4 w-4" />
+																			</Button>
+																		</div>
+																	</TableCell>
+																</TableRow>
+															))}
+														</TableBody>
+													</Table>
+												</div>
+											)}
+										</CardContent>
+									</Card>
+								</div>
+							)}
+
+							{activeTab === "analytics" && (
+								<div className="space-y-6">
+									{/* Global Month and Year Filters */}
+									<div className="flex items-center gap-4 mb-6">
+										<div className="flex items-center gap-2">
+											<span className="text-sm font-medium">
+												Filter by month:
+											</span>
+											<select
+												value={selectedMonth}
+												onChange={(e) => setSelectedMonth(e.target.value)}
+												className="px-3 py-2 border rounded-md text-sm bg-white"
+											>
+												<option value="">All months</option>
+												{availableMonths.map((month) => (
+													<option key={month} value={month}>
+														{month}
+													</option>
+												))}
+											</select>
 										</div>
-									)}
-								</CardContent>
-							</Card>
-						</div>
-					)}
+										<div className="flex items-center gap-2">
+											<span className="text-sm font-medium">
+												Filter by year:
+											</span>
+											<select
+												value={selectedYear}
+												onChange={(e) => setSelectedYear(e.target.value)}
+												className="px-3 py-2 border rounded-md text-sm bg-white"
+											>
+												<option value="">All years</option>
+												{availableYears.map((year) => (
+													<option key={year} value={year}>
+														{year}
+													</option>
+												))}
+											</select>
+										</div>
+									</div>
 
-					{activeTab === "analytics" && (
-						<div className="space-y-6">
-							{/* Global Month and Year Filters */}
-							<div className="flex items-center gap-4 mb-6">
-								<div className="flex items-center gap-2">
-									<span className="text-sm font-medium">Filter by month:</span>
-									<select
-										value={selectedMonth}
-										onChange={(e) => setSelectedMonth(e.target.value)}
-										className="px-3 py-2 border rounded-md text-sm bg-white"
-									>
-										<option value="">All months</option>
-										{availableMonths.map((month) => (
-											<option key={month} value={month}>
-												{month}
-											</option>
-										))}
-									</select>
+									<ROASMetrics
+										selectedMonth={selectedMonth}
+										selectedYear={selectedYear}
+									/>
+									<PlatformBreakdown
+										selectedMonth={selectedMonth}
+										selectedYear={selectedYear}
+									/>
+									<FunnelChart
+										selectedMonth={selectedMonth}
+										selectedYear={selectedYear}
+									/>
 								</div>
-								<div className="flex items-center gap-2">
-									<span className="text-sm font-medium">Filter by year:</span>
-									<select
-										value={selectedYear}
-										onChange={(e) => setSelectedYear(e.target.value)}
-										className="px-3 py-2 border rounded-md text-sm bg-white"
-									>
-										<option value="">All years</option>
-										{availableYears.map((year) => (
-											<option key={year} value={year}>
-												{year}
-											</option>
-										))}
-									</select>
-								</div>
-							</div>
+							)}
 
-							<ROASMetrics
-								selectedMonth={selectedMonth}
-								selectedYear={selectedYear}
-							/>
-							<PlatformBreakdown
-								selectedMonth={selectedMonth}
-								selectedYear={selectedYear}
-							/>
-							<FunnelChart
-								selectedMonth={selectedMonth}
-								selectedYear={selectedYear}
-							/>
+							{activeTab === "advertising" && <AdvertisingCostsManagement />}
 						</div>
-					)}
-
-					{activeTab === "advertising" && <AdvertisingCostsManagement />}
+					</div>
 				</div>
-			</div>
+			</SidebarInset>
 
 			{/* Edit Lead Dialog */}
 			<EditLeadDialog
@@ -922,6 +886,6 @@ export default function Dashboard() {
 					</div>
 				</DialogContent>
 			</Dialog>
-		</div>
+		</SidebarProvider>
 	);
 }
