@@ -49,8 +49,6 @@ interface Lead {
 	isClosed: boolean | null;
 	status: string | null;
 	sales: number | null;
-	followUp: string | null;
-	appointment: string | null;
 	remark: string | null;
 	trainerHandle: string | null;
 	createdAt: string | null;
@@ -503,12 +501,7 @@ export default function Leads() {
 																</span>
 															</Button>
 														</TableHead>
-														<TableHead className="w-[80px]">
-															Follow Up
-														</TableHead>
-														<TableHead className="w-[80px]">
-															Appointment
-														</TableHead>
+
 														<TableHead className="w-[100px]">Remark</TableHead>
 														<TableHead className="w-[60px]"></TableHead>
 													</TableRow>
@@ -610,24 +603,7 @@ export default function Leads() {
 																	</span>
 																</div>
 															</TableCell>
-															<TableCell>
-																<div className="max-w-[80px] truncate">
-																	<span
-																		className={`text-sm ${lead.followUp && lead.followUp !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-																	>
-																		{lead.followUp || "N/A"}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="max-w-[80px] truncate">
-																	<span
-																		className={`text-sm ${lead.appointment && lead.appointment !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-																	>
-																		{lead.appointment || "N/A"}
-																	</span>
-																</div>
-															</TableCell>
+
 															<TableCell>
 																<div className="max-w-[100px] truncate">
 																	<span

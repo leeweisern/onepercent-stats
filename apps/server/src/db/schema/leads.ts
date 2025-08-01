@@ -11,8 +11,6 @@ export const leads = sqliteTable("leads", {
 	isClosed: integer("is_closed", { mode: "boolean" }),
 	status: text("status"),
 	sales: integer("sales"),
-	followUp: text("follow_up"),
-	appointment: text("appointment"),
 	remark: text("remark"),
 	trainerHandle: text("trainer_handle"),
 	createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),

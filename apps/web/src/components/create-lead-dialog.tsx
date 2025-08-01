@@ -85,8 +85,7 @@ export function CreateLeadDialog({
 	const [sales, setSales] = useState("");
 	const [date, setDate] = useState("");
 	const [month, setMonth] = useState("");
-	const [followUp, setFollowUp] = useState("");
-	const [appointment, setAppointment] = useState("");
+
 	const [remark, setRemark] = useState("");
 	const [trainerHandle, setTrainerHandle] = useState("");
 	const [options, setOptions] = useState<Options>({
@@ -115,6 +114,18 @@ export function CreateLeadDialog({
 		}
 	}, [date]);
 
+	// Auto-update closed and status when sales changes
+	useEffect(() => {
+		const salesValue = sales ? parseInt(sales) : 0;
+
+		if (salesValue > 0) {
+			setIsClosed(true);
+			setStatus("Consult");
+		} else {
+			setIsClosed(false);
+		}
+	}, [sales]);
+
 	const resetForm = () => {
 		setName("");
 		setPhoneNumber("");
@@ -124,10 +135,15 @@ export function CreateLeadDialog({
 		setStatus("");
 		setIsClosed(false);
 		setSales("");
-		setDate("");
-		setMonth("");
-		setFollowUp("");
-		setAppointment("");
+		// Set date to today's date in YYYY-MM-DD format (user's local time)
+		const today = new Date();
+		const year = today.getFullYear();
+		const month = String(today.getMonth() + 1).padStart(2, "0");
+		const day = String(today.getDate()).padStart(2, "0");
+		const todayString = `${year}-${month}-${day}`;
+		setDate(todayString);
+		setMonth(getMonthFromDate(todayString));
+
 		setRemark("");
 		setTrainerHandle("");
 	};
@@ -169,8 +185,7 @@ export function CreateLeadDialog({
 				sales: sales ? parseInt(sales) : 0,
 				date: convertFromDateInputFormat(date),
 				month: month,
-				followUp: followUp.trim(),
-				appointment: appointment.trim(),
+
 				remark: remark.trim(),
 				trainerHandle: trainerHandle,
 			};
@@ -276,34 +291,17 @@ export function CreateLeadDialog({
 						</div>
 					</div>
 
-					{/* Closed and Sales */}
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-2">
-							<Label htmlFor="closed">Closed</Label>
-							<Select
-								value={isClosed.toString()}
-								onValueChange={(value) => setIsClosed(value === "true")}
-							>
-								<SelectTrigger>
-									<span>{isClosed ? "Yes" : "No"}</span>
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="true">Yes</SelectItem>
-									<SelectItem value="false">No</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="sales">Sales (RM)</Label>
-							<Input
-								id="sales"
-								type="number"
-								value={sales}
-								onChange={(e) => setSales(e.target.value)}
-								placeholder="Enter sales amount"
-								min="0"
-							/>
-						</div>
+					{/* Sales */}
+					<div className="space-y-2">
+						<Label htmlFor="sales">Sales (RM)</Label>
+						<Input
+							id="sales"
+							type="number"
+							value={sales}
+							onChange={(e) => setSales(e.target.value)}
+							placeholder="Enter sales amount"
+							min="0"
+						/>
 					</div>
 
 					{/* Date */}
@@ -332,30 +330,6 @@ export function CreateLeadDialog({
 								))}
 							</SelectContent>
 						</Select>
-					</div>
-
-					{/* Follow Up and Appointment */}
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-2">
-							<Label htmlFor="followUp">Follow Up</Label>
-							<Textarea
-								id="followUp"
-								value={followUp}
-								onChange={(e) => setFollowUp(e.target.value)}
-								placeholder="Enter follow up details"
-								rows={3}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="appointment">Appointment</Label>
-							<Textarea
-								id="appointment"
-								value={appointment}
-								onChange={(e) => setAppointment(e.target.value)}
-								placeholder="Enter appointment details"
-								rows={3}
-							/>
-						</div>
 					</div>
 
 					{/* Remark */}

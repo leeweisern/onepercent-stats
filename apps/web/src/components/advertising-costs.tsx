@@ -29,8 +29,7 @@ interface Lead {
 	isClosed: boolean | null;
 	status: string | null;
 	sales: number | null;
-	followUp: string | null;
-	appointment: string | null;
+
 	remark: string | null;
 	trainerHandle: string | null;
 	createdAt: string | null;

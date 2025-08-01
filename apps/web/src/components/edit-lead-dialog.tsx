@@ -82,8 +82,7 @@ interface Lead {
 	isClosed: boolean | null;
 	status: string | null;
 	sales: number | null;
-	followUp: string | null;
-	appointment: string | null;
+
 	remark: string | null;
 	trainerHandle: string | null;
 	createdAt: string | null;
@@ -119,8 +118,7 @@ export function EditLeadDialog({
 	const [sales, setSales] = useState("");
 	const [date, setDate] = useState("");
 	const [month, setMonth] = useState("");
-	const [followUp, setFollowUp] = useState("");
-	const [appointment, setAppointment] = useState("");
+
 	const [remark, setRemark] = useState("");
 	const [trainerHandle, setTrainerHandle] = useState("");
 	const [options, setOptions] = useState<Options>({
@@ -144,8 +142,7 @@ export function EditLeadDialog({
 			const dateValue = convertToDateInputFormat(lead.date);
 			setDate(dateValue);
 			setMonth(lead.month || getMonthFromDate(dateValue));
-			setFollowUp(lead.followUp || "");
-			setAppointment(lead.appointment || "");
+
 			setRemark(lead.remark || "");
 			setTrainerHandle(lead.trainerHandle || "");
 		}
@@ -175,6 +172,18 @@ export function EditLeadDialog({
 		}
 	}, [date]);
 
+	// Auto-update closed and status when sales changes
+	useEffect(() => {
+		const salesValue = sales ? parseInt(sales) : 0;
+
+		if (salesValue > 0) {
+			setIsClosed(true);
+			setStatus("Consult");
+		} else {
+			setIsClosed(false);
+		}
+	}, [sales]);
+
 	const fetchOptions = async () => {
 		try {
 			const response = await fetch("/api/analytics/leads/options");
@@ -199,8 +208,7 @@ export function EditLeadDialog({
 				sales: sales ? parseInt(sales) : null,
 				date: convertFromDateInputFormat(date),
 				month,
-				followUp,
-				appointment,
+
 				remark,
 				trainerHandle,
 			};
@@ -306,33 +314,17 @@ export function EditLeadDialog({
 						</div>
 					</div>
 
-					{/* Closed and Sales */}
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-2">
-							<Label htmlFor="closed">Closed</Label>
-							<Select
-								value={isClosed.toString()}
-								onValueChange={(value) => setIsClosed(value === "true")}
-							>
-								<SelectTrigger>
-									<span>{isClosed ? "Yes" : "No"}</span>
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="true">Yes</SelectItem>
-									<SelectItem value="false">No</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="sales">Sales (RM)</Label>
-							<Input
-								id="sales"
-								type="number"
-								value={sales}
-								onChange={(e) => setSales(e.target.value)}
-								placeholder="Enter sales amount"
-							/>
-						</div>
+					{/* Sales */}
+					<div className="space-y-2">
+						<Label htmlFor="sales">Sales (RM)</Label>
+						<Input
+							id="sales"
+							type="number"
+							value={sales}
+							onChange={(e) => setSales(e.target.value)}
+							placeholder="Enter sales amount"
+							min="0"
+						/>
 					</div>
 
 					{/* Date */}
@@ -361,30 +353,6 @@ export function EditLeadDialog({
 								))}
 							</SelectContent>
 						</Select>
-					</div>
-
-					{/* Follow Up and Appointment */}
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-2">
-							<Label htmlFor="followUp">Follow Up</Label>
-							<Textarea
-								id="followUp"
-								value={followUp}
-								onChange={(e) => setFollowUp(e.target.value)}
-								placeholder="Enter follow up details"
-								rows={3}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="appointment">Appointment</Label>
-							<Textarea
-								id="appointment"
-								value={appointment}
-								onChange={(e) => setAppointment(e.target.value)}
-								placeholder="Enter appointment details"
-								rows={3}
-							/>
-						</div>
 					</div>
 
 					{/* Remark */}
