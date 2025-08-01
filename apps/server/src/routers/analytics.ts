@@ -766,4 +766,116 @@ app.get("/roas", async (c) => {
 	}
 });
 
+// Growth data endpoints
+app.get("/leads/growth/monthly", async (c) => {
+	try {
+		const year = c.req.query("year");
+
+		// Get monthly data for leads and sales
+		let query = db
+			.select({
+				month: leads.month,
+				date: leads.date,
+				totalLeads: count(),
+				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`),
+				totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
+			})
+			.from(leads)
+			.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`);
+
+		if (year) {
+			query = query.where(
+				sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+			);
+		}
+
+		const monthlyData = await query.groupBy(leads.month);
+
+		// Sort by month order
+		const monthOrder = [
+			"January",
+			"February",
+			"March",
+			"April",
+			"May",
+			"June",
+			"July",
+			"August",
+			"September",
+			"October",
+			"November",
+			"December",
+		];
+
+		const sortedData = monthlyData.sort((a, b) => {
+			const aIndex = monthOrder.indexOf(a.month || "");
+			const bIndex = monthOrder.indexOf(b.month || "");
+			return aIndex - bIndex;
+		});
+
+		return c.json({
+			data: sortedData.map((item) => ({
+				month: item.month,
+				totalLeads: item.totalLeads || 0,
+				closedLeads: item.closedLeads || 0,
+				totalSales: item.totalSales || 0,
+			})),
+			year: year || "All years",
+		});
+	} catch (error) {
+		console.error("Error fetching monthly growth data:", error);
+		return c.json({ error: "Failed to fetch monthly growth data" }, 500);
+	}
+});
+
+app.get("/leads/growth/yearly", async (c) => {
+	try {
+		// Get all leads with dates
+		const allLeads = await db
+			.select({
+				date: leads.date,
+				isClosed: leads.isClosed,
+				sales: leads.sales,
+			})
+			.from(leads)
+			.where(sql`${leads.date} IS NOT NULL AND ${leads.date} != ''`);
+
+		// Group by year
+		const yearlyData: Record<
+			string,
+			{ totalLeads: number; closedLeads: number; totalSales: number }
+		> = {};
+
+		for (const lead of allLeads) {
+			const year = getYearFromDate(lead.date || "");
+			if (!year) continue;
+
+			if (!yearlyData[year]) {
+				yearlyData[year] = { totalLeads: 0, closedLeads: 0, totalSales: 0 };
+			}
+
+			yearlyData[year].totalLeads++;
+			if (lead.isClosed) {
+				yearlyData[year].closedLeads++;
+			}
+			yearlyData[year].totalSales += Number(lead.sales) || 0;
+		}
+
+		// Convert to array and sort by year
+		const sortedData = Object.entries(yearlyData)
+			.map(([year, data]) => ({
+				year,
+				...data,
+			}))
+			.sort((a, b) => a.year.localeCompare(b.year));
+
+		return c.json({
+			data: sortedData,
+		});
+	} catch (error) {
+		console.error("Error fetching yearly growth data:", error);
+		return c.json({ error: "Failed to fetch yearly growth data" }, 500);
+	}
+});
+
 export default app;

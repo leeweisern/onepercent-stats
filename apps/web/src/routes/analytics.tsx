@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import PlatformBreakdown from "@/components/platform-breakdown";
 import FunnelChart from "@/components/funnel-chart";
 import ROASMetrics from "@/components/roas-metrics";
+import MonthlyGrowthChart from "@/components/monthly-growth-chart";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -78,12 +79,15 @@ export default function Analytics() {
 									</select>
 								</div>
 							</div>
-
 							<div className="space-y-6">
 								<ROASMetrics
 									selectedMonth={selectedMonth}
 									selectedYear={selectedYear}
 								/>
+
+								{/* Monthly Growth Chart */}
+								<MonthlyGrowthChart selectedYear={selectedYear} />
+
 								<PlatformBreakdown
 									selectedMonth={selectedMonth}
 									selectedYear={selectedYear}
@@ -92,7 +96,7 @@ export default function Analytics() {
 									selectedMonth={selectedMonth}
 									selectedYear={selectedYear}
 								/>
-							</div>
+							</div>{" "}
 						</div>
 					</div>
 				</div>

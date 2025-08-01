@@ -18,6 +18,8 @@ This repository contains the source code for the One Percent Stats application, 
 
 - **Component Library**: Use shadcn/ui components for consistent design system
 - **Available Components**: Badge, Button, Card, Dialog, Table, Skeleton, and more in `src/components/ui/`
+- **Component Priority**: Always try to use existing shadcn/ui components first. If unsure about available components, browse https://ui.shadcn.com/docs/components to check for new or additional components that might be useful
+- **Charts**: Use shadcn/ui Chart components built on Recharts for data visualization. Supports Bar, Line, Area, Pie charts with built-in theming, tooltips, and legends
 - **Styling**: Tailwind CSS with custom CSS variables for theming
 - **Patterns**:
   - Use Badge components for status indicators (platform, status, etc.)
@@ -25,6 +27,7 @@ This repository contains the source code for the One Percent Stats application, 
   - Apply proper truncation with clickable rows for data tables
   - Include hover states and transitions for better UX
   - Use proper event handling with `stopPropagation()` for nested interactive elements
+  - For charts, use ChartContainer, ChartTooltip, ChartLegend components with proper chart config
 
 ## Codebase Layout
 
