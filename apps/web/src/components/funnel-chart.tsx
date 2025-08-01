@@ -55,13 +55,17 @@ export default function FunnelChart({
 	selectedPlatform,
 }: FunnelChartProps) {
 	const [funnelData, setFunnelData] = useState<FunnelData | null>(null);
+	const [summaryData, setSummaryData] = useState<any>(null);
 	const [loading, setLoading] = useState(true);
 	const [currentPlatform, setCurrentPlatform] = useState<string>(
 		selectedPlatform || "",
 	);
+	const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([]);
 
 	useEffect(() => {
 		fetchFunnelData();
+		fetchSummaryData();
+		fetchPlatforms();
 	}, [selectedMonth, selectedYear, currentPlatform]);
 
 	const fetchFunnelData = async () => {
@@ -79,6 +83,26 @@ export default function FunnelChart({
 			console.error("Error fetching funnel data:", error);
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const fetchSummaryData = async () => {
+		try {
+			const response = await fetch("/api/analytics/leads/summary");
+			const data = await response.json();
+			setSummaryData(data);
+		} catch (error) {
+			console.error("Error fetching summary data:", error);
+		}
+	};
+
+	const fetchPlatforms = async () => {
+		try {
+			const response = await fetch("/api/analytics/leads/filter-options");
+			const data = await response.json();
+			setAvailablePlatforms(data.platforms || []);
+		} catch (error) {
+			console.error("Error fetching platforms:", error);
 		}
 	};
 
@@ -101,8 +125,6 @@ export default function FunnelChart({
 		if (maxCount === 0) return 100;
 		return Math.max((count / maxCount) * 100, 10); // Minimum 10% width for visibility
 	};
-
-	const platforms = ["FB", "IG", "google"];
 
 	if (loading) {
 		return (
@@ -153,7 +175,7 @@ export default function FunnelChart({
 						className="px-3 py-1 border rounded-md text-sm"
 					>
 						<option value="">All platforms</option>
-						{platforms.map((platform) => (
+						{availablePlatforms.map((platform) => (
 							<option key={platform} value={platform}>
 								{platform}
 							</option>
@@ -162,71 +184,123 @@ export default function FunnelChart({
 				</div>
 			</CardHeader>
 			<CardContent>
-				<div className="space-y-4">
-					{funnelData.funnel.map((stage, index) => {
-						const width = getStageWidth(stage.count, maxCount);
-						const conversionRate =
-							totalLeads > 0 ? (stage.count / totalLeads) * 100 : 0;
+				<div className="flex items-start justify-between">
+					{/* Bar Chart */}
+					<div className="flex-1 flex items-end justify-center gap-8 h-[300px] px-8">
+						{(() => {
+							if (!summaryData) return null;
 
-						return (
-							<div key={stage.status} className="space-y-2">
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<Badge variant="outline">{stage.status}</Badge>
-										<span className="text-sm text-muted-foreground">
-											{conversionRate.toFixed(1)}% of total
-										</span>
-									</div>
-									<div className="flex items-center gap-4 text-sm">
-										<div className="flex items-center gap-1">
-											<Users className="h-4 w-4 text-muted-foreground" />
-											<span className="font-medium">{stage.count}</span>
-										</div>
-										<div className="flex items-center gap-1">
-											<DollarSign className="h-4 w-4 text-muted-foreground" />
-											<span className="font-medium">
-												{formatCurrency(stage.totalSales)}
-											</span>
-										</div>
-									</div>
-								</div>
+							// Use the accurate summary data
+							const totalLeads = summaryData.totalLeads;
+							const totalSales = summaryData.totalClosed; // This is the actual closed leads count
 
-								<div className="relative">
-									<div className="w-full bg-gray-200 rounded-lg h-12 flex items-center">
+							const simplifiedFunnel = [
+								{ status: "leads", displayName: "Leads", count: totalLeads },
+								{ status: "sales", displayName: "Sales", count: totalSales },
+							];
+
+							const maxCount = Math.max(
+								...simplifiedFunnel.map((s) => s.count),
+							);
+
+							return simplifiedFunnel.map((stage, index) => {
+								const height =
+									maxCount > 0 ? (stage.count / maxCount) * 250 : 0;
+
+								return (
+									<div
+										key={stage.status}
+										className="flex flex-col items-center gap-3"
+									>
+										<div className="text-sm font-medium text-center min-h-[20px]">
+											{stage.count}
+										</div>
 										<div
-											className={`${getStageColor(stage.status, index)} rounded-lg h-full flex items-center justify-center text-white font-medium transition-all duration-300`}
-											style={{ width: `${width}%` }}
-										>
-											<span className="text-sm">{stage.count} leads</span>
+											className="w-16 bg-blue-500 rounded-t-md transition-all duration-500 flex items-end justify-center"
+											style={{
+												height: `${Math.max(height, 20)}px`,
+												backgroundColor: index === 0 ? "#3b82f6" : "#1e40af",
+											}}
+										></div>
+										<div className="text-xs text-muted-foreground text-center">
+											{stage.displayName}
 										</div>
 									</div>
-								</div>
+								);
+							});
+						})()}
+					</div>
 
-								{/* Platform breakdown */}
-								{!currentPlatform &&
-									Object.keys(stage.platforms).length > 1 && (
-										<div className="ml-4 space-y-1">
-											{Object.entries(stage.platforms).map(
-												([platform, data]) => (
-													<div
-														key={platform}
-														className="flex items-center justify-between text-xs text-muted-foreground"
-													>
-														<span>
-															{platform}: {data.count} leads
-														</span>
-														<span>{formatCurrency(data.totalSales)}</span>
-													</div>
-												),
-											)}
-										</div>
-									)}
+					{/* Conversion Rate */}
+					<div className="ml-8 text-right">
+						{summaryData && (
+							<div className="space-y-2">
+								<div className="text-3xl font-bold text-blue-600">
+									{summaryData.totalLeads > 0
+										? (
+												(summaryData.totalClosed / summaryData.totalLeads) *
+												100
+											).toFixed(1)
+										: "0.0"}
+									%
+								</div>
+								<div className="text-sm text-muted-foreground">
+									Total Conversion
+								</div>
 							</div>
-						);
-					})}
+						)}
+					</div>
 				</div>
 
-				{funnelData.funnel.length === 0 && (
+				{/* Summary stats below chart */}
+				<div className="mt-8 grid grid-cols-2 gap-4">
+					{summaryData &&
+						(() => {
+							const totalLeads = summaryData.totalLeads;
+							const salesCount = summaryData.totalClosed;
+							const totalSalesAmount = summaryData.totalSales;
+
+							const simplifiedStats = [
+								{
+									status: "leads",
+									displayName: "Leads",
+									count: totalLeads,
+									conversionRate: 100,
+									totalSales: 0,
+								},
+								{
+									status: "sales",
+									displayName: "Sales",
+									count: salesCount,
+									conversionRate:
+										totalLeads > 0 ? (salesCount / totalLeads) * 100 : 0,
+									totalSales: totalSalesAmount,
+								},
+							];
+
+							return simplifiedStats.map((stage) => (
+								<div
+									key={stage.status}
+									className="text-center p-4 bg-muted/50 rounded-lg"
+								>
+									<div className="text-2xl font-bold">{stage.count}</div>
+									<div className="text-sm text-muted-foreground">
+										{stage.displayName}
+									</div>
+									<div className="text-xs text-muted-foreground mt-1">
+										{stage.conversionRate.toFixed(1)}%
+									</div>
+									{stage.totalSales > 0 && (
+										<div className="text-xs text-green-600 mt-1">
+											{formatCurrency(parseInt(stage.totalSales))}
+										</div>
+									)}
+								</div>
+							));
+						})()}
+				</div>
+
+				{!summaryData && (
 					<div className="text-center py-8 text-muted-foreground">
 						<TrendingDown className="mx-auto h-12 w-12 mb-4 opacity-50" />
 						<p>No funnel data available for the selected filters.</p>

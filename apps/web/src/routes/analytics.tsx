@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import PlatformBreakdown from "@/components/platform-breakdown";
 import FunnelChart from "@/components/funnel-chart";
 import ROASMetrics from "@/components/roas-metrics";
-import MonthlyGrowthChart from "@/components/monthly-growth-chart";
+import MonthlyLeadsChart from "@/components/monthly-leads-chart";
+import MonthlySalesChart from "@/components/monthly-sales-chart";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -85,8 +86,11 @@ export default function Analytics() {
 									selectedYear={selectedYear}
 								/>
 
-								{/* Monthly Growth Chart */}
-								<MonthlyGrowthChart selectedYear={selectedYear} />
+								{/* Monthly Charts */}
+								<div className="grid gap-6 md:grid-cols-2">
+									<MonthlyLeadsChart selectedYear={selectedYear} />
+									<MonthlySalesChart selectedYear={selectedYear} />
+								</div>
 
 								<PlatformBreakdown
 									selectedMonth={selectedMonth}
