@@ -72,8 +72,8 @@ export default function Leads() {
 		trainer: "",
 		isClosed: "",
 	});
-	const [sortField, setSortField] = useState<string>("");
-	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+	const [sortField, setSortField] = useState<string>("date");
+	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
 	useEffect(() => {
 		fetchLeads();
@@ -86,10 +86,14 @@ export default function Leads() {
 	const applyFilters = useCallback(() => {
 		let filtered = [...leads];
 
-		// Search by name
+		// Search by name or phone number
 		if (filters.search) {
-			filtered = filtered.filter((lead) =>
-				lead.name?.toLowerCase().includes(filters.search.toLowerCase()),
+			filtered = filtered.filter(
+				(lead) =>
+					lead.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+					lead.phoneNumber
+						?.toLowerCase()
+						.includes(filters.search.toLowerCase()),
 			);
 		}
 

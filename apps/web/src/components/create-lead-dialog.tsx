@@ -233,7 +233,7 @@ export function CreateLeadDialog({
 					{/* Platform and Status */}
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
-							<div className="flex items-center justify-between">
+							<div className="flex items-center justify-between h-5">
 								<Label htmlFor="platform">Platform *</Label>
 								<Button
 									type="button"
@@ -275,7 +275,9 @@ export function CreateLeadDialog({
 							)}
 						</div>
 						<div className="space-y-2">
-							<Label htmlFor="status">Status</Label>
+							<div className="h-5 flex items-center">
+								<Label htmlFor="status">Status</Label>
+							</div>
 							<Select value={status} onValueChange={setStatus}>
 								<SelectTrigger>
 									<span>{status || "Select status"}</span>
