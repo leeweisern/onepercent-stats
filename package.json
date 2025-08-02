@@ -18,11 +18,7 @@
 		"db:generate": "turbo -F server db:generate",
 		"db:migrate": "turbo -F server db:migrate",
 		"db:sync": "bun sync-db.js",
-		"deploy": "bun deploy.js",
-		"deploy:advanced": "bun deploy-advanced.js",
-		"deploy:dry-run": "bun deploy-advanced.js --dry-run",
-		"deploy:quick": "bun deploy-advanced.js --skip-migrations",
-		"deploy:no-build": "bun deploy-advanced.js --skip-build"
+		"deploy": "bun deploy.js"
 	},
 	"dependencies": {
 		"better-sqlite3": "^12.2.0",
