@@ -9,6 +9,7 @@ import {
 import type { Route } from "./+types/root";
 import "./index.css";
 import Header from "./components/header";
+import Loader from "./components/loader";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui/sonner";
 
@@ -57,6 +58,24 @@ export default function App() {
 			</div>
 			<Toaster richColors />
 		</ThemeProvider>
+	);
+}
+
+export function HydrateFallback() {
+	return (
+		<div className="grid h-svh grid-rows-[auto_1fr]">
+			<div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+				<div className="container flex h-14 max-w-screen-2xl items-center">
+					<div className="mr-4 hidden md:flex">
+						<div className="mr-4 flex items-center space-x-2 lg:mr-6">
+							<div className="h-6 w-6 animate-pulse rounded bg-muted" />
+							<div className="h-4 w-24 animate-pulse rounded bg-muted" />
+						</div>
+					</div>
+				</div>
+			</div>
+			<Loader />
+		</div>
 	);
 }
 

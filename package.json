@@ -18,7 +18,11 @@
 		"db:generate": "turbo -F server db:generate",
 		"db:migrate": "turbo -F server db:migrate",
 		"db:sync": "bun sync-db.js",
-		"deploy": "bun deploy.js"
+		"deploy": "bun deploy.js",
+		"prepare": "husky"
+	},
+	"lint-staged": {
+		"*.{js,ts,jsx,tsx,json,md}": "biome check --write"
 	},
 	"dependencies": {
 		"better-sqlite3": "^12.2.0",
@@ -28,6 +32,8 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.1.2",
 		"@types/papaparse": "^5.3.16",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.1.2",
 		"turbo": "^2.5.4"
 	},
 	"packageManager": "bun@1.2.19"
