@@ -19,7 +19,27 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Deploy
-        run: bun run deploy
+      - name: Build web application
+        run: bun run build
+        working-directory: ./apps/web
+        env:
+          NODE_ENV: production
+          VITE_SERVER_URL: https://onepercent-stats-server.leeweisern.workers.dev
+
+      - name: Check and apply database migrations
+        run: |
+          if ls src/db/migrations/*.sql 1> /dev/null 2>&1; then
+            echo "Found migration files, applying to remote database..."
+            wrangler d1 migrations apply onepercent-stats-new --remote
+          else
+            echo "No migration files found, skipping..."
+          fi
+        working-directory: ./apps/server
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy to Cloudflare
+        run: wrangler deploy
+        working-directory: ./apps/server
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
