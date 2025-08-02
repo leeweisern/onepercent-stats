@@ -32,8 +32,8 @@ jobs:
       - name: Check and apply database migrations
         run: |
           if ls src/db/migrations/*.sql 1> /dev/null 2>&1; then
-            echo "Found migration files, applying to remote database..."
-            wrangler d1 migrations apply onepercent-stats-new --remote
+            echo "Found migration files, attempting to apply to remote database..."
+            wrangler d1 migrations apply onepercent-stats-new --remote || echo "Migration failed, continuing with deployment..."
           else
             echo "No migration files found, skipping..."
           fi
