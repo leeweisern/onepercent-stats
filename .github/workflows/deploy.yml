@@ -19,6 +19,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Install Wrangler globally
+        run: bun install -g wrangler
+
       - name: Build web application
         run: bun run build
         working-directory: ./apps/web
