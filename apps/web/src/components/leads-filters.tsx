@@ -64,11 +64,11 @@ export function LeadsFilters({
 		trainers: [],
 	});
 
-	const [loading, setLoading] = useState(false);
+	const [_loading, setLoading] = useState(false);
 
 	useEffect(() => {
 		fetchFilterOptions();
-	}, []);
+	}, [fetchFilterOptions]);
 
 	useEffect(() => {
 		onFiltersChange(filters);

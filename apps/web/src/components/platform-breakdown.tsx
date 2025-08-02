@@ -1,14 +1,7 @@
-import { BarChart3, Calendar, ChevronDown } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -20,7 +13,7 @@ import {
 } from "@/components/ui/table";
 
 // Helper function to format month display
-const formatMonthDisplay = (monthString: string) => {
+const _formatMonthDisplay = (monthString: string) => {
 	if (monthString === "All months" || !monthString)
 		return monthString || "All months";
 
@@ -84,7 +77,7 @@ export default function PlatformBreakdown({
 
 	useEffect(() => {
 		fetchBreakdown();
-	}, [selectedMonth, selectedYear]);
+	}, [fetchBreakdown]);
 
 	const fetchBreakdown = async () => {
 		setLoading(true);

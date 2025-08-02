@@ -36,7 +36,7 @@ export default function MonthlySalesChart({
 
 	useEffect(() => {
 		fetchSalesData();
-	}, [selectedYear]);
+	}, [fetchSalesData]);
 
 	const fetchSalesData = async () => {
 		setLoading(true);

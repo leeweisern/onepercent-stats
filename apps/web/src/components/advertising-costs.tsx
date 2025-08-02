@@ -29,9 +29,11 @@ interface Lead {
 	isClosed: boolean | null;
 	status: string | null;
 	sales: number | null;
-
 	remark: string | null;
 	trainerHandle: string | null;
+	closedDate: string | null;
+	closedMonth: string | null;
+	closedYear: string | null;
 	createdAt: string | null;
 }
 
@@ -55,7 +57,7 @@ export default function AdvertisingCosts({
 	selectedYear,
 }: AdvertisingCostsProps) {
 	const [costs, setCosts] = useState<AdvertisingCost[]>([]);
-	const [leads, setLeads] = useState<Lead[]>([]);
+	const [_leads, setLeads] = useState<Lead[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [totalCost, setTotalCost] = useState(0);
 	const [totalLeads, setTotalLeads] = useState(0);
@@ -63,7 +65,7 @@ export default function AdvertisingCosts({
 
 	useEffect(() => {
 		fetchData();
-	}, [selectedMonth, selectedYear]);
+	}, [fetchData]);
 
 	const fetchData = async () => {
 		setLoading(true);

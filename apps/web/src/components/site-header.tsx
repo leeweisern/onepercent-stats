@@ -9,7 +9,6 @@ const getPageTitle = (pathname: string) => {
 			return "Analytics";
 		case "/advertising":
 			return "Advertising Costs";
-		case "/dashboard":
 		default:
 			return "Dashboard";
 	}

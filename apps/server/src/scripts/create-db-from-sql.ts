@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import fs from "fs";
+import fs from "node:fs";
 
 const dbFilePath =
 	"apps/server/.wrangler/state/v3/d1/miniflare-d1-local-test-db.sqlite";

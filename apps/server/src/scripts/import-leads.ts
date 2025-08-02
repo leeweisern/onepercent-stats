@@ -1,6 +1,6 @@
-import fs from "fs";
+import fs from "node:fs";
+import path from "node:path";
 import Papa from "papaparse";
-import path from "path";
 import { leads } from "../db/schema/leads";
 import { db } from "../db/script-db";
 
@@ -10,21 +10,21 @@ const csvFilePath = path.resolve(
 const csvFile = fs.readFileSync(csvFilePath, "utf8");
 
 const cleanData = (row: any) => {
-	const salesString = row["Sales"] || "0";
+	const salesString = row.Sales || "0";
 	const sales = Number.parseInt(salesString.replace(/[^0-9.-]+/g, "")) || 0;
 
 	return {
-		month: row["Month"],
-		date: row["Date"],
+		month: row.Month,
+		date: row.Date,
 		name: row["Name "],
 		phoneNumber: row["Phone number"],
 		platform: row["PlatFBorm "],
 		isClosed: row["Close/ Non  close"] === "close",
-		status: row["Status"],
+		status: row.Status,
 		sales: sales,
 		followUp: row["Follow Up"],
 		appointment: row["Appointment "],
-		remark: row["Remark"],
+		remark: row.Remark,
 		trainerHandle: row["Trainer handle"],
 	};
 };

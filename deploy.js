@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { execSync } = require("child_process");
-const path = require("path");
-const fs = require("fs");
+const { execSync } = require("node:child_process");
+const path = require("node:path");
+const fs = require("node:fs");
 
 const SERVER_DIR = path.join(__dirname, "apps", "server");
 const WEB_DIR = path.join(__dirname, "apps", "web");
@@ -50,7 +50,7 @@ try {
 		} else {
 			console.log("ℹ️  No migration files found\n");
 		}
-	} catch (error) {
+	} catch (_error) {
 		console.log(
 			"⚠️  Could not check migrations (this is okay if no migrations directory exists)\n",
 		);
@@ -77,7 +77,7 @@ try {
 			},
 		);
 		console.log("\n✅ API endpoint responding correctly");
-	} catch (error) {
+	} catch (_error) {
 		console.log("⚠️  Could not verify API endpoint");
 	}
 
@@ -90,7 +90,7 @@ try {
 			},
 		);
 		console.log("✅ Frontend serving correctly");
-	} catch (error) {
+	} catch (_error) {
 		console.log("⚠️  Could not verify frontend");
 	}
 

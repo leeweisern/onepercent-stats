@@ -33,7 +33,7 @@ export default function ROASMetrics({
 
 	useEffect(() => {
 		fetchROASData();
-	}, [selectedMonth, selectedYear]);
+	}, [fetchROASData]);
 
 	const fetchROASData = async () => {
 		setLoading(true);

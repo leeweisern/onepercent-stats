@@ -37,7 +37,7 @@ export default function MonthlyLeadsChart({
 
 	useEffect(() => {
 		fetchLeadsData();
-	}, [selectedYear]);
+	}, [fetchLeadsData]);
 
 	const fetchLeadsData = async () => {
 		setLoading(true);

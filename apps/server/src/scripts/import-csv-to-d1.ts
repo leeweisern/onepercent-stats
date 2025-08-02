@@ -1,7 +1,5 @@
+import { readFileSync } from "node:fs";
 import { parse } from "csv-parse/sync";
-import { drizzle } from "drizzle-orm/d1";
-import { readFileSync } from "fs";
-import { leads } from "../db/schema/leads";
 
 // This script imports CSV data directly to D1 database
 async function importCsvToD1() {
@@ -25,7 +23,7 @@ async function importCsvToD1() {
 			if (record.Sales && record.Sales.trim() !== "") {
 				const salesStr = record.Sales.replace(/,/g, "");
 				const salesNum = Number.parseFloat(salesStr);
-				if (!isNaN(salesNum)) {
+				if (!Number.isNaN(salesNum)) {
 					sales = Math.round(salesNum * 100); // Store as cents
 				}
 			}

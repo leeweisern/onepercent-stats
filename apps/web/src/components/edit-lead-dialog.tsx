@@ -52,7 +52,7 @@ const getMonthFromDate = (dateString: string): string => {
 	if (!dateString) return "";
 
 	const date = new Date(dateString);
-	if (isNaN(date.getTime())) return "";
+	if (Number.isNaN(date.getTime())) return "";
 
 	const monthNames = [
 		"January",
@@ -85,6 +85,8 @@ interface Lead {
 	remark: string | null;
 	trainerHandle: string | null;
 	closedDate: string | null;
+	closedMonth: string | null;
+	closedYear: string | null;
 	createdAt: string | null;
 }
 
@@ -163,7 +165,7 @@ export function EditLeadDialog({
 		if (open) {
 			fetchOptions();
 		}
-	}, [open]);
+	}, [open, fetchOptions]);
 
 	// Auto-update month when date changes
 	useEffect(() => {

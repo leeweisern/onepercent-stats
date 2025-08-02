@@ -52,6 +52,8 @@ interface Lead {
 	remark: string | null;
 	trainerHandle: string | null;
 	closedDate: string | null;
+	closedMonth: string | null;
+	closedYear: string | null;
 	createdAt: string | null;
 }
 
@@ -79,11 +81,11 @@ export default function Leads() {
 
 	useEffect(() => {
 		fetchLeads();
-	}, []);
+	}, [fetchLeads]);
 
 	useEffect(() => {
 		applyFilters();
-	}, [leads, filters, sortField, sortDirection]);
+	}, [applyFilters]);
 
 	const applyFilters = useCallback(() => {
 		let filtered = [...leads];
@@ -201,7 +203,7 @@ export default function Leads() {
 		}
 
 		setFilteredLeads(filtered);
-	}, [leads, filters, sortField, sortDirection]);
+	}, [leads, filters, sortField, sortDirection, parseDate]);
 
 	const fetchLeads = async () => {
 		try {

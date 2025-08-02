@@ -14,6 +14,8 @@ export const leads = sqliteTable("leads", {
 	remark: text("remark"),
 	trainerHandle: text("trainer_handle"),
 	closedDate: text("closed_date"),
+	closedMonth: text("closed_month"),
+	closedYear: text("closed_year"),
 	createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 

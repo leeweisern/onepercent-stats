@@ -1,7 +1,7 @@
-import { execSync } from "child_process";
-import fs from "fs";
+import { execSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 import Papa from "papaparse";
-import path from "path";
 
 const csvFilePath = path.resolve(
 	"../../One Percent Enquiries All Data (dd-mm-yyyy).csv",
@@ -9,21 +9,21 @@ const csvFilePath = path.resolve(
 const csvFile = fs.readFileSync(csvFilePath, "utf8");
 
 const cleanData = (row: any) => {
-	const salesString = row["Sales"] || "0";
+	const salesString = row.Sales || "0";
 	const sales = Number.parseInt(salesString.replace(/[^0-9.-]+/g, "")) || 0;
 
 	return {
-		month: row["Month"] || null,
-		date: row["Date"] || null,
+		month: row.Month || null,
+		date: row.Date || null,
 		name: row["Name "] || null,
 		phoneNumber: row["Phone number"] || null,
 		platform: row["PlatFBorm "] || null,
 		isClosed: row["Close/ Non  close"] === "close" ? 1 : 0,
-		status: row["Status"] || null,
+		status: row.Status || null,
 		sales: sales,
 		followUp: row["Follow Up"] || null,
 		appointment: row["Appointment "] || null,
-		remark: row["Remark"] || null,
+		remark: row.Remark || null,
 		trainerHandle: row["Trainer handle"] || null,
 	};
 };

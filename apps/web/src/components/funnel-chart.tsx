@@ -1,12 +1,11 @@
-import { DollarSign, TrendingDown, Users } from "lucide-react";
+import { TrendingDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Helper function to format month display
-const formatMonthDisplay = (monthString: string) => {
+const _formatMonthDisplay = (monthString: string) => {
 	if (monthString === "All months") return monthString;
 
 	const [year, month] = monthString.split("-");
@@ -66,7 +65,7 @@ export default function FunnelChart({
 		fetchFunnelData();
 		fetchSummaryData();
 		fetchPlatforms();
-	}, [selectedMonth, selectedYear, currentPlatform]);
+	}, [fetchFunnelData, fetchPlatforms, fetchSummaryData]);
 
 	const fetchFunnelData = async () => {
 		setLoading(true);
@@ -134,7 +133,7 @@ export default function FunnelChart({
 		return `RM ${amount.toLocaleString()}`;
 	};
 
-	const getStageColor = (status: string, index: number) => {
+	const _getStageColor = (_status: string, index: number) => {
 		const colors = [
 			"bg-blue-500",
 			"bg-yellow-500",
@@ -145,7 +144,7 @@ export default function FunnelChart({
 		return colors[index % colors.length];
 	};
 
-	const getStageWidth = (count: number, maxCount: number) => {
+	const _getStageWidth = (count: number, maxCount: number) => {
 		if (maxCount === 0) return 100;
 		return Math.max((count / maxCount) * 100, 10); // Minimum 10% width for visibility
 	};
@@ -172,8 +171,8 @@ export default function FunnelChart({
 
 	if (!funnelData) return null;
 
-	const maxCount = Math.max(...funnelData.funnel.map((stage) => stage.count));
-	const totalLeads = funnelData.funnel.reduce(
+	const _maxCount = Math.max(...funnelData.funnel.map((stage) => stage.count));
+	const _totalLeads = funnelData.funnel.reduce(
 		(sum, stage) => sum + stage.count,
 		0,
 	);

@@ -37,7 +37,7 @@ const getMonthFromDate = (dateString: string): string => {
 	if (!dateString) return "";
 
 	const date = new Date(dateString);
-	if (isNaN(date.getTime())) return "";
+	if (Number.isNaN(date.getTime())) return "";
 
 	const monthNames = [
 		"January",
@@ -103,7 +103,11 @@ export function CreateLeadDialog({
 			// Reset form when dialog opens
 			resetForm();
 		}
-	}, [open]);
+	}, [
+		open,
+		fetchOptions, // Reset form when dialog opens
+		resetForm,
+	]);
 
 	// Auto-update month when date changes
 	useEffect(() => {
