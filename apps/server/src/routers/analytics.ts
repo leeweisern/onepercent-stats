@@ -366,6 +366,15 @@ app.post("/leads", async (c) => {
 	// Prepare lead data with defaults
 	const dateValue = body.date || "";
 	const monthValue = body.month || getMonthFromDate(dateValue);
+	const salesValue = body.sales || 0;
+
+	// Auto-set closed date based on sales
+	let closedDateValue = body.closedDate || "";
+	if (salesValue > 0 && !closedDateValue && dateValue) {
+		closedDateValue = dateValue; // Set closed date to same as date if sales > 0
+	} else if (salesValue === 0) {
+		closedDateValue = ""; // Clear closed date if no sales
+	}
 
 	const leadData = {
 		name: body.name,
@@ -373,14 +382,14 @@ app.post("/leads", async (c) => {
 		platform: body.platform || "",
 		status: body.status || "",
 		isClosed: body.isClosed || false,
-		sales: body.sales || 0,
+		sales: salesValue,
 		date: dateValue,
 		month: monthValue,
 		followUp: body.followUp || "",
 		appointment: body.appointment || "",
 		remark: body.remark || "",
 		trainerHandle: body.trainerHandle || "",
-		closedDate: body.closedDate || "",
+		closedDate: closedDateValue,
 	};
 
 	try {
@@ -404,7 +413,25 @@ app.put("/leads/:id", async (c) => {
 	if (body.platform !== undefined) updateData.platform = body.platform;
 	if (body.status !== undefined) updateData.status = body.status;
 	if (body.isClosed !== undefined) updateData.isClosed = body.isClosed;
-	if (body.sales !== undefined) updateData.sales = body.sales;
+	if (body.sales !== undefined) {
+		updateData.sales = body.sales;
+		// Auto-update closed date based on sales
+		if (body.closedDate === undefined) {
+			if (body.sales > 0) {
+				// If sales > 0 and no explicit closed date provided, use the lead's date
+				const currentLead = await db
+					.select()
+					.from(leads)
+					.where(eq(leads.id, id));
+				if (currentLead.length > 0 && currentLead[0].date) {
+					updateData.closedDate = currentLead[0].date;
+				}
+			} else {
+				// If sales = 0, clear closed date
+				updateData.closedDate = "";
+			}
+		}
+	}
 	if (body.date !== undefined) {
 		updateData.date = body.date;
 		// Auto-update month when date is provided (unless month is explicitly provided)

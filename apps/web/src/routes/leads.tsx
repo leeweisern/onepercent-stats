@@ -144,21 +144,21 @@ export default function Leads() {
 			filtered = filtered.filter((lead) => lead.isClosed === isClosed);
 		}
 
-// Filter by closed date
+		// Filter by closed date
 		if (filters.closedDate) {
 			filtered = filtered.filter((lead) => {
 				if (!lead.closedDate) return false;
 				// Parse DD/MM/YYYY format from database
 				const parts = lead.closedDate.split("/");
 				if (parts.length === 3) {
-					const leadDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+					const leadDate = new Date(
+						parseInt(parts[2]),
+						parseInt(parts[1]) - 1,
+						parseInt(parts[0]),
+					);
 					// Parse YYYY-MM-DD format from filter input
 					const filterDate = new Date(filters.closedDate);
 					return leadDate.toDateString() === filterDate.toDateString();
-				}
-				return false;
-			});
-		}
 				}
 				return false;
 			});

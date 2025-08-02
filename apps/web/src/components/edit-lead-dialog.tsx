@@ -175,17 +175,24 @@ export function EditLeadDialog({
 		}
 	}, [date]);
 
-	// Auto-update closed and status when sales changes
+	// Auto-update closed, status, and closed date when sales changes
 	useEffect(() => {
 		const salesValue = sales ? parseInt(sales) : 0;
 
 		if (salesValue > 0) {
 			setIsClosed(true);
 			setStatus("Consult");
+			// Set closed date to current date if not already set
+			if (!closedDate) {
+				const today = new Date().toISOString().split("T")[0];
+				setClosedDate(today);
+			}
 		} else {
 			setIsClosed(false);
+			// Clear closed date when no sales
+			setClosedDate("");
 		}
-	}, [sales]);
+	}, [sales, closedDate]);
 
 	const fetchOptions = async () => {
 		try {
