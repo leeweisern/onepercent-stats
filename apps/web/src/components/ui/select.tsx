@@ -137,6 +137,13 @@ function SelectItem({
 	);
 }
 
+function SelectValue({
+	className,
+	...props
+}: React.ComponentProps<typeof SelectPrimitive.Value>) {
+	return <SelectPrimitive.Value className={cn(className)} {...props} />;
+}
+
 function SelectSeparator({
 	className,
 	...props
@@ -152,6 +159,7 @@ function SelectSeparator({
 export {
 	Select,
 	SelectTrigger,
+	SelectValue,
 	SelectContent,
 	SelectItem,
 	SelectLabel,
