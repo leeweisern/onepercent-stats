@@ -1,8 +1,8 @@
-import { db } from "../db/script-db";
-import { leads } from "../db/schema/leads";
 import fs from "fs";
-import path from "path";
 import Papa from "papaparse";
+import path from "path";
+import { leads } from "../db/schema/leads";
+import { db } from "../db/script-db";
 
 const csvFilePath = path.resolve(
 	"../../One Percent Enquiries All Data (dd-mm-yyyy).csv",
@@ -11,7 +11,7 @@ const csvFile = fs.readFileSync(csvFilePath, "utf8");
 
 const cleanData = (row: any) => {
 	const salesString = row["Sales"] || "0";
-	const sales = parseInt(salesString.replace(/[^0-9.-]+/g, "")) || 0;
+	const sales = Number.parseInt(salesString.replace(/[^0-9.-]+/g, "")) || 0;
 
 	return {
 		month: row["Month"],

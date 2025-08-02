@@ -1,20 +1,20 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 // Helper functions to convert between DD/MM/YYYY and YYYY-MM-DD formats
 const convertToDateInputFormat = (dateString: string | null): string => {
@@ -39,8 +39,8 @@ const convertFromDateInputFormat = (dateString: string): string => {
 	const parts = dateString.split("-");
 	if (parts.length === 3) {
 		const year = parts[0];
-		const month = parseInt(parts[1]).toString(); // Remove leading zero
-		const day = parseInt(parts[2]).toString(); // Remove leading zero
+		const month = Number.parseInt(parts[1]).toString(); // Remove leading zero
+		const day = Number.parseInt(parts[2]).toString(); // Remove leading zero
 		return `${day}/${month}/${year}`;
 	}
 
@@ -177,7 +177,7 @@ export function EditLeadDialog({
 
 	// Auto-update closed, status, and closed date when sales changes
 	useEffect(() => {
-		const salesValue = sales ? parseInt(sales) : 0;
+		const salesValue = sales ? Number.parseInt(sales) : 0;
 
 		if (salesValue > 0) {
 			setIsClosed(true);
@@ -215,7 +215,7 @@ export function EditLeadDialog({
 				platform: isCustomPlatform ? customPlatform : platform,
 				status,
 				isClosed,
-				sales: sales ? parseInt(sales) : null,
+				sales: sales ? Number.parseInt(sales) : null,
 				date: convertFromDateInputFormat(date),
 				month,
 				closedDate: convertFromDateInputFormat(closedDate),
@@ -237,7 +237,7 @@ export function EditLeadDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+			<DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[600px]">
 				<DialogHeader>
 					<DialogTitle>Edit Lead: {lead.name}</DialogTitle>
 				</DialogHeader>
@@ -281,7 +281,7 @@ export function EditLeadDialog({
 											setPlatform(customPlatform);
 										}
 									}}
-									className="text-xs h-6 px-2"
+									className="h-6 px-2 text-xs"
 								>
 									{isCustomPlatform ? "Select existing" : "Add new"}
 								</Button>

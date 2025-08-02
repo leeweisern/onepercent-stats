@@ -1,3 +1,4 @@
+import { Link, useNavigate } from "react-router";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -7,10 +8,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
-import { useNavigate } from "react-router";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
-import { Link } from "react-router";
 
 export default function UserMenu() {
 	const navigate = useNavigate();

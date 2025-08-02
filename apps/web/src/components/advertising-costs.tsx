@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AdvertisingCost {
 	id: number;
@@ -110,7 +110,7 @@ export default function AdvertisingCosts({
 
 		// Filter by year if selected
 		if (selectedYear && selectedYear !== "") {
-			const year = parseInt(selectedYear);
+			const year = Number.parseInt(selectedYear);
 			filtered = filtered.filter((cost) => cost.year === year);
 		}
 
@@ -142,16 +142,18 @@ export default function AdvertisingCosts({
 		return filtered;
 	};
 
-	const formatCurrency = (amount: number, currency: string = "RM") => {
+	const formatCurrency = (amount: number, currency = "RM") => {
 		return `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 	};
 
 	const getFilterDescription = () => {
 		if (selectedMonth && selectedYear) {
 			return `${selectedMonth} ${selectedYear}`;
-		} else if (selectedMonth) {
+		}
+		if (selectedMonth) {
 			return `${selectedMonth} (all years)`;
-		} else if (selectedYear) {
+		}
+		if (selectedYear) {
 			return `${selectedYear} (all months)`;
 		}
 		return "All periods";
@@ -174,27 +176,27 @@ export default function AdvertisingCosts({
 			</CardHeader>
 			<CardContent>
 				{loading ? (
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 						{[...Array(3)].map((_, i) => (
 							<Skeleton key={i} className="h-24 w-full" />
 						))}
 					</div>
 				) : (
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 						{/* Total Advertising Cost */}
-						<div className="text-center p-4 border rounded-lg">
-							<div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 mb-3">
+						<div className="rounded-lg border p-4 text-center">
+							<div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600">
 								<DollarSign className="h-6 w-6 text-white" />
 							</div>
 							<div className="space-y-1">
-								<div className="text-2xl font-bold text-green-600">
+								<div className="font-bold text-2xl text-green-600">
 									{formatCurrency(totalCost)}
 								</div>
-								<div className="text-sm text-muted-foreground">Total Leads</div>
-								<div className="text-xs text-muted-foreground mt-1">
+								<div className="text-muted-foreground text-sm">Total Leads</div>
+								<div className="mt-1 text-muted-foreground text-xs">
 									For selected period
 								</div>
-								<div className="text-xs text-muted-foreground mt-1">
+								<div className="mt-1 text-muted-foreground text-xs">
 									{filteredCosts.length} cost entr
 									{filteredCosts.length === 1 ? "y" : "ies"}
 								</div>
@@ -202,34 +204,34 @@ export default function AdvertisingCosts({
 						</div>
 
 						{/* Total Leads */}
-						<div className="text-center p-4 border rounded-lg">
-							<div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 mb-3">
-								<span className="text-white font-semibold text-lg">
+						<div className="rounded-lg border p-4 text-center">
+							<div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-blue-600">
+								<span className="font-semibold text-lg text-white">
 									{totalLeads}
 								</span>
 							</div>
 							<div className="space-y-1">
-								<div className="text-2xl font-bold text-blue-600">
+								<div className="font-bold text-2xl text-blue-600">
 									{totalLeads}
 								</div>
-								<div className="text-sm text-muted-foreground">Total Leads</div>
+								<div className="text-muted-foreground text-sm">Total Leads</div>
 							</div>
 						</div>
 
 						{/* Cost Per Lead */}
-						<div className="text-center p-4 border rounded-lg bg-gradient-to-br from-orange-50 to-red-50">
-							<div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 mb-3">
+						<div className="rounded-lg border bg-gradient-to-br from-orange-50 to-red-50 p-4 text-center">
+							<div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-red-600">
 								<DollarSign className="h-6 w-6 text-white" />
 							</div>
 							<div className="space-y-1">
-								<div className="text-2xl font-bold text-orange-600">
+								<div className="font-bold text-2xl text-orange-600">
 									{totalLeads > 0 ? formatCurrency(costPerLead) : "N/A"}
 								</div>
-								<div className="text-sm text-muted-foreground">
+								<div className="text-muted-foreground text-sm">
 									Cost Per Lead
 								</div>
 								{totalLeads === 0 && (
-									<div className="text-xs text-orange-600 mt-1">
+									<div className="mt-1 text-orange-600 text-xs">
 										No leads for this period
 									</div>
 								)}

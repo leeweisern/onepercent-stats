@@ -1,8 +1,9 @@
 // import { env } from "cloudflare:workers";
-import { auth } from "./lib/auth";
+
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { auth } from "./lib/auth";
 
 const app = new Hono();
 

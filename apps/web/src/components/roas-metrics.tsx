@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { DollarSign, Target, TrendingUp, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, DollarSign, Target, Users } from "lucide-react";
 
 interface ROASData {
 	roas: number;
@@ -85,7 +85,7 @@ export default function ROASMetrics({
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+					<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
 						{[...Array(8)].map((_, i) => (
 							<div key={i} className="space-y-2">
 								<Skeleton className="h-4 w-20" />
@@ -124,47 +124,47 @@ export default function ROASMetrics({
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+				<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
 					{/* ROAS */}
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<TrendingUp className="h-4 w-4 text-green-600" />
-							<span className="text-sm font-medium text-muted-foreground">
+							<span className="font-medium text-muted-foreground text-sm">
 								ROAS
 							</span>
 						</div>
-						<div className="text-2xl font-bold text-green-600">
+						<div className="font-bold text-2xl text-green-600">
 							{data.roas}x
 						</div>
-						<p className="text-xs text-muted-foreground">Return on Ad Spend</p>
+						<p className="text-muted-foreground text-xs">Return on Ad Spend</p>
 					</div>
 
 					{/* Total Sales */}
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<DollarSign className="h-4 w-4 text-blue-600" />
-							<span className="text-sm font-medium text-muted-foreground">
+							<span className="font-medium text-muted-foreground text-sm">
 								Total Sales
 							</span>
 						</div>
-						<div className="text-2xl font-bold text-blue-600">
+						<div className="font-bold text-2xl text-blue-600">
 							{formatCurrency(data.totalSales)}
 						</div>
-						<p className="text-xs text-muted-foreground">Revenue generated</p>
+						<p className="text-muted-foreground text-xs">Revenue generated</p>
 					</div>
 
 					{/* Ad Cost */}
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Target className="h-4 w-4 text-orange-600" />
-							<span className="text-sm font-medium text-muted-foreground">
+							<span className="font-medium text-muted-foreground text-sm">
 								Ad Spend
 							</span>
 						</div>
-						<div className="text-2xl font-bold text-orange-600">
+						<div className="font-bold text-2xl text-orange-600">
 							{formatCurrency(data.totalAdCost)}
 						</div>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-muted-foreground text-xs">
 							Total advertising cost
 						</p>
 					</div>
@@ -173,28 +173,28 @@ export default function ROASMetrics({
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Users className="h-4 w-4 text-purple-600" />
-							<span className="text-sm font-medium text-muted-foreground">
+							<span className="font-medium text-muted-foreground text-sm">
 								Conversion
 							</span>
 						</div>
-						<div className="text-2xl font-bold text-purple-600">
+						<div className="font-bold text-2xl text-purple-600">
 							{formatPercentage(data.conversionRate)}
 						</div>
-						<p className="text-xs text-muted-foreground">Lead to sale rate</p>
+						<p className="text-muted-foreground text-xs">Lead to sale rate</p>
 					</div>
 
 					{/* Cost Per Lead */}
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<DollarSign className="h-4 w-4 text-gray-600" />
-							<span className="text-sm font-medium text-muted-foreground">
+							<span className="font-medium text-muted-foreground text-sm">
 								Cost/Lead
 							</span>
 						</div>
-						<div className="text-xl font-bold text-gray-600">
+						<div className="font-bold text-gray-600 text-xl">
 							{formatCurrency(data.costPerLead)}
 						</div>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-muted-foreground text-xs">
 							Per lead acquisition
 						</p>
 					</div>
@@ -203,14 +203,14 @@ export default function ROASMetrics({
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Target className="h-4 w-4 text-red-600" />
-							<span className="text-sm font-medium text-muted-foreground">
+							<span className="font-medium text-muted-foreground text-sm">
 								Cost/Sale
 							</span>
 						</div>
-						<div className="text-xl font-bold text-red-600">
+						<div className="font-bold text-red-600 text-xl">
 							{formatCurrency(data.costPerAcquisition)}
 						</div>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-muted-foreground text-xs">
 							Per sale acquisition
 						</p>
 					</div>
@@ -219,28 +219,28 @@ export default function ROASMetrics({
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Users className="h-4 w-4 text-indigo-600" />
-							<span className="text-sm font-medium text-muted-foreground">
+							<span className="font-medium text-muted-foreground text-sm">
 								Total Leads
 							</span>
 						</div>
-						<div className="text-xl font-bold text-indigo-600">
+						<div className="font-bold text-indigo-600 text-xl">
 							{data.totalLeads}
 						</div>
-						<p className="text-xs text-muted-foreground">Leads generated</p>
+						<p className="text-muted-foreground text-xs">Leads generated</p>
 					</div>
 
 					{/* Closed Leads */}
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Users className="h-4 w-4 text-green-600" />
-							<span className="text-sm font-medium text-muted-foreground">
+							<span className="font-medium text-muted-foreground text-sm">
 								Closed Leads
 							</span>
 						</div>
-						<div className="text-xl font-bold text-green-600">
+						<div className="font-bold text-green-600 text-xl">
 							{data.closedLeads}
 						</div>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-muted-foreground text-xs">
 							Successful conversions
 						</p>
 					</div>

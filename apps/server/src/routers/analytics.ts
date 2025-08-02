@@ -1,7 +1,7 @@
+import { and, count, desc, eq, sql, sum } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db";
-import { leads, advertisingCosts } from "../db/schema/leads";
-import { desc, count, sum, eq, sql, and } from "drizzle-orm";
+import { advertisingCosts, leads } from "../db/schema/leads";
 
 const app = new Hono();
 
@@ -12,7 +12,7 @@ const getMonthFromDate = (dateString: string): string => {
 	// Handle DD/MM/YYYY format (database format)
 	const parts = dateString.split("/");
 	if (parts.length === 3) {
-		const monthIndex = parseInt(parts[1]) - 1; // Month is the second part (0-indexed)
+		const monthIndex = Number.parseInt(parts[1]) - 1; // Month is the second part (0-indexed)
 		const monthNames = [
 			"January",
 			"February",
@@ -402,7 +402,7 @@ app.post("/leads", async (c) => {
 });
 
 app.put("/leads/:id", async (c) => {
-	const id = parseInt(c.req.param("id"));
+	const id = Number.parseInt(c.req.param("id"));
 	const body = await c.req.json();
 
 	const updateData: any = {};
@@ -457,7 +457,7 @@ app.put("/leads/:id", async (c) => {
 });
 
 app.delete("/leads/:id", async (c) => {
-	const id = parseInt(c.req.param("id"));
+	const id = Number.parseInt(c.req.param("id"));
 
 	if (isNaN(id)) {
 		return c.json({ error: "Invalid lead ID" }, 400);
@@ -500,8 +500,8 @@ app.get("/advertising-costs", async (c) => {
 
 // GET advertising cost by month and year
 app.get("/advertising-costs/:year/:month", async (c) => {
-	const year = parseInt(c.req.param("year"));
-	const month = parseInt(c.req.param("month"));
+	const year = Number.parseInt(c.req.param("year"));
+	const month = Number.parseInt(c.req.param("month"));
 
 	if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
 		return c.json({ error: "Invalid year or month" }, 400);
@@ -530,9 +530,9 @@ app.post("/advertising-costs", async (c) => {
 		return c.json({ error: "Month, year, and cost are required" }, 400);
 	}
 
-	const month = parseInt(body.month);
-	const year = parseInt(body.year);
-	const cost = parseFloat(body.cost);
+	const month = Number.parseInt(body.month);
+	const year = Number.parseInt(body.year);
+	const cost = Number.parseFloat(body.cost);
 
 	if (isNaN(month) || isNaN(year) || isNaN(cost) || month < 1 || month > 12) {
 		return c.json({ error: "Invalid month, year, or cost value" }, 400);
@@ -574,7 +574,7 @@ app.post("/advertising-costs", async (c) => {
 
 // PUT update advertising cost
 app.put("/advertising-costs/:id", async (c) => {
-	const id = parseInt(c.req.param("id"));
+	const id = Number.parseInt(c.req.param("id"));
 	const body = await c.req.json();
 
 	if (isNaN(id)) {
@@ -587,21 +587,21 @@ app.put("/advertising-costs/:id", async (c) => {
 
 	// Only update fields that are provided
 	if (body.month !== undefined) {
-		const month = parseInt(body.month);
+		const month = Number.parseInt(body.month);
 		if (isNaN(month) || month < 1 || month > 12) {
 			return c.json({ error: "Invalid month value" }, 400);
 		}
 		updateData.month = month;
 	}
 	if (body.year !== undefined) {
-		const year = parseInt(body.year);
+		const year = Number.parseInt(body.year);
 		if (isNaN(year)) {
 			return c.json({ error: "Invalid year value" }, 400);
 		}
 		updateData.year = year;
 	}
 	if (body.cost !== undefined) {
-		const cost = parseFloat(body.cost);
+		const cost = Number.parseFloat(body.cost);
 		if (isNaN(cost)) {
 			return c.json({ error: "Invalid cost value" }, 400);
 		}
@@ -629,7 +629,7 @@ app.put("/advertising-costs/:id", async (c) => {
 
 // DELETE advertising cost
 app.delete("/advertising-costs/:id", async (c) => {
-	const id = parseInt(c.req.param("id"));
+	const id = Number.parseInt(c.req.param("id"));
 
 	if (isNaN(id)) {
 		return c.json({ error: "Invalid advertising cost ID" }, 400);
@@ -733,7 +733,7 @@ app.get("/roas", async (c) => {
 		if (month && year) {
 			// Specific month and year
 			const monthNumber = getMonthNumber(month);
-			const yearNumber = parseInt(year);
+			const yearNumber = Number.parseInt(year);
 
 			if (monthNumber > 0) {
 				// Validate month number
@@ -751,7 +751,7 @@ app.get("/roas", async (c) => {
 			}
 		} else if (year) {
 			// All months in a specific year
-			const yearNumber = parseInt(year);
+			const yearNumber = Number.parseInt(year);
 			const costResult = await db
 				.select({ totalCost: sum(advertisingCosts.cost) })
 				.from(advertisingCosts)

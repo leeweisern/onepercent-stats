@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import PlatformBreakdown from "@/components/platform-breakdown";
+import { useEffect, useState } from "react";
+import { AppSidebar } from "@/components/app-sidebar";
 import FunnelChart from "@/components/funnel-chart";
-import ROASMetrics from "@/components/roas-metrics";
 import MonthlyLeadsChart from "@/components/monthly-leads-chart";
 import MonthlySalesChart from "@/components/monthly-sales-chart";
-import { AppSidebar } from "@/components/app-sidebar";
+import PlatformBreakdown from "@/components/platform-breakdown";
+import ROASMetrics from "@/components/roas-metrics";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
@@ -46,15 +46,15 @@ export default function Analytics() {
 				<SiteHeader />
 				<div className="flex flex-1 flex-col">
 					<div className="flex flex-1 flex-col gap-2">
-						<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6">
+						<div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
 							{/* Global Month and Year Filters */}
-							<div className="flex items-center gap-4 mb-6">
+							<div className="mb-6 flex items-center gap-4">
 								<div className="flex items-center gap-2">
-									<span className="text-sm font-medium">Filter by month:</span>
+									<span className="font-medium text-sm">Filter by month:</span>
 									<select
 										value={selectedMonth}
 										onChange={(e) => setSelectedMonth(e.target.value)}
-										className="px-3 py-2 border rounded-md text-sm bg-white"
+										className="rounded-md border bg-white px-3 py-2 text-sm"
 									>
 										<option value="">All months</option>
 										{availableMonths.map((month) => (
@@ -65,11 +65,11 @@ export default function Analytics() {
 									</select>
 								</div>
 								<div className="flex items-center gap-2">
-									<span className="text-sm font-medium">Filter by year:</span>
+									<span className="font-medium text-sm">Filter by year:</span>
 									<select
 										value={selectedYear}
 										onChange={(e) => setSelectedYear(e.target.value)}
-										className="px-3 py-2 border rounded-md text-sm bg-white"
+										className="rounded-md border bg-white px-3 py-2 text-sm"
 									>
 										<option value="">All years</option>
 										{availableYears.map((year) => (

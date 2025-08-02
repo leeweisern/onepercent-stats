@@ -1,7 +1,7 @@
-import fs from "fs";
-import path from "path";
-import Papa from "papaparse";
 import { execSync } from "child_process";
+import fs from "fs";
+import Papa from "papaparse";
+import path from "path";
 
 const csvFilePath = path.resolve(
 	"../../One Percent Enquiries All Data (dd-mm-yyyy).csv",
@@ -10,7 +10,7 @@ const csvFile = fs.readFileSync(csvFilePath, "utf8");
 
 const cleanData = (row: any) => {
 	const salesString = row["Sales"] || "0";
-	const sales = parseInt(salesString.replace(/[^0-9.-]+/g, "")) || 0;
+	const sales = Number.parseInt(salesString.replace(/[^0-9.-]+/g, "")) || 0;
 
 	return {
 		month: row["Month"] || null,

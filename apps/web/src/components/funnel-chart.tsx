@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DollarSign, TrendingDown, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingDown, Users, DollarSign } from "lucide-react";
 
 // Helper function to format month display
 const formatMonthDisplay = (monthString: string) => {
@@ -24,7 +24,7 @@ const formatMonthDisplay = (monthString: string) => {
 		"November",
 		"December",
 	];
-	const monthIndex = parseInt(month) - 1;
+	const monthIndex = Number.parseInt(month) - 1;
 	const monthName = monthNames[monthIndex] || month;
 	return `${monthName} ${year}`;
 };
@@ -192,11 +192,11 @@ export default function FunnelChart({
 						• {funnelData.platform}
 					</Badge>
 				</CardTitle>
-				<div className="flex gap-2 flex-wrap">
+				<div className="flex flex-wrap gap-2">
 					<select
 						value={currentPlatform}
 						onChange={(e) => setCurrentPlatform(e.target.value)}
-						className="px-3 py-1 border rounded-md text-sm"
+						className="rounded-md border px-3 py-1 text-sm"
 					>
 						<option value="">All platforms</option>
 						{availablePlatforms.map((platform) => (
@@ -210,7 +210,7 @@ export default function FunnelChart({
 			<CardContent>
 				<div className="flex items-start justify-between">
 					{/* Bar Chart */}
-					<div className="flex-1 flex items-end justify-center gap-8 h-[300px] px-8">
+					<div className="flex h-[300px] flex-1 items-end justify-center gap-8 px-8">
 						{(() => {
 							if (!summaryData) return null;
 
@@ -242,11 +242,11 @@ export default function FunnelChart({
 										key={stage.status}
 										className="flex flex-col items-center gap-3"
 									>
-										<div className="text-sm font-medium text-center min-h-[20px]">
+										<div className="min-h-[20px] text-center font-medium text-sm">
 											{stage.count}
 										</div>
 										<div
-											className="w-16 bg-blue-500 rounded-t-md transition-all duration-500 flex items-end justify-center"
+											className="flex w-16 items-end justify-center rounded-t-md bg-blue-500 transition-all duration-500"
 											style={{
 												height: `${Math.max(height, 20)}px`,
 												backgroundColor:
@@ -256,8 +256,8 @@ export default function FunnelChart({
 															? "#93c5fd"
 															: "#1e40af",
 											}}
-										></div>
-										<div className="text-xs text-muted-foreground text-center">
+										/>
+										<div className="text-center text-muted-foreground text-xs">
 											{stage.displayName}
 										</div>
 									</div>
@@ -270,7 +270,7 @@ export default function FunnelChart({
 					<div className="ml-8 text-right">
 						{summaryData && (
 							<div className="space-y-2">
-								<div className="text-3xl font-bold text-blue-600">
+								<div className="font-bold text-3xl text-blue-600">
 									{summaryData.totalLeads > 0
 										? (
 												(summaryData.totalClosed / summaryData.totalLeads) *
@@ -279,7 +279,7 @@ export default function FunnelChart({
 										: "0.0"}
 									%
 								</div>
-								<div className="text-sm text-muted-foreground">
+								<div className="text-muted-foreground text-sm">
 									Total Conversion
 								</div>
 							</div>
@@ -325,18 +325,18 @@ export default function FunnelChart({
 							return simplifiedStats.map((stage) => (
 								<div
 									key={stage.status}
-									className="text-center p-4 bg-muted/50 rounded-lg"
+									className="rounded-lg bg-muted/50 p-4 text-center"
 								>
-									<div className="text-2xl font-bold">{stage.count}</div>
-									<div className="text-sm text-muted-foreground">
+									<div className="font-bold text-2xl">{stage.count}</div>
+									<div className="text-muted-foreground text-sm">
 										{stage.displayName}
 									</div>
-									<div className="text-xs text-muted-foreground mt-1">
+									<div className="mt-1 text-muted-foreground text-xs">
 										{stage.conversionRate.toFixed(1)}%
 									</div>
 									{stage.totalSales > 0 && (
-										<div className="text-xs text-green-600 mt-1">
-											{formatCurrency(parseInt(stage.totalSales))}
+										<div className="mt-1 text-green-600 text-xs">
+											{formatCurrency(Number.parseInt(stage.totalSales))}
 										</div>
 									)}
 								</div>
@@ -345,8 +345,8 @@ export default function FunnelChart({
 				</div>
 
 				{!summaryData && (
-					<div className="text-center py-8 text-muted-foreground">
-						<TrendingDown className="mx-auto h-12 w-12 mb-4 opacity-50" />
+					<div className="py-8 text-center text-muted-foreground">
+						<TrendingDown className="mx-auto mb-4 h-12 w-12 opacity-50" />
 						<p>No funnel data available for the selected filters.</p>
 					</div>
 				)}

@@ -1,4 +1,7 @@
-import { useState, useEffect } from "react";
+import { Filter, Search, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -7,9 +10,6 @@ import {
 	SelectItem,
 	SelectTrigger,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Filter, X } from "lucide-react";
 
 // Helper function to get display text for month filter
 const getMonthDisplayText = (month: string | null) => {
@@ -119,19 +119,19 @@ export function LeadsFilters({
 							onClick={clearFilters}
 							className="ml-auto"
 						>
-							<X className="h-4 w-4 mr-1" />
+							<X className="mr-1 h-4 w-4" />
 							Clear All
 						</Button>
 					)}
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
 					{/* Search by Name or Phone */}
 					<div className="space-y-2">
 						<Label htmlFor="search">Search by Name or Phone</Label>
 						<div className="relative">
-							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
 							<Input
 								id="search"
 								placeholder="Enter name or phone..."
@@ -295,11 +295,11 @@ export function LeadsFilters({
 					</div>
 
 					{/* Results Count */}
-					<div className="space-y-2 flex items-end">
-						<div className="text-sm text-muted-foreground">
+					<div className="flex items-end space-y-2">
+						<div className="text-muted-foreground text-sm">
 							<span className="font-medium">{totalResults}</span> results found
 							{hasActiveFilters && (
-								<div className="text-xs mt-1">Filters applied</div>
+								<div className="mt-1 text-xs">Filters applied</div>
 							)}
 						</div>
 					</div>

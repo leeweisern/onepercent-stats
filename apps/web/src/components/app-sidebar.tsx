@@ -1,4 +1,4 @@
-import { BarChart3, Users, DollarSign } from "lucide-react";
+import { BarChart3, DollarSign, Users } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import {
@@ -44,7 +44,7 @@ export function AppSidebar({
 	return (
 		<Sidebar collapsible="icon" variant={variant} {...props}>
 			<SidebarHeader>
-				<div className="px-2 py-2 flex items-center justify-center group-data-[collapsible=icon]:px-1">
+				<div className="flex items-center justify-center px-2 py-2 group-data-[collapsible=icon]:px-1">
 					<img
 						src="/One Percent Fitness Favicon.svg"
 						alt="One Percent Stats"

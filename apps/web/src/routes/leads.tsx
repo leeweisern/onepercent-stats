@@ -1,6 +1,35 @@
-import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	BarChart3,
+	Calendar,
+	CheckCircle,
+	ChevronDown,
+	ChevronUp,
+	Copy,
+	Edit,
+	Phone,
+	Plus,
+	Trash2,
+	TrendingUp,
+	Users,
+	XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { AppSidebar } from "@/components/app-sidebar";
+import { CreateLeadDialog } from "@/components/create-lead-dialog";
+import { EditLeadDialog } from "@/components/edit-lead-dialog";
+import { type FilterState, LeadsFilters } from "@/components/leads-filters";
+import { SiteHeader } from "@/components/site-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
 	TableBody,
@@ -9,35 +38,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
-	BarChart3,
-	Users,
-	TrendingUp,
-	Calendar,
-	Phone,
-	CheckCircle,
-	XCircle,
-	Copy,
-	Edit,
-	Trash2,
-	ChevronUp,
-	ChevronDown,
-	Plus,
-} from "lucide-react";
-import { EditLeadDialog } from "@/components/edit-lead-dialog";
-import { CreateLeadDialog } from "@/components/create-lead-dialog";
-import { LeadsFilters, type FilterState } from "@/components/leads-filters";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 interface Lead {
 	id: number;
@@ -152,9 +152,9 @@ export default function Leads() {
 				const parts = lead.closedDate.split("/");
 				if (parts.length === 3) {
 					const leadDate = new Date(
-						parseInt(parts[2]),
-						parseInt(parts[1]) - 1,
-						parseInt(parts[0]),
+						Number.parseInt(parts[2]),
+						Number.parseInt(parts[1]) - 1,
+						Number.parseInt(parts[0]),
 					);
 					// Parse YYYY-MM-DD format from filter input
 					const filterDate = new Date(filters.closedDate);
@@ -192,12 +192,11 @@ export default function Leads() {
 					// For dates, compare as Date objects
 					const comparison = aValue.getTime() - bValue.getTime();
 					return sortDirection === "asc" ? comparison : -comparison;
-				} else {
-					// For strings and numbers
-					if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-					if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-					return 0;
 				}
+				// For strings and numbers
+				if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+				if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+				return 0;
 			});
 		}
 
@@ -226,9 +225,9 @@ export default function Leads() {
 		// Parse DD/MM/YYYY format
 		const parts = dateString.split("/");
 		if (parts.length === 3) {
-			const day = parseInt(parts[0], 10);
-			const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-			const year = parseInt(parts[2], 10);
+			const day = Number.parseInt(parts[0], 10);
+			const month = Number.parseInt(parts[1], 10) - 1; // Month is 0-indexed
+			const year = Number.parseInt(parts[2], 10);
 			return new Date(year, month, day);
 		}
 		return new Date(0);
@@ -364,7 +363,7 @@ export default function Leads() {
 				<SiteHeader />
 				<div className="flex flex-1 flex-col">
 					<div className="flex flex-1 flex-col gap-2">
-						<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6">
+						<div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
 							{/* Filters */}
 							<div className="mb-6">
 								<LeadsFilters
@@ -374,42 +373,42 @@ export default function Leads() {
 							</div>
 
 							{/* Summary Cards */}
-							<div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+							<div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-4">
 								<Card>
 									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium">
+										<CardTitle className="font-medium text-sm">
 											Total Leads
 										</CardTitle>
 										<Users className="h-4 w-4 text-muted-foreground" />
 									</CardHeader>
 									<CardContent>
-										<div className="text-2xl font-bold">
+										<div className="font-bold text-2xl">
 											{filteredLeads.length}
 										</div>
 									</CardContent>
 								</Card>
 								<Card>
 									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium">
+										<CardTitle className="font-medium text-sm">
 											Closed Leads
 										</CardTitle>
 										<CheckCircle className="h-4 w-4 text-muted-foreground" />
 									</CardHeader>
 									<CardContent>
-										<div className="text-2xl font-bold">
+										<div className="font-bold text-2xl">
 											{filteredLeads.filter((lead) => lead.isClosed).length}
 										</div>
 									</CardContent>
 								</Card>
 								<Card>
 									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium">
+										<CardTitle className="font-medium text-sm">
 											Total Sales
 										</CardTitle>
 										<TrendingUp className="h-4 w-4 text-muted-foreground" />
 									</CardHeader>
 									<CardContent>
-										<div className="text-2xl font-bold">
+										<div className="font-bold text-2xl">
 											{formatCurrency(
 												filteredLeads.reduce(
 													(sum, lead) => sum + (lead.sales || 0),
@@ -421,13 +420,13 @@ export default function Leads() {
 								</Card>
 								<Card>
 									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium">
+										<CardTitle className="font-medium text-sm">
 											Conversion Rate
 										</CardTitle>
 										<BarChart3 className="h-4 w-4 text-muted-foreground" />
 									</CardHeader>
 									<CardContent>
-										<div className="text-2xl font-bold">
+										<div className="font-bold text-2xl">
 											{filteredLeads.length > 0
 												? `${Math.round((filteredLeads.filter((lead) => lead.isClosed).length / filteredLeads.length) * 100)}%`
 												: "0%"}
@@ -450,7 +449,7 @@ export default function Leads() {
 											size="sm"
 											className="ml-2"
 										>
-											<Plus className="h-4 w-4 mr-1" />
+											<Plus className="mr-1 h-4 w-4" />
 											Add Lead
 										</Button>
 									</CardTitle>
@@ -470,7 +469,7 @@ export default function Leads() {
 														<TableHead className="w-[120px] p-0">
 															<Button
 																variant="ghost"
-																className="h-full w-full justify-start px-4 py-3 font-medium hover:bg-muted/50 text-left"
+																className="h-full w-full justify-start px-4 py-3 text-left font-medium hover:bg-muted/50"
 																onClick={() => handleSort("name")}
 															>
 																<span className="flex items-center">
@@ -495,7 +494,7 @@ export default function Leads() {
 														<TableHead className="w-[100px] p-0">
 															<Button
 																variant="ghost"
-																className="h-full w-full justify-end px-4 py-3 font-medium hover:bg-muted/50 text-right"
+																className="h-full w-full justify-end px-4 py-3 text-right font-medium hover:bg-muted/50"
 																onClick={() => handleSort("sales")}
 															>
 																<span className="flex items-center">
@@ -513,7 +512,7 @@ export default function Leads() {
 														<TableHead className="w-[100px] p-0">
 															<Button
 																variant="ghost"
-																className="h-full w-full justify-start px-4 py-3 font-medium hover:bg-muted/50 text-left"
+																className="h-full w-full justify-start px-4 py-3 text-left font-medium hover:bg-muted/50"
 																onClick={() => handleSort("date")}
 															>
 																<span className="flex items-center">
@@ -531,7 +530,7 @@ export default function Leads() {
 															Closed Date
 														</TableHead>
 														<TableHead className="w-[100px]">Remark</TableHead>
-														<TableHead className="w-[60px]"></TableHead>
+														<TableHead className="w-[60px]" />
 													</TableRow>
 												</TableHeader>
 												<TableBody>
@@ -543,7 +542,7 @@ export default function Leads() {
 														>
 															<TableCell className="font-medium">
 																<div className="flex items-center gap-2">
-																	<div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+																	<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 font-medium text-sm text-white">
 																		{(lead.name || "N")[0].toUpperCase()}
 																	</div>
 																	<span className="truncate">
@@ -561,7 +560,7 @@ export default function Leads() {
 																		<Button
 																			variant="ghost"
 																			size="sm"
-																			className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+																			className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
 																			onClick={(e) => {
 																				e.stopPropagation();
 																				copyToClipboard(lead.phoneNumber || "");
@@ -589,14 +588,14 @@ export default function Leads() {
 																	{lead.isClosed ? (
 																		<div className="flex items-center gap-1">
 																			<CheckCircle className="h-4 w-4 text-green-600" />
-																			<span className="text-xs text-green-600 font-medium">
+																			<span className="font-medium text-green-600 text-xs">
 																				Yes
 																			</span>
 																		</div>
 																	) : (
 																		<div className="flex items-center gap-1">
 																			<XCircle className="h-4 w-4 text-red-600" />
-																			<span className="text-xs text-red-600 font-medium">
+																			<span className="font-medium text-red-600 text-xs">
 																				No
 																			</span>
 																		</div>
@@ -654,7 +653,7 @@ export default function Leads() {
 																	<Button
 																		variant="ghost"
 																		size="sm"
-																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+																		className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
 																		onClick={(e) => {
 																			e.stopPropagation();
 																			handleRowClick(lead);
@@ -665,7 +664,7 @@ export default function Leads() {
 																	<Button
 																		variant="ghost"
 																		size="sm"
-																		className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+																		className="h-8 w-8 p-0 text-red-600 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-700 group-hover:opacity-100"
 																		onClick={(e) => {
 																			e.stopPropagation();
 																			handleDeleteClick(lead);
@@ -710,7 +709,7 @@ export default function Leads() {
 						<DialogTitle>Delete Lead</DialogTitle>
 					</DialogHeader>
 					<div className="py-4">
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							Are you sure you want to delete the lead for{" "}
 							<span className="font-medium text-foreground">
 								{leadToDelete?.name || "N/A"}

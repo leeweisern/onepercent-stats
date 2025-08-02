@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, Calendar } from "lucide-react";
+import { Calendar, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
-	XAxis,
-	YAxis,
+	Bar,
+	BarChart,
 	CartesianGrid,
-	Tooltip,
 	Legend,
 	ResponsiveContainer,
-	BarChart,
-	Bar,
+	Tooltip,
+	XAxis,
+	YAxis,
 } from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MonthlyGrowthData {
 	month: string;
@@ -67,7 +67,7 @@ export default function MonthlyGrowthChart({
 	const CustomTooltip = ({ active, payload, label }: any) => {
 		if (active && payload && payload.length) {
 			return (
-				<div className="bg-white p-3 border rounded-lg shadow-lg">
+				<div className="rounded-lg border bg-white p-3 shadow-lg">
 					<p className="font-medium">{label}</p>
 					{payload.map((entry: any, index: number) => (
 						<p key={index} style={{ color: entry.color }}>
@@ -109,8 +109,8 @@ export default function MonthlyGrowthChart({
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="text-center py-8 text-muted-foreground">
-						<Calendar className="mx-auto h-12 w-12 mb-4 opacity-50" />
+					<div className="py-8 text-center text-muted-foreground">
+						<Calendar className="mx-auto mb-4 h-12 w-12 opacity-50" />
 						<p>No monthly growth data available for the selected year.</p>
 					</div>
 				</CardContent>

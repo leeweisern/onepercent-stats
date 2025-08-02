@@ -51,7 +51,7 @@ export default function App() {
 			disableTransitionOnChange
 			storageKey="vite-ui-theme"
 		>
-			<div className="grid grid-rows-[auto_1fr] h-svh">
+			<div className="grid h-svh grid-rows-[auto_1fr]">
 				<Header />
 				<Outlet />
 			</div>
@@ -75,11 +75,11 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 		stack = error.stack;
 	}
 	return (
-		<main className="pt-16 p-4 container mx-auto">
+		<main className="container mx-auto p-4 pt-16">
 			<h1>{message}</h1>
 			<p>{details}</p>
 			{stack && (
-				<pre className="w-full p-4 overflow-x-auto">
+				<pre className="w-full overflow-x-auto p-4">
 					<code>{stack}</code>
 				</pre>
 			)}

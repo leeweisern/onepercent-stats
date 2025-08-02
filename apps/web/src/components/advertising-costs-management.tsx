@@ -1,6 +1,15 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar, DollarSign, Edit, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -9,13 +18,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 } from "@/components/ui/select";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
 	TableBody,
@@ -24,9 +27,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { DollarSign, Plus, Edit, Trash2, Calendar } from "lucide-react";
 
 interface AdvertisingCost {
 	id: number;
@@ -92,7 +92,7 @@ export default function AdvertisingCostsManagement() {
 		}
 	};
 
-	const formatCurrency = (amount: number, currency: string = "RM") => {
+	const formatCurrency = (amount: number, currency = "RM") => {
 		return `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 	};
 
@@ -114,9 +114,9 @@ export default function AdvertisingCostsManagement() {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({
-					month: parseInt(formData.month),
-					year: parseInt(formData.year),
-					cost: parseFloat(formData.cost),
+					month: Number.parseInt(formData.month),
+					year: Number.parseInt(formData.year),
+					cost: Number.parseFloat(formData.cost),
 					currency: formData.currency,
 				}),
 			});
@@ -149,9 +149,9 @@ export default function AdvertisingCostsManagement() {
 						"Content-Type": "application/json",
 					},
 					body: JSON.stringify({
-						month: parseInt(formData.month),
-						year: parseInt(formData.year),
-						cost: parseFloat(formData.cost),
+						month: Number.parseInt(formData.month),
+						year: Number.parseInt(formData.year),
+						cost: Number.parseFloat(formData.cost),
 						currency: formData.currency,
 					}),
 				},
@@ -233,24 +233,24 @@ export default function AdvertisingCostsManagement() {
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-						<div className="text-center p-4 border rounded-lg">
-							<div className="text-2xl font-bold text-green-600">
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+						<div className="rounded-lg border p-4 text-center">
+							<div className="font-bold text-2xl text-green-600">
 								{formatCurrency(totalCost)}
 							</div>
-							<div className="text-sm text-muted-foreground">Total Spent</div>
+							<div className="text-muted-foreground text-sm">Total Spent</div>
 						</div>
-						<div className="text-center p-4 border rounded-lg">
-							<div className="text-2xl font-bold">{costs.length}</div>
-							<div className="text-sm text-muted-foreground">Total Entries</div>
+						<div className="rounded-lg border p-4 text-center">
+							<div className="font-bold text-2xl">{costs.length}</div>
+							<div className="text-muted-foreground text-sm">Total Entries</div>
 						</div>
-						<div className="text-center p-4 border rounded-lg">
-							<div className="text-2xl font-bold">
+						<div className="rounded-lg border p-4 text-center">
+							<div className="font-bold text-2xl">
 								{costs.length > 0
 									? formatCurrency(totalCost / costs.length)
 									: formatCurrency(0)}
 							</div>
-							<div className="text-sm text-muted-foreground">
+							<div className="text-muted-foreground text-sm">
 								Average per Month
 							</div>
 						</div>
@@ -270,7 +270,7 @@ export default function AdvertisingCostsManagement() {
 						>
 							<DialogTrigger asChild>
 								<Button size="sm" className="ml-auto" onClick={resetForm}>
-									<Plus className="h-4 w-4 mr-1" />
+									<Plus className="mr-1 h-4 w-4" />
 									Add Cost
 								</Button>
 							</DialogTrigger>
@@ -290,7 +290,7 @@ export default function AdvertisingCostsManagement() {
 											>
 												<SelectTrigger>
 													{formData.month
-														? monthNames[parseInt(formData.month) - 1]
+														? monthNames[Number.parseInt(formData.month) - 1]
 														: "Select month"}
 												</SelectTrigger>{" "}
 												<SelectContent>
@@ -384,7 +384,7 @@ export default function AdvertisingCostsManagement() {
 						<div className="rounded-md border">
 							<Table>
 								<TableHeader>
-									<TableRow className="hover:bg-transparent bg-muted/50">
+									<TableRow className="bg-muted/50 hover:bg-transparent">
 										<TableHead className="font-semibold">Period</TableHead>
 										<TableHead className="text-right font-semibold">
 											Cost
@@ -392,7 +392,7 @@ export default function AdvertisingCostsManagement() {
 										<TableHead className="text-center font-semibold">
 											Added
 										</TableHead>
-										<TableHead className="text-center font-semibold w-[100px]">
+										<TableHead className="w-[100px] text-center font-semibold">
 											Actions
 										</TableHead>
 									</TableRow>
@@ -402,7 +402,7 @@ export default function AdvertisingCostsManagement() {
 										<TableRow>
 											<TableCell
 												colSpan={4}
-												className="text-center py-8 text-muted-foreground"
+												className="py-8 text-center text-muted-foreground"
 											>
 												No advertising costs found. Add your first entry above.
 											</TableCell>
@@ -412,7 +412,7 @@ export default function AdvertisingCostsManagement() {
 											<TableRow key={cost.id} className="hover:bg-muted/30">
 												<TableCell className="font-medium">
 													<div className="flex items-center gap-2">
-														<div className="h-8 w-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white text-xs font-medium">
+														<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 font-medium text-white text-xs">
 															{monthNames[cost.month - 1]?.slice(0, 3)}
 														</div>
 														<span>
@@ -423,7 +423,7 @@ export default function AdvertisingCostsManagement() {
 												<TableCell className="text-right font-medium text-green-600">
 													{formatCurrency(cost.cost, cost.currency)}
 												</TableCell>
-												<TableCell className="text-center text-sm text-muted-foreground">
+												<TableCell className="text-center text-muted-foreground text-sm">
 													{new Date(cost.createdAt).toLocaleDateString()}
 												</TableCell>
 												<TableCell className="text-center">
@@ -439,7 +439,7 @@ export default function AdvertisingCostsManagement() {
 														<Button
 															variant="ghost"
 															size="sm"
-															className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+															className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
 															onClick={() => openDeleteDialog(cost)}
 														>
 															<Trash2 className="h-4 w-4" />
@@ -474,7 +474,7 @@ export default function AdvertisingCostsManagement() {
 								>
 									<SelectTrigger>
 										{formData.month
-											? monthNames[parseInt(formData.month) - 1]
+											? monthNames[Number.parseInt(formData.month) - 1]
 											: "Select month"}
 									</SelectTrigger>
 									<SelectContent>
@@ -560,7 +560,7 @@ export default function AdvertisingCostsManagement() {
 						<DialogTitle>Delete Advertising Cost</DialogTitle>
 					</DialogHeader>
 					<div className="py-4">
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							Are you sure you want to delete the advertising cost for{" "}
 							<span className="font-medium text-foreground">
 								{costToDelete &&

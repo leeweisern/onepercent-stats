@@ -53,7 +53,7 @@ const ChartTooltipContent = React.forwardRef<
 							className="h-2 w-2 rounded-full"
 							style={{ backgroundColor: entry.color }}
 						/>
-						<span className="text-sm text-muted-foreground">
+						<span className="text-muted-foreground text-sm">
 							{entry.name}: {entry.value}
 						</span>
 					</div>

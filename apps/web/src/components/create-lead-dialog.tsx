@@ -1,20 +1,20 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 // Helper function to convert from YYYY-MM-DD to DD/MM/YYYY format
 const convertFromDateInputFormat = (dateString: string): string => {
@@ -24,8 +24,8 @@ const convertFromDateInputFormat = (dateString: string): string => {
 	const parts = dateString.split("-");
 	if (parts.length === 3) {
 		const year = parts[0];
-		const month = parseInt(parts[1]).toString(); // Remove leading zero
-		const day = parseInt(parts[2]).toString(); // Remove leading zero
+		const month = Number.parseInt(parts[1]).toString(); // Remove leading zero
+		const day = Number.parseInt(parts[2]).toString(); // Remove leading zero
 		return `${day}/${month}/${year}`;
 	}
 
@@ -117,7 +117,7 @@ export function CreateLeadDialog({
 
 	// Auto-update closed and status when sales changes
 	useEffect(() => {
-		const salesValue = sales ? parseInt(sales) : 0;
+		const salesValue = sales ? Number.parseInt(sales) : 0;
 
 		if (salesValue > 0) {
 			setIsClosed(true);
@@ -184,7 +184,7 @@ export function CreateLeadDialog({
 				platform: isCustomPlatform ? customPlatform.trim() : platform,
 				status: status,
 				isClosed: isClosed,
-				sales: sales ? parseInt(sales) : 0,
+				sales: sales ? Number.parseInt(sales) : 0,
 				date: convertFromDateInputFormat(date),
 				month: month,
 				closedDate: convertFromDateInputFormat(closedDate),
@@ -205,7 +205,7 @@ export function CreateLeadDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+			<DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[600px]">
 				<DialogHeader>
 					<DialogTitle>Create New Lead</DialogTitle>
 				</DialogHeader>
@@ -236,7 +236,7 @@ export function CreateLeadDialog({
 					{/* Platform and Status */}
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
-							<div className="flex items-center justify-between h-5">
+							<div className="flex h-5 items-center justify-between">
 								<Label htmlFor="platform">Platform *</Label>
 								<Button
 									type="button"
@@ -250,7 +250,7 @@ export function CreateLeadDialog({
 											setPlatform(customPlatform);
 										}
 									}}
-									className="text-xs h-6 px-2"
+									className="h-6 px-2 text-xs"
 								>
 									{isCustomPlatform ? "Select existing" : "Add new"}
 								</Button>
@@ -278,7 +278,7 @@ export function CreateLeadDialog({
 							)}
 						</div>
 						<div className="space-y-2">
-							<div className="h-5 flex items-center">
+							<div className="flex h-5 items-center">
 								<Label htmlFor="status">Status</Label>
 							</div>
 							<Select value={status} onValueChange={setStatus}>

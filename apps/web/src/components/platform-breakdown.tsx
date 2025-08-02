@@ -1,6 +1,15 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart3, Calendar, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
 	TableBody,
@@ -9,15 +18,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, Calendar, BarChart3 } from "lucide-react";
 
 // Helper function to format month display
 const formatMonthDisplay = (monthString: string) => {
@@ -41,7 +41,7 @@ const formatMonthDisplay = (monthString: string) => {
 			"November",
 			"December",
 		];
-		const monthIndex = parseInt(month) - 1;
+		const monthIndex = Number.parseInt(month) - 1;
 		const monthName = monthNames[monthIndex] || month;
 		return `${monthName} ${year}`;
 	}
@@ -149,7 +149,7 @@ export default function PlatformBreakdown({
 					<div className="rounded-md border">
 						<Table>
 							<TableHeader>
-								<TableRow className="hover:bg-transparent bg-muted/50">
+								<TableRow className="bg-muted/50 hover:bg-transparent">
 									<TableHead className="font-semibold">Platform</TableHead>
 									<TableHead className="text-center font-semibold">
 										Close

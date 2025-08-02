@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PlatformBreakdownData {
 	platform: string | null;
@@ -48,11 +48,11 @@ export default function PlatformChart({
 					<span>Total Sales {formatCurrency(totalSales)}</span>
 					<div className="flex items-center gap-4 text-sm">
 						<div className="flex items-center gap-2">
-							<div className="w-4 h-4 bg-blue-600 rounded"></div>
+							<div className="h-4 w-4 rounded bg-blue-600" />
 							<span>Close</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<div className="w-4 h-4 bg-orange-500 rounded"></div>
+							<div className="h-4 w-4 rounded bg-orange-500" />
 							<span>No Close</span>
 						</div>
 					</div>
@@ -69,24 +69,24 @@ export default function PlatformChart({
 
 						return (
 							<div key={index} className="flex items-end gap-2">
-								<div className="flex-1 flex items-end justify-center gap-1 min-h-[220px]">
+								<div className="flex min-h-[220px] flex-1 items-end justify-center gap-1">
 									{/* Closed leads bar */}
 									<div className="flex flex-col items-center">
 										<div
-											className={`${colors.close} rounded-t transition-all duration-300 min-w-[40px]`}
+											className={`${colors.close} min-w-[40px] rounded-t transition-all duration-300`}
 											style={{ height: `${Math.max(closedHeight, 4)}px` }}
-										></div>
+										/>
 									</div>
 									{/* Not closed leads bar */}
 									<div className="flex flex-col items-center">
 										<div
-											className={`${colors.noClose} rounded-t transition-all duration-300 min-w-[40px]`}
+											className={`${colors.noClose} min-w-[40px] rounded-t transition-all duration-300`}
 											style={{ height: `${Math.max(notClosedHeight, 4)}px` }}
-										></div>
+										/>
 									</div>
 								</div>
-								<div className="text-center min-w-[100px]">
-									<div className="font-medium text-sm mb-1">
+								<div className="min-w-[100px] text-center">
+									<div className="mb-1 font-medium text-sm">
 										<Badge variant="secondary">
 											{item.platform?.toUpperCase() || "N/A"} ({item.totalLeads}
 											)
@@ -99,7 +99,7 @@ export default function PlatformChart({
 				</div>
 
 				{/* Y-axis labels */}
-				<div className="mt-4 flex justify-between text-xs text-muted-foreground border-t pt-2">
+				<div className="mt-4 flex justify-between border-t pt-2 text-muted-foreground text-xs">
 					<span>0</span>
 					<span className="text-center">Platform</span>
 					<span>{maxLeads}</span>
