@@ -82,9 +82,9 @@ interface Lead {
 	isClosed: boolean | null;
 	status: string | null;
 	sales: number | null;
-
 	remark: string | null;
 	trainerHandle: string | null;
+	closedDate: string | null;
 	createdAt: string | null;
 }
 
@@ -121,6 +121,7 @@ export function EditLeadDialog({
 
 	const [remark, setRemark] = useState("");
 	const [trainerHandle, setTrainerHandle] = useState("");
+	const [closedDate, setClosedDate] = useState("");
 	const [options, setOptions] = useState<Options>({
 		status: [],
 		platform: [],
@@ -142,6 +143,8 @@ export function EditLeadDialog({
 			const dateValue = convertToDateInputFormat(lead.date);
 			setDate(dateValue);
 			setMonth(lead.month || getMonthFromDate(dateValue));
+			const closedDateValue = convertToDateInputFormat(lead.closedDate);
+			setClosedDate(closedDateValue);
 
 			setRemark(lead.remark || "");
 			setTrainerHandle(lead.trainerHandle || "");
@@ -208,6 +211,7 @@ export function EditLeadDialog({
 				sales: sales ? parseInt(sales) : null,
 				date: convertFromDateInputFormat(date),
 				month,
+				closedDate: convertFromDateInputFormat(closedDate),
 
 				remark,
 				trainerHandle,
@@ -335,6 +339,17 @@ export function EditLeadDialog({
 							type="date"
 							value={date}
 							onChange={(e) => setDate(e.target.value)}
+						/>
+					</div>
+
+					{/* Closed Date */}
+					<div className="space-y-2">
+						<Label htmlFor="closedDate">Closed Date</Label>
+						<Input
+							id="closedDate"
+							type="date"
+							value={closedDate}
+							onChange={(e) => setClosedDate(e.target.value)}
 						/>
 					</div>
 

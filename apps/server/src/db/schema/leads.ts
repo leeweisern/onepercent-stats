@@ -13,6 +13,7 @@ export const leads = sqliteTable("leads", {
 	sales: integer("sales"),
 	remark: text("remark"),
 	trainerHandle: text("trainer_handle"),
+	closedDate: text("closed_date"),
 	createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 

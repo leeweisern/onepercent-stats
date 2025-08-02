@@ -38,6 +38,7 @@ export interface FilterState {
 	status: string;
 	trainer: string;
 	isClosed: string;
+	closedDate: string;
 }
 
 export function LeadsFilters({
@@ -52,6 +53,7 @@ export function LeadsFilters({
 		status: "",
 		trainer: "",
 		isClosed: "",
+		closedDate: "",
 	});
 
 	const [options, setOptions] = useState<FilterOptions>({
@@ -98,6 +100,7 @@ export function LeadsFilters({
 			status: "",
 			trainer: "",
 			isClosed: "",
+			closedDate: "",
 		});
 	};
 
@@ -123,7 +126,7 @@ export function LeadsFilters({
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
 					{/* Search by Name or Phone */}
 					<div className="space-y-2">
 						<Label htmlFor="search">Search by Name or Phone</Label>
@@ -278,6 +281,17 @@ export function LeadsFilters({
 								<SelectItem value="false">Open only</SelectItem>
 							</SelectContent>
 						</Select>
+					</div>
+
+					{/* Closed Date Filter */}
+					<div className="space-y-2">
+						<Label htmlFor="closedDate">Closed Date</Label>
+						<Input
+							id="closedDate"
+							type="date"
+							value={filters.closedDate}
+							onChange={(e) => updateFilter("closedDate", e.target.value)}
+						/>
 					</div>
 
 					{/* Results Count */}

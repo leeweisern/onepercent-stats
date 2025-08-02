@@ -380,6 +380,7 @@ app.post("/leads", async (c) => {
 		appointment: body.appointment || "",
 		remark: body.remark || "",
 		trainerHandle: body.trainerHandle || "",
+		closedDate: body.closedDate || "",
 	};
 
 	try {
@@ -417,6 +418,7 @@ app.put("/leads/:id", async (c) => {
 	if (body.remark !== undefined) updateData.remark = body.remark;
 	if (body.trainerHandle !== undefined)
 		updateData.trainerHandle = body.trainerHandle;
+	if (body.closedDate !== undefined) updateData.closedDate = body.closedDate;
 
 	const updatedLead = await db
 		.update(leads)

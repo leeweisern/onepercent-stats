@@ -51,6 +51,7 @@ interface Lead {
 	sales: number | null;
 	remark: string | null;
 	trainerHandle: string | null;
+	closedDate: string | null;
 	createdAt: string | null;
 }
 
@@ -71,6 +72,7 @@ export default function Leads() {
 		status: "",
 		trainer: "",
 		isClosed: "",
+		closedDate: "",
 	});
 	const [sortField, setSortField] = useState<string>("date");
 	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -140,6 +142,26 @@ export default function Leads() {
 		if (filters.isClosed !== "") {
 			const isClosed = filters.isClosed === "true";
 			filtered = filtered.filter((lead) => lead.isClosed === isClosed);
+		}
+
+// Filter by closed date
+		if (filters.closedDate) {
+			filtered = filtered.filter((lead) => {
+				if (!lead.closedDate) return false;
+				// Parse DD/MM/YYYY format from database
+				const parts = lead.closedDate.split("/");
+				if (parts.length === 3) {
+					const leadDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+					// Parse YYYY-MM-DD format from filter input
+					const filterDate = new Date(filters.closedDate);
+					return leadDate.toDateString() === filterDate.toDateString();
+				}
+				return false;
+			});
+		}
+				}
+				return false;
+			});
 		}
 
 		// Apply sorting
@@ -505,7 +527,9 @@ export default function Leads() {
 																</span>
 															</Button>
 														</TableHead>
-
+														<TableHead className="w-[100px]">
+															Closed Date
+														</TableHead>
 														<TableHead className="w-[100px]">Remark</TableHead>
 														<TableHead className="w-[60px]"></TableHead>
 													</TableRow>
@@ -604,6 +628,14 @@ export default function Leads() {
 																	<Calendar className="h-3 w-3 text-muted-foreground" />
 																	<span className="text-sm">
 																		{formatDate(lead.date)}
+																	</span>
+																</div>
+															</TableCell>
+															<TableCell>
+																<div className="flex items-center gap-1">
+																	<Calendar className="h-3 w-3 text-muted-foreground" />
+																	<span className="text-sm">
+																		{formatDate(lead.closedDate)}
 																	</span>
 																</div>
 															</TableCell>

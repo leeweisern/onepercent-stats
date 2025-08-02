@@ -88,6 +88,7 @@ export function CreateLeadDialog({
 
 	const [remark, setRemark] = useState("");
 	const [trainerHandle, setTrainerHandle] = useState("");
+	const [closedDate, setClosedDate] = useState("");
 	const [options, setOptions] = useState<Options>({
 		status: [],
 		platform: [],
@@ -143,6 +144,7 @@ export function CreateLeadDialog({
 		const todayString = `${year}-${month}-${day}`;
 		setDate(todayString);
 		setMonth(getMonthFromDate(todayString));
+		setClosedDate("");
 
 		setRemark("");
 		setTrainerHandle("");
@@ -185,6 +187,7 @@ export function CreateLeadDialog({
 				sales: sales ? parseInt(sales) : 0,
 				date: convertFromDateInputFormat(date),
 				month: month,
+				closedDate: convertFromDateInputFormat(closedDate),
 
 				remark: remark.trim(),
 				trainerHandle: trainerHandle,
@@ -314,6 +317,17 @@ export function CreateLeadDialog({
 							type="date"
 							value={date}
 							onChange={(e) => setDate(e.target.value)}
+						/>
+					</div>
+
+					{/* Closed Date */}
+					<div className="space-y-2">
+						<Label htmlFor="closedDate">Closed Date</Label>
+						<Input
+							id="closedDate"
+							type="date"
+							value={closedDate}
+							onChange={(e) => setClosedDate(e.target.value)}
 						/>
 					</div>
 
