@@ -473,7 +473,9 @@ export default function AdvertisingCostsManagement() {
 									}
 								>
 									<SelectTrigger>
-										{formData.month ? monthNames[parseInt(formData.month) - 1] : "Select month"}
+										{formData.month
+											? monthNames[parseInt(formData.month) - 1]
+											: "Select month"}
 									</SelectTrigger>
 									<SelectContent>
 										{monthNames.map((month, index) => (
@@ -528,9 +530,7 @@ export default function AdvertisingCostsManagement() {
 										setFormData({ ...formData, currency: value })
 									}
 								>
-									<SelectTrigger>
-										{formData.currency}
-									</SelectTrigger>
+									<SelectTrigger>{formData.currency}</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="RM">RM</SelectItem>
 										<SelectItem value="USD">USD</SelectItem>
