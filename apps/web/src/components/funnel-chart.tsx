@@ -61,12 +61,6 @@ export default function FunnelChart({
 	);
 	const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([]);
 
-	useEffect(() => {
-		fetchFunnelData();
-		fetchSummaryData();
-		fetchPlatforms();
-	}, [fetchFunnelData, fetchPlatforms, fetchSummaryData]);
-
 	const fetchFunnelData = async () => {
 		setLoading(true);
 		try {
@@ -128,6 +122,12 @@ export default function FunnelChart({
 			console.error("Error fetching platforms:", error);
 		}
 	};
+
+	useEffect(() => {
+		fetchFunnelData();
+		fetchSummaryData();
+		fetchPlatforms();
+	}, [selectedMonth, selectedYear, currentPlatform]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM ${amount.toLocaleString()}`;

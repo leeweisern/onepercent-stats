@@ -81,11 +81,23 @@ export default function Leads() {
 
 	useEffect(() => {
 		fetchLeads();
-	}, [fetchLeads]);
+	}, []);
 
 	useEffect(() => {
 		applyFilters();
-	}, [applyFilters]);
+	}, [leads, filters, sortField, sortDirection]);
+
+	const parseDate = useCallback((dateString: string) => {
+		// Parse DD/MM/YYYY format
+		const parts = dateString.split("/");
+		if (parts.length === 3) {
+			const day = Number.parseInt(parts[0], 10);
+			const month = Number.parseInt(parts[1], 10) - 1; // Month is 0-indexed
+			const year = Number.parseInt(parts[2], 10);
+			return new Date(year, month, day);
+		}
+		return new Date(0);
+	}, []);
 
 	const applyFilters = useCallback(() => {
 		let filtered = [...leads];
@@ -221,18 +233,6 @@ export default function Leads() {
 	const formatCurrency = (amount: number | null) => {
 		if (!amount) return "RM 0";
 		return `RM ${amount.toLocaleString()}`;
-	};
-
-	const parseDate = (dateString: string) => {
-		// Parse DD/MM/YYYY format
-		const parts = dateString.split("/");
-		if (parts.length === 3) {
-			const day = Number.parseInt(parts[0], 10);
-			const month = Number.parseInt(parts[1], 10) - 1; // Month is 0-indexed
-			const year = Number.parseInt(parts[2], 10);
-			return new Date(year, month, day);
-		}
-		return new Date(0);
 	};
 
 	const formatDate = (dateString: string | null) => {

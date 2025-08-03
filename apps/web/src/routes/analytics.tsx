@@ -13,11 +13,12 @@ export default function Analytics() {
 	const [availableYears, setAvailableYears] = useState<string[]>([]);
 	const [selectedMonth, setSelectedMonth] = useState<string>("");
 	const [selectedYear, setSelectedYear] = useState<string>("");
+	const [dateType, setDateType] = useState<"lead" | "closed">("lead");
 
 	useEffect(() => {
 		fetchAvailableMonths();
 		fetchAvailableYears();
-	}, [fetchAvailableMonths, fetchAvailableYears]);
+	}, []);
 
 	const fetchAvailableMonths = async () => {
 		try {
@@ -47,8 +48,21 @@ export default function Analytics() {
 				<div className="flex flex-1 flex-col">
 					<div className="flex flex-1 flex-col gap-2">
 						<div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
-							{/* Global Month and Year Filters */}
-							<div className="mb-6 flex items-center gap-4">
+							{/* Global Filters */}
+							<div className="mb-6 flex flex-wrap items-center gap-4">
+								<div className="flex items-center gap-2">
+									<span className="font-medium text-sm">Date type:</span>
+									<select
+										value={dateType}
+										onChange={(e) =>
+											setDateType(e.target.value as "lead" | "closed")
+										}
+										className="rounded-md border bg-white px-3 py-2 text-sm"
+									>
+										<option value="lead">Lead Date</option>
+										<option value="closed">Sale Date</option>
+									</select>
+								</div>
 								<div className="flex items-center gap-2">
 									<span className="font-medium text-sm">Filter by month:</span>
 									<select
@@ -88,8 +102,14 @@ export default function Analytics() {
 
 								{/* Monthly Charts */}
 								<div className="grid gap-6 md:grid-cols-2">
-									<MonthlyLeadsChart selectedYear={selectedYear} />
-									<MonthlySalesChart selectedYear={selectedYear} />
+									<MonthlyLeadsChart
+										selectedYear={selectedYear}
+										dateType={dateType}
+									/>
+									<MonthlySalesChart
+										selectedYear={selectedYear}
+										dateType={dateType}
+									/>
 								</div>
 
 								<PlatformBreakdown

@@ -165,7 +165,7 @@ export function EditLeadDialog({
 		if (open) {
 			fetchOptions();
 		}
-	}, [open, fetchOptions]);
+	}, [open]);
 
 	// Auto-update month when date changes
 	useEffect(() => {

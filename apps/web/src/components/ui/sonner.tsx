@@ -1,15 +1,21 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-	const { theme = "system" } = useTheme();
 	const [mounted, setMounted] = useState(false);
+	const [theme, setTheme] = useState("system");
 
 	useEffect(() => {
 		setMounted(true);
+		// Try to get theme from localStorage or default to system
+		try {
+			const savedTheme = localStorage.getItem("vite-ui-theme") || "system";
+			setTheme(savedTheme);
+		} catch {
+			setTheme("system");
+		}
 	}, []);
 
 	if (!mounted) {

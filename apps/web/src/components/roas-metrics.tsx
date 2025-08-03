@@ -31,10 +31,6 @@ export default function ROASMetrics({
 	const [data, setData] = useState<ROASData | null>(null);
 	const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		fetchROASData();
-	}, [fetchROASData]);
-
 	const fetchROASData = async () => {
 		setLoading(true);
 		try {
@@ -66,6 +62,10 @@ export default function ROASMetrics({
 			setLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		fetchROASData();
+	}, [selectedMonth, selectedYear]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM ${amount.toLocaleString()}`;

@@ -27,35 +27,47 @@ interface MonthlyLeadsResponse {
 
 interface MonthlyLeadsChartProps {
 	selectedYear?: string;
+	dateType?: "lead" | "closed";
 }
 
 export default function MonthlyLeadsChart({
 	selectedYear,
+	dateType = "lead",
 }: MonthlyLeadsChartProps) {
 	const [leadsData, setLeadsData] = useState<MonthlyLeadsResponse | null>(null);
 	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		fetchLeadsData();
-	}, [fetchLeadsData]);
 
 	const fetchLeadsData = async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
 			if (selectedYear) params.append("year", selectedYear);
+			params.append("dateType", dateType);
 
 			const response = await fetch(
 				`/api/analytics/leads/growth/monthly?${params}`,
 			);
+
+			if (!response.ok) {
+				console.error("Leads API error:", response.status, response.statusText);
+				setLeadsData(null);
+				return;
+			}
+
 			const data = await response.json();
+			console.log("Leads data received:", data);
 			setLeadsData(data);
 		} catch (error) {
 			console.error("Error fetching monthly leads data:", error);
+			setLeadsData(null);
 		} finally {
 			setLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		fetchLeadsData();
+	}, [selectedYear, dateType]);
 
 	const CustomTooltip = ({ active, payload, label }: any) => {
 		if (active && payload && payload.length) {
@@ -89,7 +101,7 @@ export default function MonthlyLeadsChart({
 		);
 	}
 
-	if (!leadsData || leadsData.data.length === 0) {
+	if (!leadsData || !leadsData.data || leadsData.data.length === 0) {
 		return (
 			<Card>
 				<CardHeader>
@@ -113,7 +125,8 @@ export default function MonthlyLeadsChart({
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<Users className="h-5 w-5" />
-					Monthly Leads
+					Monthly Leads{" "}
+					{dateType === "closed" ? "(by Sale Date)" : "(by Lead Date)"}
 					<Badge variant="outline" className="ml-auto">
 						{leadsData.year}
 					</Badge>

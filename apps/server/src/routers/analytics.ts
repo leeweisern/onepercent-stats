@@ -3,16 +3,26 @@ import { Hono } from "hono";
 import { db } from "../db";
 import { advertisingCosts, leads } from "../db/schema/leads";
 
-const app = new Hono();
+type Env = {
+	DB: D1Database;
+	ASSETS: Fetcher;
+	CORS_ORIGIN: string;
+	BETTER_AUTH_SECRET: string;
+	BETTER_AUTH_URL: string;
+	GOOGLE_CLIENT_ID?: string;
+	GOOGLE_CLIENT_SECRET?: string;
+};
+
+const app = new Hono<{ Bindings: Env }>();
 
 // Helper function to get month name from date string
-const getMonthFromDate = (dateString: string): string => {
+export const getMonthFromDate = (dateString: string): string => {
 	if (!dateString) return "";
 
 	// Handle DD/MM/YYYY format (database format)
 	const parts = dateString.split("/");
 	if (parts.length === 3) {
-		const monthIndex = Number.parseInt(parts[1]) - 1; // Month is the second part (0-indexed)
+		const monthIndex = Number.parseInt(parts[1] || "0") - 1; // Month is the second part (0-indexed)
 		const monthNames = [
 			"January",
 			"February",
@@ -47,20 +57,20 @@ const getMonthFromDate = (dateString: string): string => {
 			"November",
 			"December",
 		];
-		return monthNames[date.getMonth()];
+		return monthNames[date.getMonth()] || "";
 	}
 
 	return "";
 };
 
 // Helper function to get year from date string
-const getYearFromDate = (dateString: string): string => {
+export const getYearFromDate = (dateString: string): string => {
 	if (!dateString) return "";
 
 	// Handle DD/MM/YYYY format (database format)
 	const parts = dateString.split("/");
 	if (parts.length === 3) {
-		return parts[2]; // Year is the third part
+		return parts[2] || ""; // Year is the third part
 	}
 
 	// Handle YYYY-MM-DD format (ISO format)
@@ -109,9 +119,9 @@ app.get("/leads/summary", async (c) => {
 	const totalSales = await db.select({ value: sum(leads.sales) }).from(leads);
 
 	return c.json({
-		totalLeads: totalLeads[0].value,
-		totalClosed: totalClosed[0].value,
-		totalSales: totalSales[0].value,
+		totalLeads: totalLeads[0]?.value || 0,
+		totalClosed: totalClosed[0]?.value || 0,
+		totalSales: totalSales[0]?.value || 0,
 	});
 });
 
@@ -134,12 +144,17 @@ app.get("/leads/platform-breakdown", async (c) => {
 	let query = db
 		.select({
 			platform: leads.platform,
-			totalLeads: count(),
-			closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`),
+			totalLeads: count().as("total_leads"),
+			closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`).as(
+				"closed_leads",
+			),
 			notClosedLeads: count(
 				sql`CASE WHEN ${leads.isClosed} = 0 OR ${leads.isClosed} IS NULL THEN 1 END`,
-			),
-			totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
+			).as("not_closed_leads"),
+			totalSales:
+				sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`.as(
+					"total_sales",
+				),
 		})
 		.from(leads);
 
@@ -201,8 +216,11 @@ app.get("/leads/funnel", async (c) => {
 		.select({
 			status: leads.status,
 			platform: leads.platform,
-			count: count(),
-			totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
+			count: count().as("count"),
+			totalSales:
+				sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`.as(
+					"total_sales",
+				),
 		})
 		.from(leads);
 
@@ -315,6 +333,9 @@ app.get("/leads/filter-options", async (c) => {
 		db
 			.select({ value: leads.trainerHandle })
 			.from(leads)
+			.where(
+				sql`${leads.trainerHandle} IS NOT NULL AND ${leads.trainerHandle} != ''`,
+			)
 			.groupBy(leads.trainerHandle),
 		db.select({ value: leads.date }).from(leads).groupBy(leads.date),
 	]);
@@ -325,7 +346,7 @@ app.get("/leads/filter-options", async (c) => {
 			dateOptions
 				.map((d) => d.value)
 				.filter(Boolean)
-				.map((date) => getYearFromDate(date))
+				.map((date) => getYearFromDate(date || ""))
 				.filter(Boolean), // Filter out empty strings
 		),
 	).sort((a, b) => b.localeCompare(a)); // Sort descending
@@ -372,9 +393,13 @@ app.post("/leads", async (c) => {
 		closedDateValue = ""; // Clear closed date if no sales
 	}
 
+	// Auto-set isClosed based on sales (unless explicitly provided)
+	const isClosedValue =
+		body.isClosed !== undefined ? body.isClosed : salesValue > 0;
+
 	// Derive closedMonth and closedYear from closedDateValue
-	let closedMonthValue = body.closedMonth || "";
-	let closedYearValue = body.closedYear || "";
+	let closedMonthValue = "";
+	let closedYearValue = "";
 	if (closedDateValue) {
 		closedMonthValue = getMonthFromDate(closedDateValue);
 		closedYearValue = getYearFromDate(closedDateValue);
@@ -385,12 +410,10 @@ app.post("/leads", async (c) => {
 		phoneNumber: body.phoneNumber || "",
 		platform: body.platform || "",
 		status: body.status || "",
-		isClosed: body.isClosed || false,
+		isClosed: isClosedValue,
 		sales: salesValue,
 		date: dateValue,
 		month: monthValue,
-		followUp: body.followUp || "",
-		appointment: body.appointment || "",
 		remark: body.remark || "",
 		trainerHandle: body.trainerHandle || "",
 		closedDate: closedDateValue,
@@ -411,6 +434,14 @@ app.put("/leads/:id", async (c) => {
 	const id = Number.parseInt(c.req.param("id"));
 	const body = await c.req.json();
 
+	// Get current lead data once to avoid multiple queries
+	const currentLead = await db.select().from(leads).where(eq(leads.id, id));
+
+	if (currentLead.length === 0) {
+		return c.json({ error: "Lead not found" }, 404);
+	}
+
+	const current = currentLead[0];
 	const updateData: any = {};
 
 	// Only update fields that are provided
@@ -418,48 +449,11 @@ app.put("/leads/:id", async (c) => {
 	if (body.phoneNumber !== undefined) updateData.phoneNumber = body.phoneNumber;
 	if (body.platform !== undefined) updateData.platform = body.platform;
 	if (body.status !== undefined) updateData.status = body.status;
-	if (body.isClosed !== undefined) updateData.isClosed = body.isClosed;
-	if (body.sales !== undefined) {
-		updateData.sales = body.sales;
-		// Auto-update closed date based on sales
-		if (body.closedDate === undefined) {
-			if (body.sales > 0) {
-				// If sales > 0 and no explicit closed date provided, use the lead's date
-				const currentLead = await db
-					.select()
-					.from(leads)
-					.where(eq(leads.id, id));
-				if (currentLead.length > 0 && currentLead[0].date) {
-					updateData.closedDate = currentLead[0].date;
-				}
-			} else {
-				// If sales = 0, clear closed date
-				updateData.closedDate = "";
-			}
-		}
-		// Update closedMonth and closedYear based on sales and closedDate
-		if (body.sales > 0) {
-			// If sales > 0, ensure we have closedDate and derive closedMonth/closedYear
-			if (updateData.closedDate) {
-				updateData.closedMonth = getMonthFromDate(updateData.closedDate);
-				updateData.closedYear = getYearFromDate(updateData.closedDate);
-			} else {
-				// Get existing closedDate if not being updated
-				const currentLead = await db
-					.select()
-					.from(leads)
-					.where(eq(leads.id, id));
-				if (currentLead.length > 0 && currentLead[0].closedDate) {
-					updateData.closedMonth = getMonthFromDate(currentLead[0].closedDate);
-					updateData.closedYear = getYearFromDate(currentLead[0].closedDate);
-				}
-			}
-		} else {
-			// If sales = 0, clear closedMonth and closedYear
-			updateData.closedMonth = "";
-			updateData.closedYear = "";
-		}
-	}
+	if (body.remark !== undefined) updateData.remark = body.remark;
+	if (body.trainerHandle !== undefined)
+		updateData.trainerHandle = body.trainerHandle;
+
+	// Handle date updates
 	if (body.date !== undefined) {
 		updateData.date = body.date;
 		// Auto-update month when date is provided (unless month is explicitly provided)
@@ -468,21 +462,52 @@ app.put("/leads/:id", async (c) => {
 		}
 	}
 	if (body.month !== undefined) updateData.month = body.month;
-	if (body.followUp !== undefined) updateData.followUp = body.followUp;
-	if (body.appointment !== undefined) updateData.appointment = body.appointment;
-	if (body.remark !== undefined) updateData.remark = body.remark;
-	if (body.trainerHandle !== undefined)
-		updateData.trainerHandle = body.trainerHandle;
+
+	// Handle closed date logic - this is the main logic for closed date fields
+	let finalClosedDate = current.closedDate;
+	let finalSales = current.sales;
+	let finalIsClosed = current.isClosed;
+
+	// Update sales if provided
+	if (body.sales !== undefined) {
+		finalSales = body.sales;
+		updateData.sales = body.sales;
+	}
+
+	// Update closedDate if explicitly provided
 	if (body.closedDate !== undefined) {
+		finalClosedDate = body.closedDate;
 		updateData.closedDate = body.closedDate;
-		// Update closedMonth and closedYear when closedDate is explicitly provided
-		if (body.closedDate) {
-			updateData.closedMonth = getMonthFromDate(body.closedDate);
-			updateData.closedYear = getYearFromDate(body.closedDate);
-		} else {
-			updateData.closedMonth = "";
-			updateData.closedYear = "";
+	} else if (body.sales !== undefined) {
+		// Auto-update closed date based on sales when sales is changed but closedDate is not explicitly provided
+		if (body.sales > 0 && !current.closedDate) {
+			// If sales > 0 and no existing closed date, use the lead's date
+			finalClosedDate = current.date || "";
+			updateData.closedDate = finalClosedDate;
+		} else if (body.sales === 0) {
+			// If sales = 0, clear closed date
+			finalClosedDate = "";
+			updateData.closedDate = "";
 		}
+	}
+
+	// Update isClosed if explicitly provided, or auto-update based on sales
+	if (body.isClosed !== undefined) {
+		finalIsClosed = body.isClosed;
+		updateData.isClosed = body.isClosed;
+	} else if (body.sales !== undefined) {
+		// Auto-update isClosed based on sales
+		finalIsClosed = body.sales > 0;
+		updateData.isClosed = finalIsClosed;
+	}
+
+	// Always update closedMonth and closedYear based on final closedDate
+	if (finalClosedDate) {
+		updateData.closedMonth = getMonthFromDate(finalClosedDate);
+		updateData.closedYear = getYearFromDate(finalClosedDate);
+	} else {
+		updateData.closedMonth = "";
+		updateData.closedYear = "";
 	}
 
 	const updatedLead = await db
@@ -753,9 +778,14 @@ app.get("/roas", async (c) => {
 		// Get total sales from leads
 		let salesQuery = db
 			.select({
-				totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
-				totalLeads: count(),
-				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`),
+				totalSales:
+					sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`.as(
+						"total_sales",
+					),
+				totalLeads: count().as("total_leads"),
+				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`).as(
+					"closed_leads",
+				),
 			})
 			.from(leads);
 
@@ -852,9 +882,12 @@ app.get("/roas", async (c) => {
 		});
 	} catch (error) {
 		console.error("Error calculating ROAS:", error);
-		console.error("Error details:", error.message, error.stack);
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
+		const errorStack = error instanceof Error ? error.stack : undefined;
+		console.error("Error details:", errorMessage, errorStack);
 		return c.json(
-			{ error: "Failed to calculate ROAS", details: error.message },
+			{ error: "Failed to calculate ROAS", details: errorMessage },
 			500,
 		);
 	}
@@ -864,41 +897,13 @@ app.get("/roas", async (c) => {
 app.get("/leads/growth/monthly", async (c) => {
 	try {
 		const year = c.req.query("year");
-
-		// Get monthly data for lead creation
-		let leadsCreatedQuery = db
-			.select({
-				month: leads.month,
-				totalLeads: count(),
-			})
-			.from(leads)
-			.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`);
-
-		if (year) {
-			leadsCreatedQuery = leadsCreatedQuery.where(
-				sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
-			);
-		}
-
-		const leadsCreatedData = await leadsCreatedQuery.groupBy(leads.month);
-
-		// Get monthly data for sales closure
-		let salesClosedQuery = db
-			.select({
-				month: leads.closedMonth,
-				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`),
-				totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
-			})
-			.from(leads)
-			.where(
-				sql`${leads.closedMonth} IS NOT NULL AND ${leads.closedMonth} != ''`,
-			);
-
-		if (year) {
-			salesClosedQuery = salesClosedQuery.where(eq(leads.closedYear, year));
-		}
-
-		const salesClosedData = await salesClosedQuery.groupBy(leads.closedMonth);
+		const dateType = c.req.query("dateType") || "lead"; // Default to 'lead' for backward compatibility
+		console.log(
+			"Monthly growth request for year:",
+			year,
+			"dateType:",
+			dateType,
+		);
 
 		// Sort by month order
 		const monthOrder = [
@@ -916,14 +921,117 @@ app.get("/leads/growth/monthly", async (c) => {
 			"December",
 		];
 
+		if (dateType === "closed") {
+			// When dateType is 'closed', aggregate by closed date and filter for closed leads only
+			const conditions = [
+				sql`${leads.closedMonth} IS NOT NULL AND ${leads.closedMonth} != ''`,
+				eq(leads.isClosed, true),
+			];
+
+			if (year) {
+				conditions.push(eq(leads.closedYear, year));
+			}
+
+			const salesClosedQuery = db
+				.select({
+					month: leads.closedMonth,
+					year: leads.closedYear,
+					totalLeads: count(),
+					closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`),
+					totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
+				})
+				.from(leads)
+				.where(and(...conditions))
+				.groupBy(leads.closedMonth, leads.closedYear);
+
+			console.log("Executing sales closed query...");
+			const salesClosedData = await salesClosedQuery;
+			console.log("Sales closed data:", salesClosedData);
+
+			const sortedData = salesClosedData
+				.map((item) => ({
+					month: item.month,
+					year: item.year,
+					totalLeads: item.totalLeads || 0,
+					closedLeads: item.closedLeads || 0,
+					totalSales: item.totalSales || 0,
+				}))
+				.sort((a, b) => {
+					if (a.year !== b.year) {
+						return (a.year || "").localeCompare(b.year || "");
+					}
+					const aIndex = monthOrder.indexOf(a.month || "");
+					const bIndex = monthOrder.indexOf(b.month || "");
+					return aIndex - bIndex;
+				});
+
+			console.log("Final sorted data (closed):", sortedData);
+
+			return c.json({
+				data: sortedData,
+				year: year || "All years",
+				dateType: "closed",
+			});
+		}
+		// Default behavior: aggregate by lead creation date (original logic)
+		const leadConditions = [
+			sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`,
+		];
+
+		if (year) {
+			leadConditions.push(
+				sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+			);
+		}
+
+		const leadsCreatedQuery = db
+			.select({
+				month: leads.month,
+				year: sql<string>`substr(${leads.date}, -4)`,
+				totalLeads: count(),
+			})
+			.from(leads)
+			.where(and(...leadConditions))
+			.groupBy(leads.month, sql<string>`substr(${leads.date}, -4)`);
+
+		console.log("Executing leads created query...");
+		const leadsCreatedData = await leadsCreatedQuery;
+		console.log("Leads created data:", leadsCreatedData);
+
+		// Get monthly data for sales closure
+		const salesConditions = [
+			sql`${leads.closedMonth} IS NOT NULL AND ${leads.closedMonth} != ''`,
+		];
+
+		if (year) {
+			salesConditions.push(eq(leads.closedYear, year));
+		}
+
+		const salesClosedQuery = db
+			.select({
+				month: leads.closedMonth,
+				year: leads.closedYear,
+				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`),
+				totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
+			})
+			.from(leads)
+			.where(and(...salesConditions))
+			.groupBy(leads.closedMonth, leads.closedYear);
+
+		console.log("Executing sales closed query...");
+		const salesClosedData = await salesClosedQuery;
+		console.log("Sales closed data:", salesClosedData);
+
 		// Combine both datasets by month
 		const combinedData: Record<string, any> = {};
 
 		// Add leads created data
 		for (const item of leadsCreatedData) {
-			if (item.month) {
-				combinedData[item.month] = {
+			if (item.month && item.year) {
+				const key = `${item.year}-${item.month}`;
+				combinedData[key] = {
 					month: item.month,
+					year: item.year,
 					totalLeads: item.totalLeads || 0,
 					closedLeads: 0,
 					totalSales: 0,
@@ -933,33 +1041,51 @@ app.get("/leads/growth/monthly", async (c) => {
 
 		// Add sales closed data
 		for (const item of salesClosedData) {
-			if (item.month) {
-				if (!combinedData[item.month]) {
-					combinedData[item.month] = {
+			if (item.month && item.year) {
+				const key = `${item.year}-${item.month}`;
+				if (!combinedData[key]) {
+					combinedData[key] = {
 						month: item.month,
+						year: item.year,
 						totalLeads: 0,
 						closedLeads: 0,
 						totalSales: 0,
 					};
 				}
-				combinedData[item.month].closedLeads = item.closedLeads || 0;
-				combinedData[item.month].totalSales = item.totalSales || 0;
+				combinedData[key].closedLeads = item.closedLeads || 0;
+				combinedData[key].totalSales = item.totalSales || 0;
 			}
 		}
 
 		const sortedData = Object.values(combinedData).sort((a: any, b: any) => {
+			if (a.year !== b.year) {
+				return a.year.localeCompare(b.year);
+			}
 			const aIndex = monthOrder.indexOf(a.month || "");
 			const bIndex = monthOrder.indexOf(b.month || "");
 			return aIndex - bIndex;
 		});
 
+		console.log("Final sorted data (lead):", sortedData);
+
 		return c.json({
 			data: sortedData,
 			year: year || "All years",
+			dateType: "lead",
 		});
 	} catch (error) {
 		console.error("Error fetching monthly growth data:", error);
-		return c.json({ error: "Failed to fetch monthly growth data" }, 500);
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
+		const errorStack = error instanceof Error ? error.stack : undefined;
+		console.error("Error details:", errorMessage, errorStack);
+		return c.json(
+			{
+				error: "Failed to fetch monthly growth data",
+				details: errorMessage,
+			},
+			500,
+		);
 	}
 });
 

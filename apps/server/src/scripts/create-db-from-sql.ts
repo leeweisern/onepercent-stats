@@ -1,3 +1,5 @@
+// This script is only used locally, not in Cloudflare Workers
+// @ts-ignore - bun:sqlite is only available in Bun runtime
 import { Database } from "bun:sqlite";
 import fs from "node:fs";
 

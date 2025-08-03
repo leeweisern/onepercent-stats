@@ -13,6 +13,7 @@ This repository contains the source code for the One Percent Stats application, 
 - **Authentication**: better-auth.
 - **UI Components**: shadcn/ui with Tailwind CSS.
 - **Linting and Formatting**: Biome.
+- **Package Manager**: Always use Bun instead of npm for all package management and script execution.
 
 ## UI Component Guidelines
 

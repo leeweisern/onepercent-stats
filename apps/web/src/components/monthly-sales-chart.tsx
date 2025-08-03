@@ -26,35 +26,47 @@ interface MonthlySalesResponse {
 
 interface MonthlySalesChartProps {
 	selectedYear?: string;
+	dateType?: "lead" | "closed";
 }
 
 export default function MonthlySalesChart({
 	selectedYear,
+	dateType = "lead",
 }: MonthlySalesChartProps) {
 	const [salesData, setSalesData] = useState<MonthlySalesResponse | null>(null);
 	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		fetchSalesData();
-	}, [fetchSalesData]);
 
 	const fetchSalesData = async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
 			if (selectedYear) params.append("year", selectedYear);
+			params.append("dateType", dateType);
 
 			const response = await fetch(
 				`/api/analytics/leads/growth/monthly?${params}`,
 			);
+
+			if (!response.ok) {
+				console.error("Sales API error:", response.status, response.statusText);
+				setSalesData(null);
+				return;
+			}
+
 			const data = await response.json();
+			console.log("Sales data received:", data);
 			setSalesData(data);
 		} catch (error) {
 			console.error("Error fetching monthly sales data:", error);
+			setSalesData(null);
 		} finally {
 			setLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		fetchSalesData();
+	}, [selectedYear, dateType]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM ${amount.toLocaleString()}`;
@@ -92,7 +104,7 @@ export default function MonthlySalesChart({
 		);
 	}
 
-	if (!salesData || salesData.data.length === 0) {
+	if (!salesData || !salesData.data || salesData.data.length === 0) {
 		return (
 			<Card>
 				<CardHeader>
@@ -116,7 +128,8 @@ export default function MonthlySalesChart({
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<DollarSign className="h-5 w-5" />
-					Monthly Sales
+					Monthly Sales{" "}
+					{dateType === "closed" ? "(by Sale Date)" : "(by Lead Date)"}
 					<Badge variant="outline" className="ml-auto">
 						{salesData.year}
 					</Badge>

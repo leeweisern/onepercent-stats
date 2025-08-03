@@ -38,10 +38,6 @@ export default function MonthlyGrowthChart({
 	);
 	const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		fetchGrowthData();
-	}, [fetchGrowthData]);
-
 	const fetchGrowthData = async () => {
 		setLoading(true);
 		try {
@@ -51,14 +47,31 @@ export default function MonthlyGrowthChart({
 			const response = await fetch(
 				`/api/analytics/leads/growth/monthly?${params}`,
 			);
+
+			if (!response.ok) {
+				console.error(
+					"Growth API error:",
+					response.status,
+					response.statusText,
+				);
+				setGrowthData(null);
+				return;
+			}
+
 			const data = await response.json();
+			console.log("Growth data received:", data);
 			setGrowthData(data);
 		} catch (error) {
 			console.error("Error fetching monthly growth data:", error);
+			setGrowthData(null);
 		} finally {
 			setLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		fetchGrowthData();
+	}, [selectedYear]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM ${amount.toLocaleString()}`;
@@ -99,7 +112,7 @@ export default function MonthlyGrowthChart({
 		);
 	}
 
-	if (!growthData || growthData.data.length === 0) {
+	if (!growthData || !growthData.data || growthData.data.length === 0) {
 		return (
 			<Card>
 				<CardHeader>

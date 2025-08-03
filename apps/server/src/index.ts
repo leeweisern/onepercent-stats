@@ -5,7 +5,17 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { auth } from "./lib/auth";
 
-const app = new Hono();
+type Env = {
+	DB: D1Database;
+	ASSETS: Fetcher;
+	CORS_ORIGIN: string;
+	BETTER_AUTH_SECRET: string;
+	BETTER_AUTH_URL: string;
+	GOOGLE_CLIENT_ID?: string;
+	GOOGLE_CLIENT_SECRET?: string;
+};
+
+const app = new Hono<{ Bindings: Env }>();
 
 app.use(logger());
 app.use(

@@ -71,7 +71,8 @@ async function importCsvToD1() {
 // Export for use in other scripts
 export { importCsvToD1 };
 
-// Run if called directly
+// Run if called directly (Bun-specific)
+// @ts-ignore - import.meta.main is Bun-specific
 if (import.meta.main) {
 	importCsvToD1()
 		.then((records) => {

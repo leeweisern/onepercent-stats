@@ -522,8 +522,20 @@ interface AlarmInvocationInfo {
 	readonly isRetry: boolean;
 	readonly retryCount: number;
 }
-interface Cloudflare {
-	readonly compatibilityFlags: Record<string, boolean>;
+declare namespace Cloudflare {
+	interface Env {
+		NODE_ENV: "production";
+		CLOUDFLARE_ACCOUNT_ID: string;
+		CLOUDFLARE_DATABASE_ID: string;
+		CLOUDFLARE_D1_TOKEN: string;
+		CORS_ORIGIN: string;
+		BETTER_AUTH_SECRET: string;
+		BETTER_AUTH_URL: string;
+		GOOGLE_CLIENT_ID?: string;
+		GOOGLE_CLIENT_SECRET?: string;
+		DB: D1Database;
+		ASSETS: Fetcher;
+	}
 }
 interface DurableObject {
 	fetch(request: Request): Response | Promise<Response>;

@@ -75,10 +75,6 @@ export default function PlatformBreakdown({
 	const [data, setData] = useState<PlatformBreakdownResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		fetchBreakdown();
-	}, [fetchBreakdown]);
-
 	const fetchBreakdown = async () => {
 		setLoading(true);
 		try {
@@ -97,6 +93,10 @@ export default function PlatformBreakdown({
 			setLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		fetchBreakdown();
+	}, [selectedMonth, selectedYear]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM${amount.toLocaleString()}`;

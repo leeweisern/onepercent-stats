@@ -77,7 +77,7 @@ export default function AdvertisingCostsManagement() {
 
 	useEffect(() => {
 		fetchAdvertisingCosts();
-	}, [fetchAdvertisingCosts]);
+	}, []);
 
 	const fetchAdvertisingCosts = async () => {
 		setLoading(true);
