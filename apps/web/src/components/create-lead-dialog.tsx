@@ -15,47 +15,11 @@ import {
 	SelectTrigger,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-// Helper function to convert from YYYY-MM-DD to DD/MM/YYYY format
-const convertFromDateInputFormat = (dateString: string): string => {
-	if (!dateString) return "";
-
-	// Parse YYYY-MM-DD format and convert to DD/MM/YYYY
-	const parts = dateString.split("-");
-	if (parts.length === 3) {
-		const year = parts[0];
-		const month = Number.parseInt(parts[1]).toString(); // Remove leading zero
-		const day = Number.parseInt(parts[2]).toString(); // Remove leading zero
-		return `${day}/${month}/${year}`;
-	}
-
-	return dateString;
-};
-
-// Helper function to get month name from date
-const getMonthFromDate = (dateString: string): string => {
-	if (!dateString) return "";
-
-	const date = new Date(dateString);
-	if (Number.isNaN(date.getTime())) return "";
-
-	const monthNames = [
-		"January",
-		"February",
-		"March",
-		"April",
-		"May",
-		"June",
-		"July",
-		"August",
-		"September",
-		"October",
-		"November",
-		"December",
-	];
-
-	return monthNames[date.getMonth()];
-};
+import {
+	convertFromDateInputFormat,
+	getMonthFromDate,
+	getTodayYYYYMMDD,
+} from "@/lib/date-utils";
 
 interface CreateLeadDialogProps {
 	open: boolean;
@@ -117,11 +81,7 @@ export function CreateLeadDialog({
 		setIsClosed(false);
 		setSales("");
 		// Set date to today's date in YYYY-MM-DD format (user's local time)
-		const today = new Date();
-		const year = today.getFullYear();
-		const month = String(today.getMonth() + 1).padStart(2, "0");
-		const day = String(today.getDate()).padStart(2, "0");
-		const todayString = `${year}-${month}-${day}`;
+		const todayString = getTodayYYYYMMDD();
 		setDate(todayString);
 		setMonth(getMonthFromDate(todayString));
 		setClosedDate("");

@@ -2,6 +2,7 @@ import { and, count, desc, eq, sql, sum } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db";
 import { advertisingCosts, leads } from "../db/schema/leads";
+import { standardizeDate } from "../lib/date-utils";
 
 type Env = {
 	DB: D1Database;
@@ -380,13 +381,13 @@ app.post("/leads", async (c) => {
 		return c.json({ error: "Name is required" }, 400);
 	}
 
-	// Prepare lead data with defaults
-	const dateValue = body.date || "";
+	// Prepare lead data with defaults and standardize dates
+	const dateValue = standardizeDate(body.date) || "";
 	const monthValue = body.month || getMonthFromDate(dateValue);
 	const salesValue = body.sales || 0;
 
 	// Auto-set closed date based on sales
-	let closedDateValue = body.closedDate || "";
+	let closedDateValue = standardizeDate(body.closedDate) || "";
 	if (salesValue > 0 && !closedDateValue && dateValue) {
 		closedDateValue = dateValue; // Set closed date to same as date if sales > 0
 	} else if (salesValue === 0) {
@@ -453,12 +454,12 @@ app.put("/leads/:id", async (c) => {
 	if (body.trainerHandle !== undefined)
 		updateData.trainerHandle = body.trainerHandle;
 
-	// Handle date updates
+	// Handle date updates with standardization
 	if (body.date !== undefined) {
-		updateData.date = body.date;
+		updateData.date = standardizeDate(body.date);
 		// Auto-update month when date is provided (unless month is explicitly provided)
 		if (body.month === undefined && body.date) {
-			updateData.month = getMonthFromDate(body.date);
+			updateData.month = getMonthFromDate(updateData.date || "");
 		}
 	}
 	if (body.month !== undefined) updateData.month = body.month;
@@ -474,10 +475,10 @@ app.put("/leads/:id", async (c) => {
 		updateData.sales = body.sales;
 	}
 
-	// Update closedDate if explicitly provided
+	// Update closedDate if explicitly provided with standardization
 	if (body.closedDate !== undefined) {
-		finalClosedDate = body.closedDate;
-		updateData.closedDate = body.closedDate;
+		finalClosedDate = standardizeDate(body.closedDate) || "";
+		updateData.closedDate = finalClosedDate;
 	} else if (body.sales !== undefined) {
 		// Auto-update closed date based on sales when sales is changed but closedDate is not explicitly provided
 		if (body.sales > 0 && !current.closedDate) {
@@ -922,10 +923,10 @@ app.get("/leads/growth/monthly", async (c) => {
 		];
 
 		if (dateType === "closed") {
-			// When dateType is 'closed', aggregate by closed date and filter for closed leads only
+			// When dateType is 'closed', aggregate by closed date and show all leads that were closed in that month
 			const conditions = [
 				sql`${leads.closedMonth} IS NOT NULL AND ${leads.closedMonth} != ''`,
-				eq(leads.isClosed, true),
+				eq(leads.isClosed, true), // Only include leads that were actually closed
 			];
 
 			if (year) {
@@ -936,8 +937,8 @@ app.get("/leads/growth/monthly", async (c) => {
 				.select({
 					month: leads.closedMonth,
 					year: leads.closedYear,
-					totalLeads: count(),
-					closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`),
+					totalLeads: count(), // Count all closed leads in this month (should equal closedLeads)
+					closedLeads: count(), // Same as totalLeads since we're filtering for closed leads only
 					totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
 				})
 				.from(leads)

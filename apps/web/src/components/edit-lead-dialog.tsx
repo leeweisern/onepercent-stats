@@ -15,62 +15,11 @@ import {
 	SelectTrigger,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-// Helper functions to convert between DD/MM/YYYY and YYYY-MM-DD formats
-const convertToDateInputFormat = (dateString: string | null): string => {
-	if (!dateString) return "";
-
-	// Parse DD/MM/YYYY format and convert to YYYY-MM-DD
-	const parts = dateString.split("/");
-	if (parts.length === 3) {
-		const day = parts[0].padStart(2, "0");
-		const month = parts[1].padStart(2, "0");
-		const year = parts[2];
-		return `${year}-${month}-${day}`;
-	}
-
-	return dateString;
-};
-
-const convertFromDateInputFormat = (dateString: string): string => {
-	if (!dateString) return "";
-
-	// Parse YYYY-MM-DD format and convert to DD/MM/YYYY
-	const parts = dateString.split("-");
-	if (parts.length === 3) {
-		const year = parts[0];
-		const month = Number.parseInt(parts[1]).toString(); // Remove leading zero
-		const day = Number.parseInt(parts[2]).toString(); // Remove leading zero
-		return `${day}/${month}/${year}`;
-	}
-
-	return dateString;
-};
-
-// Helper function to get month name from date
-const getMonthFromDate = (dateString: string): string => {
-	if (!dateString) return "";
-
-	const date = new Date(dateString);
-	if (Number.isNaN(date.getTime())) return "";
-
-	const monthNames = [
-		"January",
-		"February",
-		"March",
-		"April",
-		"May",
-		"June",
-		"July",
-		"August",
-		"September",
-		"October",
-		"November",
-		"December",
-	];
-
-	return monthNames[date.getMonth()];
-};
+import {
+	convertToDateInputFormat,
+	convertFromDateInputFormat,
+	getMonthFromDate,
+} from "@/lib/date-utils";
 
 interface Lead {
 	id: number;
