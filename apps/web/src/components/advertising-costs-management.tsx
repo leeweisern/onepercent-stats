@@ -1,5 +1,5 @@
 import { Calendar, DollarSign, Edit, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,11 +75,7 @@ export default function AdvertisingCostsManagement() {
 		currency: "RM",
 	});
 
-	useEffect(() => {
-		fetchAdvertisingCosts();
-	}, [fetchAdvertisingCosts]);
-
-	const fetchAdvertisingCosts = async () => {
+	const fetchAdvertisingCosts = useCallback(async () => {
 		setLoading(true);
 		try {
 			const response = await fetch("/api/analytics/advertising-costs");
@@ -90,7 +86,11 @@ export default function AdvertisingCostsManagement() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		fetchAdvertisingCosts();
+	}, [fetchAdvertisingCosts]);
 
 	const formatCurrency = (amount: number, currency = "RM") => {
 		return `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

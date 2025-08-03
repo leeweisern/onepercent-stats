@@ -1,5 +1,5 @@
 import { DollarSign, Target, TrendingUp, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -31,7 +31,7 @@ export default function ROASMetrics({
 	const [data, setData] = useState<ROASData | null>(null);
 	const [loading, setLoading] = useState(true);
 
-	const fetchROASData = async () => {
+	const fetchROASData = useCallback(async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
@@ -61,7 +61,7 @@ export default function ROASMetrics({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedMonth, selectedYear]);
 
 	useEffect(() => {
 		fetchROASData();

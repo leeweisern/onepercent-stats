@@ -79,13 +79,18 @@ export default function Leads() {
 	const [sortField, setSortField] = useState<string>("date");
 	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-	useEffect(() => {
-		fetchLeads();
-	}, [fetchLeads]);
-
-	useEffect(() => {
-		applyFilters();
-	}, [applyFilters]);
+	const fetchLeads = useCallback(async () => {
+		try {
+			const response = await fetch("/api/analytics/leads");
+			const data = await response.json();
+			setLeads(data);
+			setFilteredLeads(data);
+		} catch (error) {
+			console.error("Error fetching leads:", error);
+		} finally {
+			setLoading(false);
+		}
+	}, []);
 
 	const parseDate = useCallback((dateString: string) => {
 		// Parse DD/MM/YYYY format
@@ -217,18 +222,13 @@ export default function Leads() {
 		setFilteredLeads(filtered);
 	}, [leads, filters, sortField, sortDirection, parseDate]);
 
-	const fetchLeads = async () => {
-		try {
-			const response = await fetch("/api/analytics/leads");
-			const data = await response.json();
-			setLeads(data);
-			setFilteredLeads(data);
-		} catch (error) {
-			console.error("Error fetching leads:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
+	useEffect(() => {
+		fetchLeads();
+	}, [fetchLeads]);
+
+	useEffect(() => {
+		applyFilters();
+	}, [applyFilters]);
 
 	const formatCurrency = (amount: number | null) => {
 		if (!amount) return "RM 0";

@@ -1,5 +1,5 @@
 import { TrendingDown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,7 +61,7 @@ export default function FunnelChart({
 	);
 	const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([]);
 
-	const fetchFunnelData = async () => {
+	const fetchFunnelData = useCallback(async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
@@ -77,9 +77,9 @@ export default function FunnelChart({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedMonth, selectedYear, currentPlatform]);
 
-	const fetchSummaryData = async () => {
+	const fetchSummaryData = useCallback(async () => {
 		try {
 			// Build query params for filtering
 			const params = new URLSearchParams();
@@ -111,9 +111,9 @@ export default function FunnelChart({
 		} catch (error) {
 			console.error("Error fetching summary data:", error);
 		}
-	};
+	}, [selectedMonth, selectedYear, currentPlatform]);
 
-	const fetchPlatforms = async () => {
+	const fetchPlatforms = useCallback(async () => {
 		try {
 			const response = await fetch("/api/analytics/leads/filter-options");
 			const data = await response.json();
@@ -121,7 +121,7 @@ export default function FunnelChart({
 		} catch (error) {
 			console.error("Error fetching platforms:", error);
 		}
-	};
+	}, []);
 
 	useEffect(() => {
 		fetchFunnelData();

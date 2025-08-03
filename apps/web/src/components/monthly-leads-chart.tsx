@@ -1,5 +1,5 @@
 import { Calendar, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Bar,
 	BarChart,
@@ -37,7 +37,7 @@ export default function MonthlyLeadsChart({
 	const [leadsData, setLeadsData] = useState<MonthlyLeadsResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 
-	const fetchLeadsData = async () => {
+	const fetchLeadsData = useCallback(async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
@@ -63,7 +63,7 @@ export default function MonthlyLeadsChart({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedYear, dateType]);
 
 	useEffect(() => {
 		fetchLeadsData();

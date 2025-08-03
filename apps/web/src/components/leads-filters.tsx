@@ -1,5 +1,5 @@
 import { Filter, Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -66,15 +66,7 @@ export function LeadsFilters({
 
 	const [_loading, setLoading] = useState(false);
 
-	useEffect(() => {
-		fetchFilterOptions();
-	}, [fetchFilterOptions]);
-
-	useEffect(() => {
-		onFiltersChange(filters);
-	}, [filters, onFiltersChange]);
-
-	const fetchFilterOptions = async () => {
+	const fetchFilterOptions = useCallback(async () => {
 		setLoading(true);
 		try {
 			const response = await fetch("/api/analytics/leads/filter-options");
@@ -85,7 +77,15 @@ export function LeadsFilters({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		fetchFilterOptions();
+	}, [fetchFilterOptions]);
+
+	useEffect(() => {
+		onFiltersChange(filters);
+	}, [filters, onFiltersChange]);
 
 	const updateFilter = (key: keyof FilterState, value: string) => {
 		setFilters((prev) => ({ ...prev, [key]: value }));

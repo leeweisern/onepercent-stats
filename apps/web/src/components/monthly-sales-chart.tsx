@@ -1,5 +1,5 @@
 import { Calendar, DollarSign } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Bar,
 	BarChart,
@@ -36,7 +36,7 @@ export default function MonthlySalesChart({
 	const [salesData, setSalesData] = useState<MonthlySalesResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 
-	const fetchSalesData = async () => {
+	const fetchSalesData = useCallback(async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
@@ -62,7 +62,7 @@ export default function MonthlySalesChart({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedYear, dateType]);
 
 	useEffect(() => {
 		fetchSalesData();

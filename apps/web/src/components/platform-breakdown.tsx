@@ -1,5 +1,5 @@
 import { BarChart3 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -75,7 +75,7 @@ export default function PlatformBreakdown({
 	const [data, setData] = useState<PlatformBreakdownResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 
-	const fetchBreakdown = async () => {
+	const fetchBreakdown = useCallback(async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
@@ -92,7 +92,7 @@ export default function PlatformBreakdown({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedMonth, selectedYear]);
 
 	useEffect(() => {
 		fetchBreakdown();

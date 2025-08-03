@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -132,6 +132,16 @@ export function EditLeadDialog({
 	});
 	const [loading, setLoading] = useState(false);
 
+	const fetchOptions = useCallback(async () => {
+		try {
+			const response = await fetch("/api/analytics/leads/options");
+			const data = await response.json();
+			setOptions(data);
+		} catch (error) {
+			console.error("Failed to fetch options:", error);
+		}
+	}, []);
+
 	useEffect(() => {
 		if (lead) {
 			setName(lead.name || "");
@@ -195,16 +205,6 @@ export function EditLeadDialog({
 			setClosedDate("");
 		}
 	}, [sales, closedDate]);
-
-	const fetchOptions = async () => {
-		try {
-			const response = await fetch("/api/analytics/leads/options");
-			const data = await response.json();
-			setOptions(data);
-		} catch (error) {
-			console.error("Failed to fetch options:", error);
-		}
-	};
 
 	const handleSave = async () => {
 		if (!lead) return;

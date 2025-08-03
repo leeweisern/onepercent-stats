@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import FunnelChart from "@/components/funnel-chart";
 import MonthlyLeadsChart from "@/components/monthly-leads-chart";
@@ -15,12 +15,7 @@ export default function Analytics() {
 	const [selectedYear, setSelectedYear] = useState<string>("");
 	const [dateType, setDateType] = useState<"lead" | "closed">("lead");
 
-	useEffect(() => {
-		fetchAvailableMonths();
-		fetchAvailableYears();
-	}, [fetchAvailableMonths, fetchAvailableYears]);
-
-	const fetchAvailableMonths = async () => {
+	const fetchAvailableMonths = useCallback(async () => {
 		try {
 			const response = await fetch("/api/analytics/leads/months");
 			const months = await response.json();
@@ -28,9 +23,9 @@ export default function Analytics() {
 		} catch (error) {
 			console.error("Error fetching months:", error);
 		}
-	};
+	}, []);
 
-	const fetchAvailableYears = async () => {
+	const fetchAvailableYears = useCallback(async () => {
 		try {
 			const response = await fetch("/api/analytics/leads/filter-options");
 			const data = await response.json();
@@ -38,7 +33,12 @@ export default function Analytics() {
 		} catch (error) {
 			console.error("Error fetching years:", error);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		fetchAvailableMonths();
+		fetchAvailableYears();
+	}, [fetchAvailableMonths, fetchAvailableYears]);
 
 	return (
 		<SidebarProvider>

@@ -1,5 +1,5 @@
 import { DollarSign } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,11 +63,7 @@ export default function AdvertisingCosts({
 	const [totalLeads, setTotalLeads] = useState(0);
 	const [costPerLead, setCostPerLead] = useState(0);
 
-	useEffect(() => {
-		fetchData();
-	}, [fetchData]);
-
-	const fetchData = async () => {
+	const fetchData = useCallback(async () => {
 		setLoading(true);
 		try {
 			// Fetch advertising costs and leads in parallel
@@ -98,7 +94,11 @@ export default function AdvertisingCosts({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedMonth, selectedYear]);
+
+	useEffect(() => {
+		fetchData();
+	}, [fetchData]);
 	const filterCosts = (allCosts: AdvertisingCost[]) => {
 		let filtered = [...allCosts];
 

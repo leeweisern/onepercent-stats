@@ -1,5 +1,5 @@
 import { Calendar, TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Bar,
 	BarChart,
@@ -38,7 +38,7 @@ export default function MonthlyGrowthChart({
 	);
 	const [loading, setLoading] = useState(true);
 
-	const fetchGrowthData = async () => {
+	const fetchGrowthData = useCallback(async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams();
@@ -67,7 +67,7 @@ export default function MonthlyGrowthChart({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedYear]);
 
 	useEffect(() => {
 		fetchGrowthData();

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -97,17 +97,46 @@ export function CreateLeadDialog({
 	});
 	const [loading, setLoading] = useState(false);
 
+	const fetchOptions = useCallback(async () => {
+		try {
+			const response = await fetch("/api/analytics/leads/options");
+			const data = await response.json();
+			setOptions(data);
+		} catch (error) {
+			console.error("Failed to fetch options:", error);
+		}
+	}, []);
+
+	const resetForm = useCallback(() => {
+		setName("");
+		setPhoneNumber("");
+		setPlatform("");
+		setCustomPlatform("");
+		setIsCustomPlatform(false);
+		setStatus("");
+		setIsClosed(false);
+		setSales("");
+		// Set date to today's date in YYYY-MM-DD format (user's local time)
+		const today = new Date();
+		const year = today.getFullYear();
+		const month = String(today.getMonth() + 1).padStart(2, "0");
+		const day = String(today.getDate()).padStart(2, "0");
+		const todayString = `${year}-${month}-${day}`;
+		setDate(todayString);
+		setMonth(getMonthFromDate(todayString));
+		setClosedDate("");
+
+		setRemark("");
+		setTrainerHandle("");
+	}, []);
+
 	useEffect(() => {
 		if (open) {
 			fetchOptions();
 			// Reset form when dialog opens
 			resetForm();
 		}
-	}, [
-		open,
-		fetchOptions, // Reset form when dialog opens
-		resetForm,
-	]);
+	}, [open, fetchOptions, resetForm]);
 
 	// Auto-update month when date changes
 	useEffect(() => {
@@ -130,39 +159,6 @@ export function CreateLeadDialog({
 			setIsClosed(false);
 		}
 	}, [sales]);
-
-	const resetForm = () => {
-		setName("");
-		setPhoneNumber("");
-		setPlatform("");
-		setCustomPlatform("");
-		setIsCustomPlatform(false);
-		setStatus("");
-		setIsClosed(false);
-		setSales("");
-		// Set date to today's date in YYYY-MM-DD format (user's local time)
-		const today = new Date();
-		const year = today.getFullYear();
-		const month = String(today.getMonth() + 1).padStart(2, "0");
-		const day = String(today.getDate()).padStart(2, "0");
-		const todayString = `${year}-${month}-${day}`;
-		setDate(todayString);
-		setMonth(getMonthFromDate(todayString));
-		setClosedDate("");
-
-		setRemark("");
-		setTrainerHandle("");
-	};
-
-	const fetchOptions = async () => {
-		try {
-			const response = await fetch("/api/analytics/leads/options");
-			const data = await response.json();
-			setOptions(data);
-		} catch (error) {
-			console.error("Failed to fetch options:", error);
-		}
-	};
 
 	const handleSave = async () => {
 		if (!name.trim()) {
