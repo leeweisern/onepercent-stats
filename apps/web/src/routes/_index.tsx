@@ -1,5 +1,6 @@
 import { Navigate } from "react-router";
 import type { Route } from "./+types/_index";
+import { ProtectedRoute } from "@/components/protected-route";
 
 export function meta({}: Route.MetaArgs) {
 	return [
@@ -9,5 +10,9 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Index() {
-	return <Navigate to="/dashboard" replace />;
+	return (
+		<ProtectedRoute>
+			<Navigate to="/dashboard" replace />
+		</ProtectedRoute>
+	);
 }

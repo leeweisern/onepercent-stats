@@ -18,6 +18,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { CreateLeadDialog } from "@/components/create-lead-dialog";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { type FilterState, LeadsFilters } from "@/components/leads-filters";
+import { ProtectedRoute } from "@/components/protected-route";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -359,379 +360,391 @@ export default function Leads() {
 	};
 
 	return (
-		<SidebarProvider>
-			<AppSidebar variant="inset" />
-			<SidebarInset>
-				<SiteHeader />
-				<div className="flex flex-1 flex-col">
-					<div className="flex flex-1 flex-col gap-2">
-						<div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
-							{/* Filters */}
-							<div className="mb-6">
-								<LeadsFilters
-									onFiltersChange={handleFiltersChange}
-									totalResults={filteredLeads.length}
-								/>
-							</div>
+		<ProtectedRoute>
+			<SidebarProvider>
+				<AppSidebar variant="inset" />
+				<SidebarInset>
+					<SiteHeader />
+					<div className="flex flex-1 flex-col">
+						<div className="flex flex-1 flex-col gap-2">
+							<div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
+								{/* Filters */}
+								<div className="mb-6">
+									<LeadsFilters
+										onFiltersChange={handleFiltersChange}
+										totalResults={filteredLeads.length}
+									/>
+								</div>
 
-							{/* Summary Cards */}
-							<div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-4">
-								<Card>
-									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="font-medium text-sm">
-											Total Leads
-										</CardTitle>
-										<Users className="h-4 w-4 text-muted-foreground" />
-									</CardHeader>
-									<CardContent>
-										<div className="font-bold text-2xl">
-											{filteredLeads.length}
-										</div>
-									</CardContent>
-								</Card>
-								<Card>
-									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="font-medium text-sm">
-											Closed Leads
-										</CardTitle>
-										<CheckCircle className="h-4 w-4 text-muted-foreground" />
-									</CardHeader>
-									<CardContent>
-										<div className="font-bold text-2xl">
-											{filteredLeads.filter((lead) => lead.isClosed).length}
-										</div>
-									</CardContent>
-								</Card>
-								<Card>
-									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="font-medium text-sm">
-											Total Sales
-										</CardTitle>
-										<TrendingUp className="h-4 w-4 text-muted-foreground" />
-									</CardHeader>
-									<CardContent>
-										<div className="font-bold text-2xl">
-											{formatCurrency(
-												filteredLeads.reduce(
-													(sum, lead) => sum + (lead.sales || 0),
-													0,
-												),
-											)}
-										</div>
-									</CardContent>
-								</Card>
-								<Card>
-									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="font-medium text-sm">
-											Conversion Rate
-										</CardTitle>
-										<BarChart3 className="h-4 w-4 text-muted-foreground" />
-									</CardHeader>
-									<CardContent>
-										<div className="font-bold text-2xl">
-											{filteredLeads.length > 0
-												? `${Math.round((filteredLeads.filter((lead) => lead.isClosed).length / filteredLeads.length) * 100)}%`
-												: "0%"}
-										</div>
-									</CardContent>
-								</Card>
-							</div>
+								{/* Summary Cards */}
+								<div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-4">
+									<Card>
+										<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+											<CardTitle className="font-medium text-sm">
+												Total Leads
+											</CardTitle>
+											<Users className="h-4 w-4 text-muted-foreground" />
+										</CardHeader>
+										<CardContent>
+											<div className="font-bold text-2xl">
+												{filteredLeads.length}
+											</div>
+										</CardContent>
+									</Card>
+									<Card>
+										<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+											<CardTitle className="font-medium text-sm">
+												Closed Leads
+											</CardTitle>
+											<CheckCircle className="h-4 w-4 text-muted-foreground" />
+										</CardHeader>
+										<CardContent>
+											<div className="font-bold text-2xl">
+												{filteredLeads.filter((lead) => lead.isClosed).length}
+											</div>
+										</CardContent>
+									</Card>
+									<Card>
+										<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+											<CardTitle className="font-medium text-sm">
+												Total Sales
+											</CardTitle>
+											<TrendingUp className="h-4 w-4 text-muted-foreground" />
+										</CardHeader>
+										<CardContent>
+											<div className="font-bold text-2xl">
+												{formatCurrency(
+													filteredLeads.reduce(
+														(sum, lead) => sum + (lead.sales || 0),
+														0,
+													),
+												)}
+											</div>
+										</CardContent>
+									</Card>
+									<Card>
+										<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+											<CardTitle className="font-medium text-sm">
+												Conversion Rate
+											</CardTitle>
+											<BarChart3 className="h-4 w-4 text-muted-foreground" />
+										</CardHeader>
+										<CardContent>
+											<div className="font-bold text-2xl">
+												{filteredLeads.length > 0
+													? `${Math.round((filteredLeads.filter((lead) => lead.isClosed).length / filteredLeads.length) * 100)}%`
+													: "0%"}
+											</div>
+										</CardContent>
+									</Card>
+								</div>
 
-							{/* Leads Table */}
-							<Card>
-								<CardHeader>
-									<CardTitle className="flex items-center gap-2">
-										<Users className="h-5 w-5" />
-										All Leads
-										<Badge variant="secondary" className="ml-auto">
-											{filteredLeads.length} total
-										</Badge>
-										<Button
-											onClick={() => setIsCreateDialogOpen(true)}
-											size="sm"
-											className="ml-2"
-										>
-											<Plus className="mr-1 h-4 w-4" />
-											Add Lead
-										</Button>
-									</CardTitle>
-								</CardHeader>
-								<CardContent className="p-0">
-									{loading ? (
-										<div className="space-y-2 p-6">
-											{[...Array(5)].map((_, i) => (
-												<Skeleton key={i} className="h-12 w-full" />
-											))}
-										</div>
-									) : (
-										<div className="rounded-md border">
-											<Table>
-												<TableHeader>
-													<TableRow className="hover:bg-transparent">
-														<TableHead className="w-[120px] p-0">
-															<Button
-																variant="ghost"
-																className="h-full w-full justify-start px-4 py-3 text-left font-medium hover:bg-muted/50"
-																onClick={() => handleSort("name")}
+								{/* Leads Table */}
+								<Card>
+									<CardHeader>
+										<CardTitle className="flex items-center gap-2">
+											<Users className="h-5 w-5" />
+											All Leads
+											<Badge variant="secondary" className="ml-auto">
+												{filteredLeads.length} total
+											</Badge>
+											<Button
+												onClick={() => setIsCreateDialogOpen(true)}
+												size="sm"
+												className="ml-2"
+											>
+												<Plus className="mr-1 h-4 w-4" />
+												Add Lead
+											</Button>
+										</CardTitle>
+									</CardHeader>
+									<CardContent className="p-0">
+										{loading ? (
+											<div className="space-y-2 p-6">
+												{[...Array(5)].map((_, i) => (
+													<Skeleton key={i} className="h-12 w-full" />
+												))}
+											</div>
+										) : (
+											<div className="rounded-md border">
+												<Table>
+													<TableHeader>
+														<TableRow className="hover:bg-transparent">
+															<TableHead className="w-[120px] p-0">
+																<Button
+																	variant="ghost"
+																	className="h-full w-full justify-start px-4 py-3 text-left font-medium hover:bg-muted/50"
+																	onClick={() => handleSort("name")}
+																>
+																	<span className="flex items-center">
+																		Name
+																		{sortField === "name" &&
+																			(sortDirection === "asc" ? (
+																				<ChevronUp className="ml-1 h-4 w-4" />
+																			) : (
+																				<ChevronDown className="ml-1 h-4 w-4" />
+																			))}
+																	</span>
+																</Button>
+															</TableHead>
+															<TableHead className="w-[140px]">Phone</TableHead>
+															<TableHead className="w-[100px]">
+																Platform
+															</TableHead>
+															<TableHead className="w-[100px]">
+																Status
+															</TableHead>
+															<TableHead className="w-[80px] text-center">
+																Closed
+															</TableHead>
+															<TableHead className="w-[100px] p-0">
+																<Button
+																	variant="ghost"
+																	className="h-full w-full justify-end px-4 py-3 text-right font-medium hover:bg-muted/50"
+																	onClick={() => handleSort("sales")}
+																>
+																	<span className="flex items-center">
+																		Sales
+																		{sortField === "sales" &&
+																			(sortDirection === "asc" ? (
+																				<ChevronUp className="ml-1 h-4 w-4" />
+																			) : (
+																				<ChevronDown className="ml-1 h-4 w-4" />
+																			))}
+																	</span>
+																</Button>
+															</TableHead>
+															<TableHead className="w-[80px]">
+																Trainer
+															</TableHead>
+															<TableHead className="w-[100px] p-0">
+																<Button
+																	variant="ghost"
+																	className="h-full w-full justify-start px-4 py-3 text-left font-medium hover:bg-muted/50"
+																	onClick={() => handleSort("date")}
+																>
+																	<span className="flex items-center">
+																		Date
+																		{sortField === "date" &&
+																			(sortDirection === "asc" ? (
+																				<ChevronUp className="ml-1 h-4 w-4" />
+																			) : (
+																				<ChevronDown className="ml-1 h-4 w-4" />
+																			))}
+																	</span>
+																</Button>
+															</TableHead>
+															<TableHead className="w-[100px]">
+																Closed Date
+															</TableHead>
+															<TableHead className="w-[100px]">
+																Remark
+															</TableHead>
+															<TableHead className="w-[60px]" />
+														</TableRow>
+													</TableHeader>
+													<TableBody>
+														{filteredLeads.map((lead) => (
+															<TableRow
+																key={lead.id}
+																className="group cursor-pointer hover:bg-muted/50"
+																onClick={() => handleRowClick(lead)}
 															>
-																<span className="flex items-center">
-																	Name
-																	{sortField === "name" &&
-																		(sortDirection === "asc" ? (
-																			<ChevronUp className="ml-1 h-4 w-4" />
-																		) : (
-																			<ChevronDown className="ml-1 h-4 w-4" />
-																		))}
-																</span>
-															</Button>
-														</TableHead>
-														<TableHead className="w-[140px]">Phone</TableHead>
-														<TableHead className="w-[100px]">
-															Platform
-														</TableHead>
-														<TableHead className="w-[100px]">Status</TableHead>
-														<TableHead className="w-[80px] text-center">
-															Closed
-														</TableHead>
-														<TableHead className="w-[100px] p-0">
-															<Button
-																variant="ghost"
-																className="h-full w-full justify-end px-4 py-3 text-right font-medium hover:bg-muted/50"
-																onClick={() => handleSort("sales")}
-															>
-																<span className="flex items-center">
-																	Sales
-																	{sortField === "sales" &&
-																		(sortDirection === "asc" ? (
-																			<ChevronUp className="ml-1 h-4 w-4" />
-																		) : (
-																			<ChevronDown className="ml-1 h-4 w-4" />
-																		))}
-																</span>
-															</Button>
-														</TableHead>
-														<TableHead className="w-[80px]">Trainer</TableHead>
-														<TableHead className="w-[100px] p-0">
-															<Button
-																variant="ghost"
-																className="h-full w-full justify-start px-4 py-3 text-left font-medium hover:bg-muted/50"
-																onClick={() => handleSort("date")}
-															>
-																<span className="flex items-center">
-																	Date
-																	{sortField === "date" &&
-																		(sortDirection === "asc" ? (
-																			<ChevronUp className="ml-1 h-4 w-4" />
-																		) : (
-																			<ChevronDown className="ml-1 h-4 w-4" />
-																		))}
-																</span>
-															</Button>
-														</TableHead>
-														<TableHead className="w-[100px]">
-															Closed Date
-														</TableHead>
-														<TableHead className="w-[100px]">Remark</TableHead>
-														<TableHead className="w-[60px]" />
-													</TableRow>
-												</TableHeader>
-												<TableBody>
-													{filteredLeads.map((lead) => (
-														<TableRow
-															key={lead.id}
-															className="group cursor-pointer hover:bg-muted/50"
-															onClick={() => handleRowClick(lead)}
-														>
-															<TableCell className="font-medium">
-																<div className="flex items-center gap-2">
-																	<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 font-medium text-sm text-white">
-																		{(lead.name || "N")[0].toUpperCase()}
+																<TableCell className="font-medium">
+																	<div className="flex items-center gap-2">
+																		<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 font-medium text-sm text-white">
+																			{(lead.name || "N")[0].toUpperCase()}
+																		</div>
+																		<span className="truncate">
+																			{lead.name || "N/A"}
+																		</span>
 																	</div>
-																	<span className="truncate">
-																		{lead.name || "N/A"}
+																</TableCell>
+																<TableCell>
+																	<div className="flex items-center gap-2">
+																		<Phone className="h-3 w-3 text-muted-foreground" />
+																		<span className="font-mono text-sm">
+																			{lead.phoneNumber || "N/A"}
+																		</span>
+																		{lead.phoneNumber && (
+																			<Button
+																				variant="ghost"
+																				size="sm"
+																				className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+																				onClick={(e) => {
+																					e.stopPropagation();
+																					copyToClipboard(
+																						lead.phoneNumber || "",
+																					);
+																				}}
+																			>
+																				<Copy className="h-3 w-3" />
+																			</Button>
+																		)}
+																	</div>
+																</TableCell>
+																<TableCell>
+																	<Badge
+																		variant={getPlatformVariant(lead.platform)}
+																	>
+																		{lead.platform || "N/A"}
+																	</Badge>
+																</TableCell>
+																<TableCell>
+																	<Badge
+																		variant={getStatusVariant(lead.status)}
+																	>
+																		{lead.status || "N/A"}
+																	</Badge>
+																</TableCell>
+																<TableCell className="text-center">
+																	<div className="flex justify-center">
+																		{lead.isClosed ? (
+																			<div className="flex items-center gap-1">
+																				<CheckCircle className="h-4 w-4 text-green-600" />
+																				<span className="font-medium text-green-600 text-xs">
+																					Yes
+																				</span>
+																			</div>
+																		) : (
+																			<div className="flex items-center gap-1">
+																				<XCircle className="h-4 w-4 text-red-600" />
+																				<span className="font-medium text-red-600 text-xs">
+																					No
+																				</span>
+																			</div>
+																		)}
+																	</div>
+																</TableCell>
+																<TableCell className="text-right font-medium">
+																	<span
+																		className={
+																			lead.sales && lead.sales > 0
+																				? "text-green-600"
+																				: "text-muted-foreground"
+																		}
+																	>
+																		{formatCurrency(lead.sales)}
 																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="flex items-center gap-2">
-																	<Phone className="h-3 w-3 text-muted-foreground" />
-																	<span className="font-mono text-sm">
-																		{lead.phoneNumber || "N/A"}
-																	</span>
-																	{lead.phoneNumber && (
+																</TableCell>
+																<TableCell>
+																	<div className="max-w-[80px] truncate">
+																		<span
+																			className={`text-sm ${lead.trainerHandle && lead.trainerHandle !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																		>
+																			{lead.trainerHandle || "N/A"}
+																		</span>
+																	</div>
+																</TableCell>
+																<TableCell>
+																	<div className="flex items-center gap-1">
+																		<Calendar className="h-3 w-3 text-muted-foreground" />
+																		<span className="text-sm">
+																			{formatDate(lead.date)}
+																		</span>
+																	</div>
+																</TableCell>
+																<TableCell>
+																	<div className="flex items-center gap-1">
+																		<Calendar className="h-3 w-3 text-muted-foreground" />
+																		<span className="text-sm">
+																			{formatDate(lead.closedDate)}
+																		</span>
+																	</div>
+																</TableCell>
+
+																<TableCell>
+																	<div className="max-w-[100px] truncate">
+																		<span
+																			className={`text-sm ${lead.remark && lead.remark !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
+																		>
+																			{lead.remark || "N/A"}
+																		</span>
+																	</div>
+																</TableCell>
+																<TableCell>
+																	<div className="flex gap-1">
 																		<Button
 																			variant="ghost"
 																			size="sm"
-																			className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+																			className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
 																			onClick={(e) => {
 																				e.stopPropagation();
-																				copyToClipboard(lead.phoneNumber || "");
+																				handleRowClick(lead);
 																			}}
 																		>
-																			<Copy className="h-3 w-3" />
+																			<Edit className="h-4 w-4" />
 																		</Button>
-																	)}
-																</div>
-															</TableCell>
-															<TableCell>
-																<Badge
-																	variant={getPlatformVariant(lead.platform)}
-																>
-																	{lead.platform || "N/A"}
-																</Badge>
-															</TableCell>
-															<TableCell>
-																<Badge variant={getStatusVariant(lead.status)}>
-																	{lead.status || "N/A"}
-																</Badge>
-															</TableCell>
-															<TableCell className="text-center">
-																<div className="flex justify-center">
-																	{lead.isClosed ? (
-																		<div className="flex items-center gap-1">
-																			<CheckCircle className="h-4 w-4 text-green-600" />
-																			<span className="font-medium text-green-600 text-xs">
-																				Yes
-																			</span>
-																		</div>
-																	) : (
-																		<div className="flex items-center gap-1">
-																			<XCircle className="h-4 w-4 text-red-600" />
-																			<span className="font-medium text-red-600 text-xs">
-																				No
-																			</span>
-																		</div>
-																	)}
-																</div>
-															</TableCell>
-															<TableCell className="text-right font-medium">
-																<span
-																	className={
-																		lead.sales && lead.sales > 0
-																			? "text-green-600"
-																			: "text-muted-foreground"
-																	}
-																>
-																	{formatCurrency(lead.sales)}
-																</span>
-															</TableCell>
-															<TableCell>
-																<div className="max-w-[80px] truncate">
-																	<span
-																		className={`text-sm ${lead.trainerHandle && lead.trainerHandle !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-																	>
-																		{lead.trainerHandle || "N/A"}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="flex items-center gap-1">
-																	<Calendar className="h-3 w-3 text-muted-foreground" />
-																	<span className="text-sm">
-																		{formatDate(lead.date)}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="flex items-center gap-1">
-																	<Calendar className="h-3 w-3 text-muted-foreground" />
-																	<span className="text-sm">
-																		{formatDate(lead.closedDate)}
-																	</span>
-																</div>
-															</TableCell>
-
-															<TableCell>
-																<div className="max-w-[100px] truncate">
-																	<span
-																		className={`text-sm ${lead.remark && lead.remark !== "N/A" ? "text-foreground" : "text-muted-foreground"}`}
-																	>
-																		{lead.remark || "N/A"}
-																	</span>
-																</div>
-															</TableCell>
-															<TableCell>
-																<div className="flex gap-1">
-																	<Button
-																		variant="ghost"
-																		size="sm"
-																		className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			handleRowClick(lead);
-																		}}
-																	>
-																		<Edit className="h-4 w-4" />
-																	</Button>
-																	<Button
-																		variant="ghost"
-																		size="sm"
-																		className="h-8 w-8 p-0 text-red-600 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-700 group-hover:opacity-100"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			handleDeleteClick(lead);
-																		}}
-																	>
-																		<Trash2 className="h-4 w-4" />
-																	</Button>
-																</div>
-															</TableCell>
-														</TableRow>
-													))}
-												</TableBody>
-											</Table>
-										</div>
-									)}
-								</CardContent>
-							</Card>
+																		<Button
+																			variant="ghost"
+																			size="sm"
+																			className="h-8 w-8 p-0 text-red-600 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-700 group-hover:opacity-100"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				handleDeleteClick(lead);
+																			}}
+																		>
+																			<Trash2 className="h-4 w-4" />
+																		</Button>
+																	</div>
+																</TableCell>
+															</TableRow>
+														))}
+													</TableBody>
+												</Table>
+											</div>
+										)}
+									</CardContent>
+								</Card>
+							</div>
 						</div>
 					</div>
-				</div>
-			</SidebarInset>
+				</SidebarInset>
 
-			{/* Edit Lead Dialog */}
-			<EditLeadDialog
-				lead={editLead}
-				open={isEditDialogOpen}
-				onOpenChange={setIsEditDialogOpen}
-				onSave={handleSaveLead}
-			/>
+				{/* Edit Lead Dialog */}
+				<EditLeadDialog
+					lead={editLead}
+					open={isEditDialogOpen}
+					onOpenChange={setIsEditDialogOpen}
+					onSave={handleSaveLead}
+				/>
 
-			{/* Create Lead Dialog */}
-			<CreateLeadDialog
-				open={isCreateDialogOpen}
-				onOpenChange={setIsCreateDialogOpen}
-				onSave={handleCreateLead}
-			/>
+				{/* Create Lead Dialog */}
+				<CreateLeadDialog
+					open={isCreateDialogOpen}
+					onOpenChange={setIsCreateDialogOpen}
+					onSave={handleCreateLead}
+				/>
 
-			{/* Delete Confirmation Dialog */}
-			<Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-				<DialogContent className="sm:max-w-[425px]">
-					<DialogHeader>
-						<DialogTitle>Delete Lead</DialogTitle>
-					</DialogHeader>
-					<div className="py-4">
-						<p className="text-muted-foreground text-sm">
-							Are you sure you want to delete the lead for{" "}
-							<span className="font-medium text-foreground">
-								{leadToDelete?.name || "N/A"}
-							</span>
-							? This action cannot be undone.
-						</p>
-					</div>
-					<div className="flex justify-end gap-2">
-						<Button
-							variant="outline"
-							onClick={() => setDeleteConfirmOpen(false)}
-						>
-							Cancel
-						</Button>
-						<Button variant="destructive" onClick={handleDeleteConfirm}>
-							Delete
-						</Button>
-					</div>
-				</DialogContent>
-			</Dialog>
-		</SidebarProvider>
+				{/* Delete Confirmation Dialog */}
+				<Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+					<DialogContent className="sm:max-w-[425px]">
+						<DialogHeader>
+							<DialogTitle>Delete Lead</DialogTitle>
+						</DialogHeader>
+						<div className="py-4">
+							<p className="text-muted-foreground text-sm">
+								Are you sure you want to delete the lead for{" "}
+								<span className="font-medium text-foreground">
+									{leadToDelete?.name || "N/A"}
+								</span>
+								? This action cannot be undone.
+							</p>
+						</div>
+						<div className="flex justify-end gap-2">
+							<Button
+								variant="outline"
+								onClick={() => setDeleteConfirmOpen(false)}
+							>
+								Cancel
+							</Button>
+							<Button variant="destructive" onClick={handleDeleteConfirm}>
+								Delete
+							</Button>
+						</div>
+					</DialogContent>
+				</Dialog>
+			</SidebarProvider>
+		</ProtectedRoute>
 	);
 }

@@ -1,5 +1,6 @@
-import { BarChart3, DollarSign, Users } from "lucide-react";
+import { BarChart3, DollarSign, Users, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router";
+import { authClient } from "@/lib/auth-client";
 
 import {
 	Sidebar,
@@ -40,6 +41,7 @@ export function AppSidebar({
 	...props
 }: AppSidebarProps & React.ComponentProps<typeof Sidebar>) {
 	const location = useLocation();
+	const { data: session } = authClient.useSession();
 
 	return (
 		<Sidebar collapsible="icon" variant={variant} {...props}>
@@ -70,6 +72,20 @@ export function AppSidebar({
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 							))}
+							{session?.user && (
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										asChild
+										isActive={location.pathname === "/admin"}
+										tooltip="Admin"
+									>
+										<Link to="/admin">
+											<Settings />
+											<span>Admin</span>
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							)}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>

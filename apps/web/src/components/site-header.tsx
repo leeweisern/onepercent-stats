@@ -1,5 +1,6 @@
 import { useLocation } from "react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import UserMenu from "./user-menu";
 
 const getPageTitle = (pathname: string) => {
 	switch (pathname) {
@@ -9,6 +10,8 @@ const getPageTitle = (pathname: string) => {
 			return "Analytics";
 		case "/advertising":
 			return "Advertising Costs";
+		case "/admin":
+			return "Admin";
 		default:
 			return "Dashboard";
 	}
@@ -21,9 +24,10 @@ export function SiteHeader() {
 	return (
 		<header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
 			<SidebarTrigger className="-ml-1" />
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-2 flex-1">
 				<h1 className="font-semibold text-lg">{pageTitle}</h1>
 			</div>
+			<UserMenu />
 		</header>
 	);
 }

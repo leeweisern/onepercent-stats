@@ -1,13 +1,50 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { authClient } from "@/lib/auth-client";
 import SignInForm from "@/components/sign-in-form";
-import SignUpForm from "@/components/sign-up-form";
+import Loader from "@/components/loader";
 
 export default function Login() {
-	const [showSignIn, setShowSignIn] = useState(false);
+	const navigate = useNavigate();
+	const { data: session, isLoading, error } = authClient.useSession();
 
-	return showSignIn ? (
-		<SignInForm onSwitchToSignUp={() => setShowSignIn(false)} />
-	) : (
-		<SignUpForm onSwitchToSignIn={() => setShowSignIn(true)} />
-	);
+	useEffect(() => {
+		console.log("Login component state:", {
+			isLoading,
+			hasSession: !!session,
+			error: error?.message,
+		});
+
+		if (session && !isLoading) {
+			console.log("User is authenticated, redirecting to dashboard");
+			navigate("/dashboard", { replace: true });
+		}
+	}, [session, isLoading, navigate, error]);
+
+	// Add timeout for login page loading as well
+	useEffect(() => {
+		const timeout = setTimeout(() => {
+			console.log("Login page timeout reached");
+		}, 3000);
+
+		return () => clearTimeout(timeout);
+	}, []);
+
+	if (isLoading) {
+		return (
+			<div className="flex items-center justify-center h-screen">
+				<Loader />
+			</div>
+		);
+	}
+
+	if (session) {
+		return (
+			<div className="flex items-center justify-center h-screen">
+				<Loader />
+			</div>
+		);
+	}
+
+	return <SignInForm />;
 }

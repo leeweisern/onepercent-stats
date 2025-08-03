@@ -11,10 +11,10 @@ import { Label } from "./ui/label";
 export default function SignInForm({
 	onSwitchToSignUp,
 }: {
-	onSwitchToSignUp: () => void;
-}) {
+	onSwitchToSignUp?: () => void;
+} = {}) {
 	const navigate = useNavigate();
-	const { isPending } = authClient.useSession();
+	const { isPending, mutateSession } = authClient.useSession();
 
 	const form = useForm({
 		defaultValues: {
@@ -29,6 +29,7 @@ export default function SignInForm({
 				},
 				{
 					onSuccess: () => {
+						mutateSession();
 						navigate("/dashboard");
 						toast.success("Sign in successful");
 					},
@@ -121,15 +122,17 @@ export default function SignInForm({
 				</form.Subscribe>
 			</form>
 
-			<div className="mt-4 text-center">
-				<Button
-					variant="link"
-					onClick={onSwitchToSignUp}
-					className="text-indigo-600 hover:text-indigo-800"
-				>
-					Need an account? Sign Up
-				</Button>
-			</div>
+			{onSwitchToSignUp && (
+				<div className="mt-4 text-center">
+					<Button
+						variant="link"
+						onClick={onSwitchToSignUp}
+						className="text-indigo-600 hover:text-indigo-800"
+					>
+						Need an account? Sign Up
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 }

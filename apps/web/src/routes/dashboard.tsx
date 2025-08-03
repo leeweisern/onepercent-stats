@@ -1,6 +1,10 @@
 import { Navigate } from "react-router";
+import { ProtectedRoute } from "@/components/protected-route";
 
 export default function Dashboard() {
-	// Redirect to leads page as the default
-	return <Navigate to="/leads" replace />;
+	return (
+		<ProtectedRoute>
+			<Navigate to="/leads" replace />
+		</ProtectedRoute>
+	);
 }
