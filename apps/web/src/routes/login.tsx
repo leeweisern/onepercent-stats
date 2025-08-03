@@ -15,9 +15,10 @@ export default function Login() {
 			error: error?.message,
 		});
 
-		if (session && !isLoading) {
-			console.log("User is authenticated, redirecting to dashboard");
-			navigate("/dashboard", { replace: true });
+		// Only redirect if we have a confirmed session and loading is complete
+		if (!isLoading && session?.user) {
+			console.log("User is authenticated, redirecting to leads");
+			navigate("/leads", { replace: true });
 		}
 	}, [session, isLoading, navigate, error]);
 

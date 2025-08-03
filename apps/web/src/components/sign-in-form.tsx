@@ -14,7 +14,7 @@ export default function SignInForm({
 	onSwitchToSignUp?: () => void;
 } = {}) {
 	const navigate = useNavigate();
-	const { isPending, mutateSession } = authClient.useSession();
+	const { isPending } = authClient.useSession();
 
 	const form = useForm({
 		defaultValues: {
@@ -29,9 +29,11 @@ export default function SignInForm({
 				},
 				{
 					onSuccess: () => {
-						mutateSession();
-						navigate("/dashboard");
 						toast.success("Sign in successful");
+						// Use setTimeout to ensure the session is updated before navigation
+						setTimeout(() => {
+							navigate("/leads");
+						}, 100);
 					},
 					onError: (error) => {
 						toast.error(error.error.message);

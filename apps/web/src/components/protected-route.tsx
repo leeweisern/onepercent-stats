@@ -24,15 +24,16 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 		}
 	}, [isLoading]);
 
-	// Set a timeout to prevent infinite loading
+	// Failsafe timeout – only while still loading
 	useEffect(() => {
-		const timeout = setTimeout(() => {
-			console.log("Auth timeout reached, redirecting to login");
-			setTimeoutReached(true);
-		}, 5000); // 5 second timeout
-
-		return () => clearTimeout(timeout);
-	}, []);
+		if (isLoading) {
+			const id = setTimeout(() => {
+				console.log("Auth timeout reached, redirecting to login");
+				setTimeoutReached(true);
+			}, 5000);
+			return () => clearTimeout(id);
+		}
+	}, [isLoading]);
 
 	// Debug logging
 	useEffect(() => {
@@ -55,11 +56,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	}
 
 	// If there's an error, timeout reached, or no session, redirect to login
-	if (error || timeoutReached || !session) {
+	if (error || timeoutReached || (!session && hasChecked)) {
 		console.log("Redirecting to login:", {
 			error: error?.message,
 			timeoutReached,
 			hasSession: !!session,
+			hasChecked,
 		});
 		return <Navigate to="/login" replace />;
 	}

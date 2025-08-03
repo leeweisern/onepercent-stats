@@ -5,7 +5,7 @@
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
 		"NODE_ENV": "production",
-		"CORS_ORIGIN": "*"
+		"CORS_ORIGIN": "https://onepercent-stats-server.leeweisern.workers.dev"
 	},
 	"assets": {
 		"directory": "../web/build/client",

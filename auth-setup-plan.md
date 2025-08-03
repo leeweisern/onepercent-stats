@@ -76,7 +76,7 @@ app.route("/api/auth/*", toHonoHandler(auth));
 
    await auth.createUser({
      name: "Jane",
-     email: "chongxienhui4m@gmail.com",
+     email: "signatureonepercent2025@gmail.com",
      password: "12345678",
      emailVerified: true,
    });
@@ -226,7 +226,7 @@ Flow triggered from Admin UI:
 1. **Server-Side Authentication:**
    - Better Auth configured with `disableSignUp: true`
    - Admin role column added to user table
-   - Initial admin user created (Jane: chongxienhui4m@gmail.com, password: 12345678)
+   - Initial admin user created (Jane: signatureonepercent2025@gmail.com, password: 12345678)
    - Admin API endpoints for user management
 
 2. **Frontend Protection:**
@@ -242,7 +242,7 @@ Flow triggered from Admin UI:
    - User list with role and status indicators
 
 ### Login Credentials:
-- **Email:** chongxienhui4m@gmail.com
+- **Email:** signatureonepercent2025@gmail.com
 - **Password:** 12345678
 - **Role:** Admin
 

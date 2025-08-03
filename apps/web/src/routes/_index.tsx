@@ -12,7 +12,7 @@ export function meta({}: Route.MetaArgs) {
 export default function Index() {
 	return (
 		<ProtectedRoute>
-			<Navigate to="/dashboard" replace />
+			<Navigate to="/leads" replace />
 		</ProtectedRoute>
 	);
 }

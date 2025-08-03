@@ -15,8 +15,7 @@ try {
 	const env = {
 		...process.env,
 		CLOUDFLARE_API_TOKEN:
-			process.env.CLOUDFLARE_D1_TOKEN ||
-			"63vUheWw64HXvXMRFt7aWluyzyqHdr9djzYk_gaI",
+			process.env.CLOUDFLARE_D1_TOKEN || process.env.CLOUDFLARE_API_TOKEN,
 	};
 
 	// Step 1: Build web application

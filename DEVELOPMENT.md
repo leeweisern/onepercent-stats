@@ -29,7 +29,7 @@ This will start the web application on `http://localhost:5173`.
 1. Open your browser and go to `http://localhost:5173`
 2. You should be redirected to the login page
 3. Use the admin credentials:
-   - **Email:** chongxienhui4m@gmail.com
+   - **Email:** signatureonepercent2025@gmail.com
    - **Password:** 12345678
 
 ### Troubleshooting
