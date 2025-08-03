@@ -103,7 +103,11 @@ export function CreateLeadDialog({
 			// Reset form when dialog opens
 			resetForm();
 		}
-	}, [open]);
+	}, [
+		open,
+		fetchOptions, // Reset form when dialog opens
+		resetForm,
+	]);
 
 	// Auto-update month when date changes
 	useEffect(() => {

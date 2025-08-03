@@ -96,7 +96,7 @@ export default function PlatformBreakdown({
 
 	useEffect(() => {
 		fetchBreakdown();
-	}, [selectedMonth, selectedYear]);
+	}, [fetchBreakdown]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM${amount.toLocaleString()}`;

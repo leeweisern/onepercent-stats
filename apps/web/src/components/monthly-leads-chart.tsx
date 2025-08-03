@@ -67,7 +67,7 @@ export default function MonthlyLeadsChart({
 
 	useEffect(() => {
 		fetchLeadsData();
-	}, [selectedYear, dateType]);
+	}, [fetchLeadsData]);
 
 	const CustomTooltip = ({ active, payload, label }: any) => {
 		if (active && payload && payload.length) {

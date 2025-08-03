@@ -81,11 +81,11 @@ export default function Leads() {
 
 	useEffect(() => {
 		fetchLeads();
-	}, []);
+	}, [fetchLeads]);
 
 	useEffect(() => {
 		applyFilters();
-	}, [leads, filters, sortField, sortDirection]);
+	}, [applyFilters]);
 
 	const parseDate = useCallback((dateString: string) => {
 		// Parse DD/MM/YYYY format

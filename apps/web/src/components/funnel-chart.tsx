@@ -127,7 +127,7 @@ export default function FunnelChart({
 		fetchFunnelData();
 		fetchSummaryData();
 		fetchPlatforms();
-	}, [selectedMonth, selectedYear, currentPlatform]);
+	}, [fetchFunnelData, fetchPlatforms, fetchSummaryData]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM ${amount.toLocaleString()}`;

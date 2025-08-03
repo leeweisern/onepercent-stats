@@ -65,7 +65,7 @@ export default function ROASMetrics({
 
 	useEffect(() => {
 		fetchROASData();
-	}, [selectedMonth, selectedYear]);
+	}, [fetchROASData]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM ${amount.toLocaleString()}`;

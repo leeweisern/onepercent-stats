@@ -92,3 +92,112 @@ This directory contains the frontend application.
 - **`package.json`**: The root `package.json` file for the monorepo.
 - **`README.md`**: The main README file for the project.
 - **`turbo.json`**: The configuration file for Turborepo.
+
+## Database Operations
+
+### Querying the Remote D1 Database
+
+The project uses Cloudflare D1 as the database. You can query the remote database directly using the Wrangler CLI.
+
+#### Basic Query Commands
+
+```bash
+# Navigate to the server directory
+cd apps/server
+
+# Query the remote database (replace with your actual database name)
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT * FROM leads LIMIT 5"
+
+# Get table structure
+wrangler d1 execute onepercent-stats-new --remote --command "PRAGMA table_info(leads)"
+
+# Count total records
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT COUNT(*) as total FROM leads"
+```
+
+#### Common Queries
+
+```bash
+# Get leads by platform
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT platform, COUNT(*) as count FROM leads GROUP BY platform ORDER BY count DESC"
+
+# Get conversion data
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT is_closed, COUNT(*) as count, SUM(sales) as total_sales FROM leads GROUP BY is_closed"
+
+# Get recent leads
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT id, name, platform, sales, created_at FROM leads ORDER BY created_at DESC LIMIT 10"
+
+# Get leads with sales data
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT * FROM leads WHERE sales > 0 ORDER BY sales DESC"
+```
+
+#### Database Schema
+
+The main tables in the database:
+
+**leads table:**
+- `id` (INTEGER, PRIMARY KEY)
+- `month` (TEXT) - Month name (e.g., "May", "June")
+- `date` (TEXT) - Date in DD/MM/YYYY format
+- `name` (TEXT) - Lead's name
+- `phone_number` (TEXT) - Phone number
+- `platform` (TEXT) - Marketing platform (Facebook, Google, etc.)
+- `is_closed` (INTEGER) - Boolean (0/1) indicating if lead is closed
+- `status` (TEXT) - Lead status
+- `sales` (INTEGER) - Sales amount in RM
+- `remark` (TEXT) - Additional notes
+- `trainer_handle` (TEXT) - Trainer identifier
+- `closed_date` (TEXT) - Date when lead was closed (DD/MM/YYYY)
+- `closed_month` (TEXT) - Month when lead was closed
+- `closed_year` (TEXT) - Year when lead was closed
+- `created_at` (TEXT) - Timestamp when record was created
+
+**advertising_costs table:**
+- `id` (INTEGER, PRIMARY KEY)
+- `month` (INTEGER) - Month number (1-12)
+- `year` (INTEGER) - Year
+- `cost` (REAL) - Advertising cost amount
+- `currency` (TEXT) - Currency (default "RM")
+- `created_at` (TEXT) - Creation timestamp
+- `updated_at` (TEXT) - Last update timestamp
+
+#### Database Migrations
+
+```bash
+# Apply pending migrations to remote database
+wrangler d1 migrations apply onepercent-stats-new --remote
+
+# Check migration status
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT * FROM __drizzle_migrations"
+
+# Generate new migration (after schema changes)
+cd apps/server
+bun run db:generate
+```
+
+#### Local vs Remote Database
+
+```bash
+# Query local database (remove --remote flag)
+wrangler d1 execute onepercent-stats-new --command "SELECT COUNT(*) FROM leads"
+
+# Apply migrations locally
+wrangler d1 migrations apply onepercent-stats-new --local
+```
+
+#### Data Backup and Export
+
+```bash
+# Export data to SQL file
+wrangler d1 export onepercent-stats-new --remote --output backup.sql
+
+# Import data from SQL file
+wrangler d1 execute onepercent-stats-new --remote --file backup.sql
+```
+
+#### Troubleshooting
+
+- **Column not found errors**: Check if migrations have been applied with `wrangler d1 migrations apply`
+- **Permission errors**: Ensure you're logged in with `wrangler login`
+- **Database not found**: Verify the database name in `wrangler.jsonc` matches the command
+- **Syntax errors**: Use proper SQL syntax and escape quotes in complex queries

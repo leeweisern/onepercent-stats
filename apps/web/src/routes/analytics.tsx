@@ -18,7 +18,7 @@ export default function Analytics() {
 	useEffect(() => {
 		fetchAvailableMonths();
 		fetchAvailableYears();
-	}, []);
+	}, [fetchAvailableMonths, fetchAvailableYears]);
 
 	const fetchAvailableMonths = async () => {
 		try {

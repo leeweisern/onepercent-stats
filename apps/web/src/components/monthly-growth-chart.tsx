@@ -71,7 +71,7 @@ export default function MonthlyGrowthChart({
 
 	useEffect(() => {
 		fetchGrowthData();
-	}, [selectedYear]);
+	}, [fetchGrowthData]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM ${amount.toLocaleString()}`;

@@ -465,12 +465,12 @@ app.put("/leads/:id", async (c) => {
 
 	// Handle closed date logic - this is the main logic for closed date fields
 	let finalClosedDate = current.closedDate;
-	let finalSales = current.sales;
+	let _finalSales = current.sales;
 	let finalIsClosed = current.isClosed;
 
 	// Update sales if provided
 	if (body.sales !== undefined) {
-		finalSales = body.sales;
+		_finalSales = body.sales;
 		updateData.sales = body.sales;
 	}
 

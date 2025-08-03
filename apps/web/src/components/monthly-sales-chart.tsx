@@ -66,7 +66,7 @@ export default function MonthlySalesChart({
 
 	useEffect(() => {
 		fetchSalesData();
-	}, [selectedYear, dateType]);
+	}, [fetchSalesData]);
 
 	const formatCurrency = (amount: number) => {
 		return `RM ${amount.toLocaleString()}`;

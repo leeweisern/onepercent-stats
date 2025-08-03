@@ -68,7 +68,7 @@ export function LeadsFilters({
 
 	useEffect(() => {
 		fetchFilterOptions();
-	}, []);
+	}, [fetchFilterOptions]);
 
 	useEffect(() => {
 		onFiltersChange(filters);
