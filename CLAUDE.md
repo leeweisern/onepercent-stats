@@ -195,9 +195,42 @@ wrangler d1 export onepercent-stats-new --remote --output backup.sql
 wrangler d1 execute onepercent-stats-new --remote --file backup.sql
 ```
 
+#### Cloudflare Authentication
+
+**IMPORTANT**: Do NOT use `wrangler login` for authentication. Instead, use the API token from the `.env` file.
+
+The project uses API token authentication which is automatically read from the `.env` file in `apps/server/`:
+- `CLOUDFLARE_D1_TOKEN` - API token for D1 database access
+- `CLOUDFLARE_API_KEY` - Same token value for API access
+- `CLOUDFLARE_ACCOUNT_ID` - Account ID for Cloudflare operations
+- `CLOUDFLARE_DATABASE_ID` - Database ID for the D1 database
+
+Wrangler automatically reads these environment variables, so no manual authentication is needed.
+
+#### Export/Import Data Between Remote and Local
+
+```bash
+# Export full database from remote
+cd apps/server
+wrangler d1 export onepercent-stats-new --remote --output=./backup.sql
+
+# Export only data (no schema)
+wrangler d1 export onepercent-stats-new --remote --output=./data-only.sql --no-schema
+
+# Export only schema (no data)
+wrangler d1 export onepercent-stats-new --remote --output=./schema-only.sql --no-data
+
+# Import to local database (after clearing existing data)
+wrangler d1 execute onepercent-stats-new --local --file=./backup.sql
+
+# Clear local database tables before import
+wrangler d1 execute onepercent-stats-new --local --command "DROP TABLE IF EXISTS leads; DROP TABLE IF EXISTS advertising_costs; DROP TABLE IF EXISTS account; DROP TABLE IF EXISTS session; DROP TABLE IF EXISTS verification; DROP TABLE IF EXISTS user;"
+```
+
 #### Troubleshooting
 
 - **Column not found errors**: Check if migrations have been applied with `wrangler d1 migrations apply`
-- **Permission errors**: Ensure you're logged in with `wrangler login`
+- **Authentication errors**: Verify the API token in `.env` file is correct and has proper permissions
 - **Database not found**: Verify the database name in `wrangler.jsonc` matches the command
 - **Syntax errors**: Use proper SQL syntax and escape quotes in complex queries
+- **Import errors with timestamps**: Exported SQL may have unquoted timestamp values that need to be fixed before import
