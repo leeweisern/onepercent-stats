@@ -20,9 +20,31 @@ try {
 
 	// Step 1: Build web application
 	console.log("📦 Building web application...");
+
+	// Load production environment variables
+	const prodEnvPath = path.join(WEB_DIR, ".env.production");
+	let prodEnvVars = {};
+	if (fs.existsSync(prodEnvPath)) {
+		const prodEnvContent = fs.readFileSync(prodEnvPath, "utf8");
+		prodEnvContent.split("\n").forEach((line) => {
+			const [key, value] = line.split("=");
+			if (key && value) {
+				prodEnvVars[key.trim()] = value.trim();
+			}
+		});
+		console.log(
+			"📋 Loaded production environment variables:",
+			Object.keys(prodEnvVars),
+		);
+	}
+
 	execSync("bun run build", {
 		cwd: WEB_DIR,
-		env,
+		env: {
+			...env,
+			...prodEnvVars,
+			NODE_ENV: "production",
+		},
 		stdio: "inherit",
 	});
 	console.log("✅ Web application built successfully\n");
