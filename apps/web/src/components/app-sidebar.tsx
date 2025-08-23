@@ -45,27 +45,27 @@ export function AppSidebar({
 	return (
 		<Sidebar collapsible="icon" variant={variant} {...props}>
 			<SidebarHeader>
-				<div className="flex items-center justify-center px-2 py-2 group-data-[collapsible=icon]:px-1">
-					<img
-						src="/One Percent Fitness Favicon.svg"
-						alt="One Percent Stats"
-						className="h-8 w-auto group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6"
-					/>
+				<div className="flex h-16 items-center px-6 border-b border-sidebar-border group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
+					<img src="/One Percent Fitness Favicon.svg" alt="One Percent Stats" className="h-8 w-8" />
 				</div>
-			</SidebarHeader>{" "}
-			<SidebarContent>
+			</SidebarHeader>
+			<SidebarContent className="px-3 py-4">
 				<SidebarGroup>
 					<SidebarGroupContent>
-						<SidebarMenu>
+						<SidebarMenu className="space-y-1">
 							{menuItems.map((item) => (
 								<SidebarMenuItem key={item.url}>
 									<SidebarMenuButton
 										asChild
 										isActive={location.pathname === item.url}
-										tooltip={item.title}
+										className="sidebar-menu-button"
 									>
-										<Link to={item.url}>
-											<item.icon />
+										<Link
+											to={item.url}
+											data-active={location.pathname === item.url}
+											className="sidebar-menu-button"
+										>
+											<item.icon className="h-5 w-5" />
 											<span>{item.title}</span>
 										</Link>
 									</SidebarMenuButton>
@@ -76,10 +76,14 @@ export function AppSidebar({
 									<SidebarMenuButton
 										asChild
 										isActive={location.pathname === "/admin"}
-										tooltip="Admin"
+										className="sidebar-menu-button"
 									>
-										<Link to="/admin">
-											<Settings />
+										<Link
+											to="/admin"
+											data-active={location.pathname === "/admin"}
+											className="sidebar-menu-button"
+										>
+											<Settings className="h-5 w-5" />
 											<span>Admin</span>
 										</Link>
 									</SidebarMenuButton>

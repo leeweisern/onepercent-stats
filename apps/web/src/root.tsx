@@ -10,7 +10,6 @@ import type { Route } from "./+types/root";
 import "./index.css";
 import Header from "./components/header";
 import Loader from "./components/loader";
-import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui/sonner";
 
 export const links: Route.LinksFunction = () => [
@@ -46,18 +45,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
 	return (
-		<ThemeProvider
-			attribute="class"
-			defaultTheme="light"
-			disableTransitionOnChange
-			storageKey="vite-ui-theme"
-		>
+		<>
 			<div className="grid h-svh grid-rows-[auto_1fr]">
 				<Header />
 				<Outlet />
 			</div>
 			<Toaster richColors />
-		</ThemeProvider>
+		</>
 	);
 }
 

@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BRAND_COLORS } from "@/lib/brand-colors";
 
 interface MonthlySalesData {
 	month: string;
@@ -147,7 +148,12 @@ export default function MonthlySalesChart({
 							<YAxis tick={{ fontSize: 12 }} />
 							<Tooltip content={<CustomSalesTooltip />} />
 							<Legend />
-							<Bar dataKey="totalSales" fill="#f59e0b" name="Total Sales" radius={[2, 2, 0, 0]} />
+							<Bar
+								dataKey="totalSales"
+								fill={BRAND_COLORS.PRIMARY_RED}
+								name="Total Sales"
+								radius={[2, 2, 0, 0]}
+							/>
 						</BarChart>
 					</ResponsiveContainer>
 				</div>

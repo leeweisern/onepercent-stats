@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import z from "zod";
 import { authClient } from "@/lib/auth-client";
+import { BRAND_COLORS } from "@/lib/brand-colors";
 import Loader from "./loader";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -75,7 +76,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp?: ()
 									onChange={(e) => field.handleChange(e.target.value)}
 								/>
 								{field.state.meta.errors.map((error) => (
-									<p key={error?.message} className="text-red-500">
+									<p key={error?.message} style={{ color: BRAND_COLORS.PRIMARY_RED }}>
 										{error?.message}
 									</p>
 								))}
@@ -98,7 +99,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp?: ()
 									onChange={(e) => field.handleChange(e.target.value)}
 								/>
 								{field.state.meta.errors.map((error) => (
-									<p key={error?.message} className="text-red-500">
+									<p key={error?.message} style={{ color: BRAND_COLORS.PRIMARY_RED }}>
 										{error?.message}
 									</p>
 								))}
@@ -125,7 +126,8 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp?: ()
 					<Button
 						variant="link"
 						onClick={onSwitchToSignUp}
-						className="text-indigo-600 hover:text-indigo-800"
+						className="hover:underline"
+						style={{ color: BRAND_COLORS.PRIMARY_RED }}
 					>
 						Need an account? Sign Up
 					</Button>

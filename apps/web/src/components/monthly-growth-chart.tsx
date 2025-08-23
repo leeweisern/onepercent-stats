@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BRAND_COLORS } from "@/lib/brand-colors";
 
 interface MonthlyGrowthData {
 	month: string;
@@ -148,21 +149,21 @@ export default function MonthlyGrowthChart({ selectedYear }: MonthlyGrowthChartP
 							<Bar
 								yAxisId="left"
 								dataKey="totalLeads"
-								fill="#3b82f6"
+								fill={BRAND_COLORS.PRIMARY_RED}
 								name="Total Leads"
 								radius={[2, 2, 0, 0]}
 							/>
 							<Bar
 								yAxisId="left"
 								dataKey="closedLeads"
-								fill="#10b981"
+								fill={BRAND_COLORS.BLACK}
 								name="Closed Leads"
 								radius={[2, 2, 0, 0]}
 							/>
 							<Bar
 								yAxisId="right"
 								dataKey="totalSales"
-								fill="#f59e0b"
+								fill={BRAND_COLORS.GRAY_600}
 								name="Total Sales"
 								radius={[2, 2, 0, 0]}
 							/>

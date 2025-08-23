@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BRAND_COLORS } from "@/lib/brand-colors";
 
 interface PlatformBreakdownData {
 	platform: string | null;
@@ -20,19 +21,9 @@ export default function PlatformChart({ data, totalSales }: PlatformChartProps) 
 		return `RM${amount.toLocaleString()}`;
 	};
 
-	const getPlatformColor = (platform: string | null) => {
-		switch (platform?.toLowerCase()) {
-			case "facebook":
-			case "fb":
-				return { close: "bg-blue-600", noClose: "bg-orange-500" };
-			case "google":
-				return { close: "bg-green-600", noClose: "bg-orange-500" };
-			case "instagram":
-			case "ig":
-				return { close: "bg-purple-600", noClose: "bg-orange-500" };
-			default:
-				return { close: "bg-gray-600", noClose: "bg-orange-500" };
-		}
+	const getPlatformColor = (_platform: string | null) => {
+		// Using brand colors consistently - red for closed, black for not closed
+		return { close: "[&]:bg-[#e41e26]", noClose: "[&]:bg-black" };
 	};
 
 	const maxLeads = Math.max(...data.map((d) => d.totalLeads));
@@ -44,11 +35,14 @@ export default function PlatformChart({ data, totalSales }: PlatformChartProps) 
 					<span>Total Sales {formatCurrency(totalSales)}</span>
 					<div className="flex items-center gap-4 text-sm">
 						<div className="flex items-center gap-2">
-							<div className="h-4 w-4 rounded bg-blue-600" />
+							<div
+								className="h-4 w-4 rounded"
+								style={{ backgroundColor: BRAND_COLORS.PRIMARY_RED }}
+							/>
 							<span>Close</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<div className="h-4 w-4 rounded bg-orange-500" />
+							<div className="h-4 w-4 rounded" style={{ backgroundColor: BRAND_COLORS.BLACK }} />
 							<span>No Close</span>
 						</div>
 					</div>

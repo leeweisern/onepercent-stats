@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BRAND_COLORS } from "@/lib/brand-colors";
 
 // Helper function to format month display
 const _formatMonthDisplay = (monthString: string) => {
@@ -221,11 +222,15 @@ export default function FunnelChart({
 											{stage.count}
 										</div>
 										<div
-											className="flex w-16 items-end justify-center rounded-t-md bg-blue-500 transition-all duration-500"
+											className="flex w-16 items-end justify-center rounded-t-md transition-all duration-500"
 											style={{
 												height: `${Math.max(height, 20)}px`,
 												backgroundColor:
-													index === 0 ? "#3b82f6" : index === 1 ? "#93c5fd" : "#1e40af",
+													index === 0
+														? BRAND_COLORS.PRIMARY_RED
+														: index === 1
+															? BRAND_COLORS.GRAY_400
+															: BRAND_COLORS.BLACK,
 											}}
 										/>
 										<div className="text-center text-muted-foreground text-xs">
@@ -241,7 +246,7 @@ export default function FunnelChart({
 					<div className="ml-8 text-right">
 						{summaryData && (
 							<div className="space-y-2">
-								<div className="font-bold text-3xl text-blue-600">
+								<div className="font-bold text-3xl" style={{ color: BRAND_COLORS.PRIMARY_RED }}>
 									{summaryData.totalLeads > 0
 										? ((summaryData.totalClosed / summaryData.totalLeads) * 100).toFixed(1)
 										: "0.0"}
@@ -294,7 +299,7 @@ export default function FunnelChart({
 										{stage.conversionRate.toFixed(1)}%
 									</div>
 									{stage.totalSales > 0 && (
-										<div className="mt-1 text-green-600 text-xs">
+										<div className="mt-1 text-xs" style={{ color: BRAND_COLORS.PRIMARY_RED }}>
 											{formatCurrency(Number.parseInt(stage.totalSales, 10))}
 										</div>
 									)}
