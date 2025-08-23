@@ -1,16 +1,18 @@
+import {
+	type ColumnDef,
+	getCoreRowModel,
+	getPaginationRowModel,
+	getSortedRowModel,
+	type SortingState,
+	useReactTable,
+} from "@tanstack/react-table";
 import { BarChart3 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+import { DataTableColumnHeader } from "./data-table/column-header";
+import { DataTable } from "./data-table/data-table";
+import { DataTablePagination } from "./data-table/pagination";
 
 // Helper function to format month display
 const _formatMonthDisplay = (monthString: string) => {
@@ -70,6 +72,7 @@ interface PlatformBreakdownProps {
 export default function PlatformBreakdown({ selectedMonth, selectedYear }: PlatformBreakdownProps) {
 	const [data, setData] = useState<PlatformBreakdownResponse | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [sorting, setSorting] = useState<SortingState>([]);
 
 	const fetchBreakdown = useCallback(async () => {
 		setLoading(true);
@@ -111,6 +114,56 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 		}
 	};
 
+	// Define table columns
+	const columns: ColumnDef<PlatformBreakdownData>[] = [
+		{
+			accessorKey: "platform",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Platform" />,
+			cell: ({ row }) => {
+				const platform = row.original.platform;
+				return (
+					<div className="flex items-center gap-2">
+						<Badge variant={getPlatformVariant(platform)}>{platform?.toUpperCase() || "N/A"}</Badge>
+						<span className="text-muted-foreground">({row.original.totalLeads})</span>
+					</div>
+				);
+			},
+		},
+		{
+			accessorKey: "closedLeads",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Close" />,
+			cell: ({ row }) => <div className="text-center font-medium">{row.original.closedLeads}</div>,
+		},
+		{
+			accessorKey: "notClosedLeads",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="No Close" />,
+			cell: ({ row }) => (
+				<div className="text-center font-medium">{row.original.notClosedLeads}</div>
+			),
+		},
+		{
+			accessorKey: "totalSales",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Total Sales" />,
+			cell: ({ row }) => (
+				<div className="text-right font-medium text-green-600">
+					{formatCurrency(row.original.totalSales)}
+				</div>
+			),
+		},
+	];
+
+	const table = useReactTable({
+		data: data?.breakdown || [],
+		columns,
+		onSortingChange: setSorting,
+		getCoreRowModel: getCoreRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+		state: {
+			sorting,
+		},
+	});
+
 	return (
 		<Card>
 			<CardHeader>
@@ -125,63 +178,32 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 					)}
 				</CardTitle>{" "}
 			</CardHeader>
-			<CardContent className="p-0">
-				{loading ? (
-					<div className="space-y-2 p-6">
-						{Array.from({ length: 4 }, () => (
-							<Skeleton key={crypto.randomUUID()} className="h-12 w-full" />
-						))}
-					</div>
-				) : (
-					<div className="rounded-md border">
-						<Table>
-							<TableHeader>
-								<TableRow className="bg-muted/50 hover:bg-transparent">
-									<TableHead className="font-semibold">Platform</TableHead>
-									<TableHead className="text-center font-semibold">Close</TableHead>
-									<TableHead className="text-center font-semibold">No Close</TableHead>
-									<TableHead className="text-right font-semibold">Total Sales</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data?.breakdown.map((row) => (
-									<TableRow key={row.platform || crypto.randomUUID()} className="hover:bg-muted/30">
-										<TableCell className="font-medium">
-											<div className="flex items-center gap-2">
-												<Badge variant={getPlatformVariant(row.platform)}>
-													{row.platform?.toUpperCase() || "N/A"}
-												</Badge>
-												<span className="text-muted-foreground">({row.totalLeads})</span>
-											</div>
-										</TableCell>
-										<TableCell className="text-center font-medium">{row.closedLeads}</TableCell>
-										<TableCell className="text-center font-medium">{row.notClosedLeads}</TableCell>
-										<TableCell className="text-right font-medium text-green-600">
-											{formatCurrency(row.totalSales)}
-										</TableCell>
-									</TableRow>
-								))}
-								{data && (
-									<TableRow className="bg-muted/50 font-semibold hover:bg-muted/50">
-										<TableCell className="font-bold">
-											<div className="flex items-center gap-2">
-												<span>Total</span>
-												<span className="text-muted-foreground">({data.totals.totalLeads})</span>
-											</div>
-										</TableCell>
-										<TableCell className="text-center font-bold">
-											{data.totals.closedLeads}
-										</TableCell>
-										<TableCell className="text-center font-bold">
-											{data.totals.notClosedLeads}
-										</TableCell>
-										<TableCell className="text-right font-bold text-green-600">
-											{formatCurrency(data.totals.totalSales)}
-										</TableCell>
-									</TableRow>
-								)}
-							</TableBody>
-						</Table>
+			<CardContent>
+				<div className="space-y-4">
+					<DataTable
+						columns={columns}
+						data={data?.breakdown || []}
+						state={{ sorting }}
+						onSortingChange={setSorting}
+						isLoading={loading}
+					/>
+					{data?.breakdown && data.breakdown.length > 0 && <DataTablePagination table={table} />}
+				</div>
+
+				{/* Totals Row */}
+				{data && !loading && (
+					<div className="mt-4 rounded-md border bg-muted/25 p-4">
+						<div className="grid grid-cols-4 gap-4">
+							<div className="font-bold">
+								<span>Total</span>
+								<span className="text-muted-foreground ml-2">({data.totals.totalLeads})</span>
+							</div>
+							<div className="text-center font-bold">{data.totals.closedLeads}</div>
+							<div className="text-center font-bold">{data.totals.notClosedLeads}</div>
+							<div className="text-right font-bold text-green-600">
+								{formatCurrency(data.totals.totalSales)}
+							</div>
+						</div>
 					</div>
 				)}
 			</CardContent>

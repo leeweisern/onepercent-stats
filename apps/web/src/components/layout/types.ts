@@ -1,13 +1,7 @@
 type User = {
+	role: string;
 	name: string;
-	email: string;
-	avatar: string;
-};
-
-type Team = {
-	name: string;
-	logo: React.ElementType;
-	plan: string;
+	logo: string;
 };
 
 type BaseNavItem = {
@@ -35,7 +29,6 @@ type NavGroup = {
 
 type SidebarData = {
 	user: User;
-	teams: Team[];
 	navGroups: NavGroup[];
 };
 

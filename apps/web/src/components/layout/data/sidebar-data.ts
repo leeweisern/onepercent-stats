@@ -11,9 +11,9 @@ import type { SidebarData } from "../types";
 
 export const sidebarData: SidebarData = {
 	user: {
-		name: "Admin User",
-		email: "admin@onepercent.com",
-		avatar: "/One Percent Fitness Favicon.svg",
+		role: "Admin User",
+		name: "admin@onepercent.com",
+		logo: "/One Percent Fitness Favicon.svg",
 	},
 	teams: [
 		{

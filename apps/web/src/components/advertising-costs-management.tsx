@@ -1,4 +1,12 @@
-import { Calendar, DollarSign, Edit, Plus, Trash2 } from "lucide-react";
+import {
+	type ColumnDef,
+	getCoreRowModel,
+	getPaginationRowModel,
+	getSortedRowModel,
+	type SortingState,
+	useReactTable,
+} from "@tanstack/react-table";
+import { Calendar, DollarSign, Edit, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,18 +18,18 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+import { DataTableColumnHeader } from "./data-table/column-header";
+import { DataTable } from "./data-table/data-table";
+import { DataTablePagination } from "./data-table/pagination";
 
 interface AdvertisingCost {
 	id: number;
@@ -61,6 +69,9 @@ export default function AdvertisingCostsManagement() {
 	const [editingCost, setEditingCost] = useState<AdvertisingCost | null>(null);
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [costToDelete, setCostToDelete] = useState<AdvertisingCost | null>(null);
+
+	// Table state
+	const [sorting, setSorting] = useState<SortingState>([]);
 
 	// Form state
 	const [formData, setFormData] = useState({
@@ -204,6 +215,95 @@ export default function AdvertisingCostsManagement() {
 
 	const totalCost = costs.reduce((sum, cost) => sum + cost.cost, 0);
 
+	// Define table columns
+	const columns: ColumnDef<AdvertisingCost>[] = [
+		{
+			accessorKey: "period",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Period" />,
+			cell: ({ row }) => {
+				const cost = row.original;
+				return (
+					<div className="flex items-center gap-2">
+						<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 font-medium text-white text-xs">
+							{monthNames[cost.month - 1]?.slice(0, 3)}
+						</div>
+						<span className="font-medium">
+							{monthNames[cost.month - 1]} {cost.year}
+						</span>
+					</div>
+				);
+			},
+		},
+		{
+			accessorKey: "cost",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Cost" />,
+			cell: ({ row }) => {
+				const cost = row.original;
+				return (
+					<div className="text-right font-medium text-green-600">
+						{formatCurrency(cost.cost, cost.currency)}
+					</div>
+				);
+			},
+		},
+		{
+			accessorKey: "createdAt",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Added" />,
+			cell: ({ row }) => {
+				const createdAt = row.getValue("createdAt") as string;
+				return (
+					<div className="text-center text-muted-foreground text-sm">
+						{new Date(createdAt).toLocaleDateString()}
+					</div>
+				);
+			},
+		},
+		{
+			id: "actions",
+			header: "Actions",
+			cell: ({ row }) => {
+				const cost = row.original;
+				return (
+					<div className="text-center">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" className="h-8 w-8 p-0">
+									<span className="sr-only">Open menu</span>
+									<MoreHorizontal className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={() => openEditDialog(cost)}>
+									<Edit className="mr-2 h-4 w-4" />
+									Edit cost
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									className="text-destructive"
+									onClick={() => openDeleteDialog(cost)}
+								>
+									<Trash2 className="mr-2 h-4 w-4" />
+									Delete cost
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			},
+		},
+	];
+
+	const table = useReactTable({
+		data: costs,
+		columns,
+		onSortingChange: setSorting,
+		getCoreRowModel: getCoreRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+		state: {
+			sorting,
+		},
+	});
+
 	return (
 		<div className="space-y-6">
 			{/* Summary Card */}
@@ -336,77 +436,17 @@ export default function AdvertisingCostsManagement() {
 						</Dialog>
 					</CardTitle>
 				</CardHeader>
-				<CardContent className="p-0">
-					{loading ? (
-						<div className="space-y-2 p-6">
-							{Array.from({ length: 5 }, () => (
-								<Skeleton key={crypto.randomUUID()} className="h-12 w-full" />
-							))}
-						</div>
-					) : (
-						<div className="rounded-md border">
-							<Table>
-								<TableHeader>
-									<TableRow className="bg-muted/50 hover:bg-transparent">
-										<TableHead className="font-semibold">Period</TableHead>
-										<TableHead className="text-right font-semibold">Cost</TableHead>
-										<TableHead className="text-center font-semibold">Added</TableHead>
-										<TableHead className="w-[100px] text-center font-semibold">Actions</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{costs.length === 0 ? (
-										<TableRow>
-											<TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-												No advertising costs found. Add your first entry above.
-											</TableCell>
-										</TableRow>
-									) : (
-										costs.map((cost) => (
-											<TableRow key={cost.id} className="hover:bg-muted/30">
-												<TableCell className="font-medium">
-													<div className="flex items-center gap-2">
-														<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 font-medium text-white text-xs">
-															{monthNames[cost.month - 1]?.slice(0, 3)}
-														</div>
-														<span>
-															{monthNames[cost.month - 1]} {cost.year}
-														</span>
-													</div>
-												</TableCell>
-												<TableCell className="text-right font-medium text-green-600">
-													{formatCurrency(cost.cost, cost.currency)}
-												</TableCell>
-												<TableCell className="text-center text-muted-foreground text-sm">
-													{new Date(cost.createdAt).toLocaleDateString()}
-												</TableCell>
-												<TableCell className="text-center">
-													<div className="flex justify-center gap-1">
-														<Button
-															variant="ghost"
-															size="sm"
-															className="h-8 w-8 p-0"
-															onClick={() => openEditDialog(cost)}
-														>
-															<Edit className="h-4 w-4" />
-														</Button>
-														<Button
-															variant="ghost"
-															size="sm"
-															className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
-															onClick={() => openDeleteDialog(cost)}
-														>
-															<Trash2 className="h-4 w-4" />
-														</Button>
-													</div>
-												</TableCell>
-											</TableRow>
-										))
-									)}
-								</TableBody>
-							</Table>
-						</div>
-					)}
+				<CardContent>
+					<div className="space-y-4">
+						<DataTable
+							columns={columns}
+							data={costs}
+							state={{ sorting }}
+							onSortingChange={setSorting}
+							isLoading={loading}
+						/>
+						{costs.length > 0 && <DataTablePagination table={table} />}
+					</div>
 				</CardContent>
 			</Card>
 

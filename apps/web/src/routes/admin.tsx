@@ -1,7 +1,6 @@
 import { Trash2, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
-import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -228,16 +227,14 @@ export default function AdminPage() {
 
 	return (
 		<ProtectedRoute>
-			<AuthenticatedLayout>
-				<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-					{/* Page Header */}
-					<div>
-						<h1 className="text-3xl font-bold tracking-tight">Admin</h1>
-						<p className="text-muted-foreground">Manage users and system settings</p>
-					</div>
-					{content()}
+			<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+				{/* Page Header */}
+				<div>
+					<h1 className="text-3xl font-bold tracking-tight">Admin</h1>
+					<p className="text-muted-foreground">Manage users and system settings</p>
 				</div>
-			</AuthenticatedLayout>
+				{content()}
+			</div>
 		</ProtectedRoute>
 	);
 }
