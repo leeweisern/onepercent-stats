@@ -1,9 +1,8 @@
 import { Trash2, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
 import { ProtectedRoute } from "@/components/protected-route";
-import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +24,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
 	Table,
 	TableBody,
@@ -230,13 +228,16 @@ export default function AdminPage() {
 
 	return (
 		<ProtectedRoute>
-			<SidebarProvider>
-				<AppSidebar />
-				<SidebarInset>
-					<SiteHeader />
-					<div className="flex flex-1 flex-col gap-4 p-4">{content()}</div>
-				</SidebarInset>
-			</SidebarProvider>
+			<AuthenticatedLayout>
+				<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+					{/* Page Header */}
+					<div>
+						<h1 className="text-3xl font-bold tracking-tight">Admin</h1>
+						<p className="text-muted-foreground">Manage users and system settings</p>
+					</div>
+					{content()}
+				</div>
+			</AuthenticatedLayout>
 		</ProtectedRoute>
 	);
 }

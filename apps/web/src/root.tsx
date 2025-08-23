@@ -5,12 +5,16 @@ import {
 	Outlet,
 	Scripts,
 	ScrollRestoration,
+	useLocation,
 } from "react-router";
 import type { Route } from "./+types/root";
 import "./index.css";
-import Header from "./components/header";
+import { AuthenticatedLayout } from "./components/layout/authenticated-layout";
 import Loader from "./components/loader";
 import { Toaster } from "./components/ui/sonner";
+import { DirectionProvider } from "./context/direction-provider";
+import { FontProvider } from "./context/font-provider";
+import { ThemeProvider } from "./context/theme-provider";
 
 export const links: Route.LinksFunction = () => [
 	{ rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -44,14 +48,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+	const location = useLocation();
+	const isLoginPage = location.pathname === "/login";
+
 	return (
-		<>
-			<div className="grid h-svh grid-rows-[auto_1fr]">
-				<Header />
-				<Outlet />
-			</div>
-			<Toaster richColors />
-		</>
+		<ThemeProvider>
+			<FontProvider>
+				<DirectionProvider>
+					{isLoginPage ? (
+						<Outlet />
+					) : (
+						<AuthenticatedLayout>
+							<Outlet />
+						</AuthenticatedLayout>
+					)}
+					<Toaster richColors />
+				</DirectionProvider>
+			</FontProvider>
+		</ThemeProvider>
 	);
 }
 

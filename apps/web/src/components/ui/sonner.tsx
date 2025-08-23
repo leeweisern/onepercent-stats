@@ -1,44 +1,15 @@
-"use client";
+import { Toaster as Sonner } from "sonner";
+import { useTheme } from "../../context/theme-provider";
 
-import { useEffect, useState } from "react";
-import { Toaster as Sonner, type ToasterProps } from "sonner";
+type ToasterProps = React.ComponentProps<typeof Sonner>;
 
-const Toaster = ({ ...props }: ToasterProps) => {
-	const [mounted, setMounted] = useState(false);
-	const [theme, setTheme] = useState("system");
-
-	useEffect(() => {
-		setMounted(true);
-		// Try to get theme from localStorage or default to system
-		try {
-			const savedTheme = localStorage.getItem("vite-ui-theme") || "system";
-			setTheme(savedTheme);
-		} catch {
-			setTheme("system");
-		}
-	}, []);
-
-	if (!mounted) {
-		return (
-			<Sonner
-				theme="system"
-				className="toaster group"
-				style={
-					{
-						"--normal-bg": "var(--popover)",
-						"--normal-text": "var(--popover-foreground)",
-						"--normal-border": "var(--border)",
-					} as React.CSSProperties
-				}
-				{...props}
-			/>
-		);
-	}
+export function Toaster({ ...props }: ToasterProps) {
+	const { theme = "system" } = useTheme();
 
 	return (
 		<Sonner
 			theme={theme as ToasterProps["theme"]}
-			className="toaster group"
+			className="toaster group [&_div[data-content]]:w-full"
 			style={
 				{
 					"--normal-bg": "var(--popover)",
@@ -49,6 +20,4 @@ const Toaster = ({ ...props }: ToasterProps) => {
 			{...props}
 		/>
 	);
-};
-
-export { Toaster };
+}
