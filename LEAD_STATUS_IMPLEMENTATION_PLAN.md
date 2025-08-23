@@ -122,7 +122,13 @@ The current lead management system suffers from:
 4. **Analytics Dashboards**
    - Update "Closed Leads" metrics to count only `Closed Won` status
    - Update conversion rates to use `Closed Won` for calculations
-   - Update funnel visualization with new status progression
+   - Update funnel visualization with new status progression:
+     - Display full 6-stage funnel: New → Contacted → Follow Up → Consulted → Closed Won → Closed Lost
+     - Show conversion rate as percentage of leads that reached "Closed Won"
+     - Color-code stages: New (gray), Contacted (blue), Follow Up (orange), Consulted (purple), Closed Won (green), Closed Lost (red)
+   - Ensure all analytics components respect `dateType` filter (lead date vs closed date)
+   - Platform breakdown should show "Closed Won" count as closed leads
+   - ROAS metrics should use "Closed Won" for conversion calculations
 
 ## Technical Specifications
 
@@ -233,17 +239,48 @@ Estimated time: 2 days
 
 ### Phase 3: Complete Backend Code Updates (Days 4-5)
 
-**Step 3.1: Update Analytics Router**
-- Modify `apps/server/src/routers/analytics.ts`
-- Replace all `isClosed` references with status checks:
-  - `/leads/summary`: Count `status = 'Closed Won'` for totalClosed
-  - `/leads/platform-breakdown`: Use status for closed/not closed
-  - `/leads/funnel`: Update status order and grouping
-  - `/leads/options`: Return canonical status list
-  - `/leads/filter-options`: Remove isClosed options
-  - `/roas`: Use `Closed Won` for conversion metrics
+**Step 3.1: Create Status Utilities and Maintenance**
+- Create `apps/server/src/lib/status.ts`:
+  - Export `LEAD_STATUSES` = ["New", "Contacted", "Follow Up", "Consulted", "Closed Won", "Closed Lost"]
+  - Export `STATUS_ORDER` map for sorting
+  - Add `normalizeStatus(dbStatus: string)` helper for legacy mapping:
+    - "Consult" → "Consulted"
+    - "No Reply" → "Contacted"
+    - null/empty → "New"
+- Create `apps/server/src/lib/status-maintenance.ts`:
+  - Implement `runStatusMaintenance(db)` function:
+    - Auto-promote stale `Contacted` leads to `Follow Up` after 3 days
+    - Sync sales-status: sales > 0 → `Closed Won`
+    - Performance target: < 100ms execution time
 
-**Step 3.2: Update Lead CRUD Operations**
+**Step 3.2: Update Analytics Router with Canonical Statuses**
+- Modify `apps/server/src/routers/analytics.ts`:
+  - Add status maintenance calls to key endpoints:
+    - `/leads/funnel`, `/leads/platform-breakdown`, `/leads/summary`, `/roas`
+  - **Update `/leads/months`**:
+    - Accept `dateType` param ("lead" | "closed")
+    - When "lead": group by `leads.month`
+    - When "closed": group by `leads.closedMonth` where status = "Closed Won"
+  - **Update `/leads/funnel`**:
+    - Accept `dateType`, `month`, `year`, `platform` params
+    - Use normalized statuses via `normalizeStatus()`
+    - Return canonical status order: New → Contacted → Follow Up → Consulted → Closed Won → Closed Lost
+    - Include period metadata in response
+  - **Update `/leads/summary`**:
+    - Accept `dateType`, `month`, `year`, `platform` params
+    - Return: totalLeads, totalConsults (status="Consulted"), totalClosed (status="Closed Won"), totalSales
+    - Remove all `isClosed` references
+  - **Update `/leads/platform-breakdown`**:
+    - Accept `dateType` param
+    - closedLeads = count(status = "Closed Won")
+    - notClosedLeads = totalLeads - closedLeads
+  - **Update `/leads/filter-options`**:
+    - Return canonical `LEAD_STATUSES` (not derived from DB)
+  - **Update `/roas`**:
+    - Use `Closed Won` for conversion metrics
+    - closedLeads = count(status = "Closed Won")
+
+**Step 3.3: Update Lead CRUD Operations**
 - POST `/leads`:
   - Default status to "New"
   - Auto-set `Closed Won` when sales > 0
@@ -252,11 +289,6 @@ Estimated time: 2 days
   - Handle status transitions with date updates
   - Sync sales amount with status changes
   - Update `updatedAt` on every modification
-
-**Step 3.3: Add Status Check Logic**
-- Create helper function to check for stale leads
-- Integrate into relevant API calls
-- Auto-promote `Contacted` to `Follow Up` after 3 days
 
 Estimated time: 2 days
 
@@ -274,10 +306,32 @@ Estimated time: 2 days
 - Add new date columns
 - Update status badges
 
-**Step 4.3: Update Filters and Analytics**
-- Modify `apps/web/src/components/leads-filters.tsx`
-- Update all analytics components
-- Replace boolean filters with status multi-select
+**Step 4.3: Update Analytics Page and Components**
+- **Update Analytics Page** (`apps/web/src/routes/analytics.tsx`):
+  - Pass `dateType` prop to `PlatformBreakdown` and `FunnelChart`
+  - Include `dateType` when fetching available months
+- **Update FunnelChart** (`apps/web/src/components/funnel-chart.tsx`):
+  - Accept `dateType` prop
+  - Include `dateType` in API calls
+  - Remove client-side `/leads` fetch for summary calculation
+  - Either derive summary from `/leads/funnel` response or call updated `/leads/summary`
+  - Replace legacy status checks:
+    - "Consult" → "Consulted"
+    - `isClosed` → `status === "Closed Won"`
+  - Option A: Keep 3-bar simplified view (Leads, Consulted, Closed Won)
+  - Option B (Recommended): Display full 6-stage funnel with canonical statuses
+  - Show conversion rate as Closed Won / Total Leads
+- **Update PlatformBreakdown** (`apps/web/src/components/platform-breakdown.tsx`):
+  - Accept `dateType` prop
+  - Include `dateType` in API calls
+  - Ensure closedLeads reflects "Closed Won" status
+- **Update Lead Filters** (`apps/web/src/components/leads-filters.tsx`):
+  - Replace boolean "Closed Status" filter with multi-select status filter
+  - Show canonical status values
+- **Update Other Analytics Components**:
+  - `monthly-leads-chart.tsx`: Already respects `dateType`
+  - `monthly-sales-chart.tsx`: Already respects `dateType`
+  - `roas-metrics.tsx`: Optionally accept `dateType` for consistency
 
 Estimated time: 2 days
 
@@ -383,7 +437,8 @@ Estimated time: 1 day
 ## File Structure & Changes
 
 ### New Files to Create
-- `apps/server/src/lib/status.ts` - Status constants and types
+- `apps/server/src/lib/status.ts` - Status constants, types, and normalization helpers
+- `apps/server/src/lib/status-maintenance.ts` - Status maintenance logic for automatic transitions
 - `apps/server/src/scripts/migrate-lead-status.ts` - Data migration script
 
 ### Files to Modify
@@ -411,6 +466,7 @@ Estimated time: 1 day
 
 ### Unit Tests
 - Date utility functions (add days, compare, etc.)
+- Status normalization function (legacy status mapping)
 - Status transition logic
 - Sales-status synchronization rules
 - Data migration mappings
@@ -420,6 +476,9 @@ Estimated time: 1 day
 - Database operations with new fields
 - Status transition workflows
 - Follow-up date calculations
+- Analytics endpoints with dateType filtering
+- Funnel data aggregation with canonical statuses
+- Status maintenance performance (< 100ms)
 
 ### User Acceptance Tests
 1. Create new lead → Verify default status is "New"
@@ -427,7 +486,12 @@ Estimated time: 1 day
 3. Wait 3 days after contacting → Verify status changes to "Follow Up"
 4. Edit lead status → Verify appropriate date fields update
 5. Filter by status → Verify correct results returned
-6. View analytics → Verify metrics calculate correctly
+6. View analytics → Verify metrics calculate correctly:
+   - Funnel shows 6 canonical stages in correct order
+   - Conversion rate = Closed Won / Total Leads
+   - Platform breakdown "closed" count = Closed Won leads
+   - Switching dateType updates all analytics components consistently
+   - ROAS uses Closed Won for conversion metrics
 
 ## Deployment & Migration
 
@@ -521,6 +585,8 @@ Estimated time: 1 day
 4. Leave closedDate empty for Closed Lost, rely on updatedAt timestamp
 5. Keep the system simple, avoiding complexity of enterprise CRM systems
 6. **NEW**: Perform complete migration locally first, then replace remote database entirely (no backward compatibility phase)
+7. **NEW**: Display full 6-stage funnel in analytics with canonical statuses
+8. **NEW**: Unify dateType filtering across all analytics components for consistency
 
 ### Status Transition Rules
 ```
@@ -592,4 +658,5 @@ wrangler d1 execute onepercent-stats-new --remote --command "SELECT COUNT(*) FRO
 ---
 *Generated on: December 2024*
 *Updated to use simplified local-first migration approach*
+*Updated to include comprehensive analytics updates and 6-stage funnel visualization*
 *Based on conversation about lead status management system implementation*
