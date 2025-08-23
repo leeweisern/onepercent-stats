@@ -1,4 +1,4 @@
-import { BarChart3, Shield, TrendingUp, UserPlus, Users } from "lucide-react";
+import { BarChart3, Shield, TrendingUp, Users } from "lucide-react";
 import type { SidebarData } from "../types";
 
 export const sidebarData: SidebarData = {
@@ -31,11 +31,6 @@ export const sidebarData: SidebarData = {
 		{
 			title: "Management",
 			items: [
-				{
-					title: "Add New Lead",
-					url: "/new",
-					icon: UserPlus,
-				},
 				{
 					title: "Admin",
 					url: "/admin",

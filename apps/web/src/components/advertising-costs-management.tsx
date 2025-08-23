@@ -26,7 +26,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { DataTableColumnHeader } from "./data-table/column-header";
 import { DataTable } from "./data-table/data-table";
 import { DataTablePagination } from "./data-table/pagination";
@@ -350,88 +356,92 @@ export default function AdvertisingCostsManagement() {
 									Add Cost
 								</Button>
 							</DialogTrigger>
-							<DialogContent>
+							<DialogContent className="sm:max-w-[500px]">
 								<DialogHeader>
 									<DialogTitle>Add Advertising Cost</DialogTitle>
+									<p className="text-sm text-muted-foreground">Add a new advertising cost record</p>
 								</DialogHeader>
-								<form onSubmit={handleCreate} className="space-y-4">
-									<div className="grid grid-cols-2 gap-4">
-										<div>
-											<Label htmlFor="month">Month</Label>
-											<Select
-												value={formData.month}
-												onValueChange={(value) => setFormData({ ...formData, month: value })}
-											>
-												<SelectTrigger>
-													{formData.month
-														? monthNames[Number.parseInt(formData.month, 10) - 1]
-														: "Select month"}
-												</SelectTrigger>{" "}
-												<SelectContent>
-													{monthNames.map((month, index) => (
-														<SelectItem key={month} value={(index + 1).toString()}>
-															{month}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-										<div>
-											<Label htmlFor="year">Year</Label>
-											<Select
-												value={formData.year}
-												onValueChange={(value) => setFormData({ ...formData, year: value })}
-											>
-												<SelectTrigger>{formData.year || "Select year"}</SelectTrigger>{" "}
-												<SelectContent>
-													{years.map((year) => (
-														<SelectItem key={year} value={year.toString()}>
-															{year}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-									</div>
-									<div className="grid grid-cols-2 gap-4">
-										<div>
-											<Label htmlFor={costInputId}>Cost</Label>
-											<Input
-												id={costInputId}
-												type="number"
-												step="0.01"
-												placeholder="0.00"
-												value={formData.cost}
-												onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-												required
-											/>
-										</div>
-										<div>
-											<Label htmlFor="currency">Currency</Label>
-											<Select
-												value={formData.currency}
-												onValueChange={(value) => setFormData({ ...formData, currency: value })}
-											>
-												<SelectTrigger>{formData.currency}</SelectTrigger>{" "}
-												<SelectContent>
-													<SelectItem value="RM">RM</SelectItem>
-													<SelectItem value="USD">USD</SelectItem>
-													<SelectItem value="EUR">EUR</SelectItem>
-												</SelectContent>
-											</Select>
-										</div>
-									</div>
-									<div className="flex justify-end gap-2">
-										<Button
-											type="button"
-											variant="outline"
-											onClick={() => setIsCreateDialogOpen(false)}
-										>
-											Cancel
-										</Button>
-										<Button type="submit">Add Cost</Button>
-									</div>
-								</form>
+
+								<Card>
+									<CardHeader>
+										<CardTitle>Cost Information</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<form onSubmit={handleCreate} className="space-y-4">
+											<div className="grid grid-cols-2 gap-4">
+												<div className="space-y-2">
+													<Label htmlFor="month">Month</Label>
+													<Select
+														value={formData.month}
+														onValueChange={(value) => setFormData({ ...formData, month: value })}
+													>
+														<SelectTrigger>
+															<SelectValue placeholder="Select month" />
+														</SelectTrigger>
+														<SelectContent>
+															{monthNames.map((month, index) => (
+																<SelectItem key={month} value={(index + 1).toString()}>
+																	{month}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</div>
+												<div className="space-y-2">
+													<Label htmlFor="year">Year</Label>
+													<Select
+														value={formData.year}
+														onValueChange={(value) => setFormData({ ...formData, year: value })}
+													>
+														<SelectTrigger>
+															<SelectValue placeholder="Select year" />
+														</SelectTrigger>
+														<SelectContent>
+															{years.map((year) => (
+																<SelectItem key={year} value={year.toString()}>
+																	{year}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</div>
+											</div>
+											<div className="grid grid-cols-2 gap-4">
+												<div className="space-y-2">
+													<Label htmlFor={costInputId}>Cost</Label>
+													<Input
+														id={costInputId}
+														type="number"
+														step="0.01"
+														placeholder="0.00"
+														value={formData.cost}
+														onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+														required
+													/>
+												</div>
+												<div className="space-y-2">
+													<Label htmlFor="currency">Currency</Label>
+													<Select
+														value={formData.currency}
+														onValueChange={(value) => setFormData({ ...formData, currency: value })}
+													>
+														<SelectTrigger>
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="RM">RM</SelectItem>
+															<SelectItem value="USD">USD</SelectItem>
+															<SelectItem value="EUR">EUR</SelectItem>
+														</SelectContent>
+													</Select>
+												</div>
+											</div>
+											<Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+												Add Cost
+											</Button>
+										</form>
+									</CardContent>
+								</Card>
 							</DialogContent>
 						</Dialog>
 					</CardTitle>
@@ -452,84 +462,92 @@ export default function AdvertisingCostsManagement() {
 
 			{/* Edit Dialog */}
 			<Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-				<DialogContent>
+				<DialogContent className="sm:max-w-[500px]">
 					<DialogHeader>
 						<DialogTitle>Edit Advertising Cost</DialogTitle>
+						<p className="text-sm text-muted-foreground">Update advertising cost record</p>
 					</DialogHeader>
-					<form onSubmit={handleEdit} className="space-y-4">
-						<div className="grid grid-cols-2 gap-4">
-							<div>
-								<Label htmlFor="edit-month">Month</Label>
-								<Select
-									value={formData.month}
-									onValueChange={(value) => setFormData({ ...formData, month: value })}
-								>
-									<SelectTrigger>
-										{formData.month
-											? monthNames[Number.parseInt(formData.month, 10) - 1]
-											: "Select month"}
-									</SelectTrigger>
-									<SelectContent>
-										{monthNames.map((month, index) => (
-											<SelectItem key={month} value={(index + 1).toString()}>
-												{month}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-							<div>
-								<Label htmlFor="edit-year">Year</Label>
-								<Select
-									value={formData.year}
-									onValueChange={(value) => setFormData({ ...formData, year: value })}
-								>
-									<SelectTrigger>{formData.year || "Select year"}</SelectTrigger>
-									<SelectContent>
-										{years.map((year) => (
-											<SelectItem key={year} value={year.toString()}>
-												{year}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-						</div>
-						<div className="grid grid-cols-2 gap-4">
-							<div>
-								<Label htmlFor={editCostInputId}>Cost</Label>
-								<Input
-									id={editCostInputId}
-									type="number"
-									step="0.01"
-									placeholder="0.00"
-									value={formData.cost}
-									onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-									required
-								/>
-							</div>
-							<div>
-								<Label htmlFor="edit-currency">Currency</Label>
-								<Select
-									value={formData.currency}
-									onValueChange={(value) => setFormData({ ...formData, currency: value })}
-								>
-									<SelectTrigger>{formData.currency}</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="RM">RM</SelectItem>
-										<SelectItem value="USD">USD</SelectItem>
-										<SelectItem value="EUR">EUR</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						</div>
-						<div className="flex justify-end gap-2">
-							<Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-								Cancel
-							</Button>
-							<Button type="submit">Update Cost</Button>
-						</div>
-					</form>
+
+					<Card>
+						<CardHeader>
+							<CardTitle>Cost Information</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<form onSubmit={handleEdit} className="space-y-4">
+								<div className="grid grid-cols-2 gap-4">
+									<div className="space-y-2">
+										<Label htmlFor="edit-month">Month</Label>
+										<Select
+											value={formData.month}
+											onValueChange={(value) => setFormData({ ...formData, month: value })}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select month" />
+											</SelectTrigger>
+											<SelectContent>
+												{monthNames.map((month, index) => (
+													<SelectItem key={month} value={(index + 1).toString()}>
+														{month}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="edit-year">Year</Label>
+										<Select
+											value={formData.year}
+											onValueChange={(value) => setFormData({ ...formData, year: value })}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select year" />
+											</SelectTrigger>
+											<SelectContent>
+												{years.map((year) => (
+													<SelectItem key={year} value={year.toString()}>
+														{year}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
+								<div className="grid grid-cols-2 gap-4">
+									<div className="space-y-2">
+										<Label htmlFor={editCostInputId}>Cost</Label>
+										<Input
+											id={editCostInputId}
+											type="number"
+											step="0.01"
+											placeholder="0.00"
+											value={formData.cost}
+											onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+											required
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="edit-currency">Currency</Label>
+										<Select
+											value={formData.currency}
+											onValueChange={(value) => setFormData({ ...formData, currency: value })}
+										>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="RM">RM</SelectItem>
+												<SelectItem value="USD">USD</SelectItem>
+												<SelectItem value="EUR">EUR</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
+								<Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+									Update Cost
+								</Button>
+							</form>
+						</CardContent>
+					</Card>
 				</DialogContent>
 			</Dialog>
 
@@ -538,24 +556,36 @@ export default function AdvertisingCostsManagement() {
 				<DialogContent className="sm:max-w-[425px]">
 					<DialogHeader>
 						<DialogTitle>Delete Advertising Cost</DialogTitle>
-					</DialogHeader>
-					<div className="py-4">
-						<p className="text-muted-foreground text-sm">
-							Are you sure you want to delete the advertising cost for{" "}
-							<span className="font-medium text-foreground">
-								{costToDelete && `${monthNames[costToDelete.month - 1]} ${costToDelete.year}`}
-							</span>
-							? This action cannot be undone.
+						<p className="text-sm text-muted-foreground">
+							Confirm deletion of advertising cost record
 						</p>
-					</div>
-					<div className="flex justify-end gap-2">
-						<Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
-							Cancel
-						</Button>
-						<Button variant="destructive" onClick={handleDelete}>
-							Delete
-						</Button>
-					</div>
+					</DialogHeader>
+
+					<Card>
+						<CardContent className="pt-6">
+							<div className="space-y-4">
+								<p className="text-muted-foreground text-sm">
+									Are you sure you want to delete the advertising cost for{" "}
+									<span className="font-medium text-foreground">
+										{costToDelete && `${monthNames[costToDelete.month - 1]} ${costToDelete.year}`}
+									</span>
+									? This action cannot be undone.
+								</p>
+								<div className="flex gap-2">
+									<Button
+										variant="outline"
+										onClick={() => setDeleteConfirmOpen(false)}
+										className="flex-1"
+									>
+										Cancel
+									</Button>
+									<Button variant="destructive" onClick={handleDelete} className="flex-1">
+										Delete
+									</Button>
+								</div>
+							</div>
+						</CardContent>
+					</Card>
 				</DialogContent>
 			</Dialog>
 		</div>

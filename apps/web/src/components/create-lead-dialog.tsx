@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { convertFromDateInputFormat, getMonthFromDate, getTodayYYYYMMDD } from "@/lib/date-utils";
 
@@ -160,83 +167,103 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle>Create New Lead</DialogTitle>
+					<DialogTitle>Add New Lead</DialogTitle>
+					<p className="text-sm text-muted-foreground">Create a new lead in the system</p>
 				</DialogHeader>
-				<div className="grid gap-4 py-4">
-					{/* Basic Information */}
-					<div className="grid grid-cols-2 gap-4">
+
+				<Card>
+					<CardHeader>
+						<CardTitle>Lead Information</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						{/* Name */}
 						<div className="space-y-2">
-							<Label htmlFor={nameId}>Name *</Label>
+							<Label htmlFor={nameId}>Name</Label>
 							<Input
 								id={nameId}
 								value={name}
 								onChange={(e) => setName(e.target.value)}
-								placeholder="Enter name"
+								placeholder="Enter full name"
 								required
 							/>
 						</div>
+
+						{/* Phone Number */}
 						<div className="space-y-2">
-							<Label htmlFor={phoneId}>Phone Number</Label>
+							<Label htmlFor={phoneId}>
+								Phone Number <span className="text-sm text-muted-foreground">(optional)</span>
+							</Label>
 							<Input
 								id={phoneId}
 								value={phoneNumber}
 								onChange={(e) => setPhoneNumber(e.target.value)}
-								placeholder="60161111111"
+								placeholder="Enter phone number"
 							/>
 						</div>
-					</div>
 
-					{/* Platform and Status */}
-					<div className="grid grid-cols-2 gap-4">
+						{/* Platform */}
 						<div className="space-y-2">
-							<div className="flex h-5 items-center justify-between">
-								<Label htmlFor={platformId}>Platform *</Label>
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									onClick={() => {
-										setIsCustomPlatform(!isCustomPlatform);
-										if (!isCustomPlatform) {
-											setCustomPlatform(platform);
-										} else {
-											setPlatform(customPlatform);
-										}
-									}}
-									className="h-6 px-2 text-xs"
-								>
-									{isCustomPlatform ? "Select existing" : "Add new"}
-								</Button>
-							</div>
+							<Label htmlFor={platformId}>Platform</Label>
 							{isCustomPlatform ? (
-								<Input
-									id={customPlatformId}
-									value={customPlatform}
-									onChange={(e) => setCustomPlatform(e.target.value)}
-									placeholder="Enter new platform name"
-								/>
+								<div className="flex items-center gap-2">
+									<Input
+										id={customPlatformId}
+										value={customPlatform}
+										onChange={(e) => setCustomPlatform(e.target.value)}
+										placeholder="Enter new platform name"
+										className="flex-1"
+									/>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => {
+											setIsCustomPlatform(false);
+											setPlatform(customPlatform);
+										}}
+										className="px-2 text-xs"
+									>
+										Select existing
+									</Button>
+								</div>
 							) : (
-								<Select value={platform} onValueChange={setPlatform}>
-									<SelectTrigger>
-										<span>{platform || "Select platform"}</span>
-									</SelectTrigger>
-									<SelectContent>
-										{options.platform.map((p) => (
-											<SelectItem key={p} value={p}>
-												{p}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<div className="flex items-center gap-2">
+									<Select value={platform} onValueChange={setPlatform}>
+										<SelectTrigger className="flex-1">
+											<SelectValue placeholder="Select platform" />
+										</SelectTrigger>
+										<SelectContent>
+											{options.platform.map((p) => (
+												<SelectItem key={p} value={p}>
+													{p}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => {
+											setIsCustomPlatform(true);
+											setCustomPlatform(platform);
+										}}
+										className="px-2 text-xs"
+									>
+										Add new
+									</Button>
+								</div>
 							)}
 						</div>
+
+						{/* Status */}
 						<div className="space-y-2">
-							<div className="flex h-5 items-center">
-								<Label htmlFor={statusId}>Status</Label>
-							</div>
-							<Select value={status} onValueChange={setStatus}>
+							<Label htmlFor={statusId}>
+								Status <span className="text-sm text-muted-foreground">(optional)</span>
+							</Label>
+							<Select value={status} onValueChange={setStatus} defaultValue="New">
 								<SelectTrigger>
-									<span>{status || "Select status"}</span>
+									<SelectValue placeholder="New" />
 								</SelectTrigger>
 								<SelectContent>
 									{options.status.map((s) => (
@@ -247,79 +274,133 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 								</SelectContent>
 							</Select>
 						</div>
-					</div>
 
-					{/* Sales */}
-					<div className="space-y-2">
-						<Label htmlFor={salesId}>Sales (RM)</Label>
-						<Input
-							id={salesId}
-							type="number"
-							value={sales}
-							onChange={(e) => setSales(e.target.value)}
-							placeholder="Enter sales amount"
-							min="0"
-						/>
-					</div>
+						{/* Notes */}
+						<div className="space-y-2">
+							<Label htmlFor={remarkId}>
+								Notes <span className="text-sm text-muted-foreground">(optional)</span>
+							</Label>
+							<Textarea
+								id={remarkId}
+								value={remark}
+								onChange={(e) => setRemark(e.target.value)}
+								placeholder="Enter notes"
+								rows={3}
+							/>
+						</div>
 
-					{/* Date */}
-					<div className="space-y-2">
-						<Label htmlFor={dateId}>Date *</Label>
-						<Input id={dateId} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-					</div>
+						{/* Advanced Fields (Hidden by default to match design) */}
+						<details className="space-y-4">
+							<summary className="cursor-pointer text-sm font-medium">Advanced Options</summary>
+							<div className="mt-4 space-y-4">
+								{/* Sales */}
+								<div className="space-y-2">
+									<Label htmlFor={salesId}>
+										Sales (RM) <span className="text-sm text-muted-foreground">(optional)</span>
+									</Label>
+									<Input
+										id={salesId}
+										type="number"
+										value={sales}
+										onChange={(e) => setSales(e.target.value)}
+										placeholder="Enter sales amount"
+										min="0"
+									/>
+								</div>
 
-					{/* Closed Date */}
-					<div className="space-y-2">
-						<Label htmlFor={closedDateId}>Closed Date</Label>
-						<Input
-							id={closedDateId}
-							type="date"
-							value={closedDate}
-							onChange={(e) => setClosedDate(e.target.value)}
-						/>
-					</div>
+								{/* Date */}
+								<div className="space-y-2">
+									<Label htmlFor={dateId}>Date</Label>
+									<Input
+										id={dateId}
+										type="date"
+										value={date}
+										onChange={(e) => setDate(e.target.value)}
+									/>
+								</div>
 
-					{/* Trainer */}
-					<div className="space-y-2">
-						<Label htmlFor={trainerId}>Trainer Handle</Label>
-						<Select value={trainerHandle} onValueChange={setTrainerHandle}>
-							<SelectTrigger>
-								<span>{trainerHandle || "Select trainer"}</span>
-							</SelectTrigger>
-							<SelectContent>
-								{options.trainerHandle.map((t) => (
-									<SelectItem key={t} value={t}>
-										{t}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
+								{/* Closed Date */}
+								<div className="space-y-2">
+									<Label htmlFor={closedDateId}>
+										Closed Date <span className="text-sm text-muted-foreground">(optional)</span>
+									</Label>
+									<Input
+										id={closedDateId}
+										type="date"
+										value={closedDate}
+										onChange={(e) => setClosedDate(e.target.value)}
+									/>
+								</div>
 
-					{/* Remark */}
-					<div className="space-y-2">
-						<Label htmlFor={remarkId}>Remark</Label>
-						<Textarea
-							id={remarkId}
-							value={remark}
-							onChange={(e) => setRemark(e.target.value)}
-							placeholder="Enter remarks"
-							rows={3}
-						/>
-					</div>
-				</div>
+								{/* Trainer */}
+								<div className="space-y-2">
+									<Label htmlFor={trainerId}>
+										Trainer Handle <span className="text-sm text-muted-foreground">(optional)</span>
+									</Label>
+									<Select value={trainerHandle} onValueChange={setTrainerHandle}>
+										<SelectTrigger>
+											<SelectValue placeholder="Select trainer" />
+										</SelectTrigger>
+										<SelectContent>
+											{options.trainerHandle.map((t) => (
+												<SelectItem key={t} value={t}>
+													{t}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
 
-				<div className="flex justify-end gap-2">
-					<Button variant="outline" onClick={() => onOpenChange(false)}>
-						Cancel
-					</Button>
-					<Button
-						onClick={handleSave}
-						disabled={loading || !name.trim() || (!platform && !customPlatform.trim()) || !date}
-					>
-						{loading ? "Creating..." : "Create Lead"}
-					</Button>
-				</div>
+								{/* Date */}
+								<div className="space-y-2">
+									<Label htmlFor={dateId}>Date</Label>
+									<Input
+										id={dateId}
+										type="date"
+										value={date}
+										onChange={(e) => setDate(e.target.value)}
+									/>
+								</div>
+
+								{/* Closed Date */}
+								<div className="space-y-2">
+									<Label htmlFor={closedDateId}>Closed Date</Label>
+									<Input
+										id={closedDateId}
+										type="date"
+										value={closedDate}
+										onChange={(e) => setClosedDate(e.target.value)}
+									/>
+								</div>
+
+								{/* Trainer */}
+								<div className="space-y-2">
+									<Label htmlFor={trainerId}>Trainer Handle</Label>
+									<Select value={trainerHandle} onValueChange={setTrainerHandle}>
+										<SelectTrigger>
+											<SelectValue placeholder="Select trainer" />
+										</SelectTrigger>
+										<SelectContent>
+											{options.trainerHandle.map((t) => (
+												<SelectItem key={t} value={t}>
+													{t}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							</div>
+						</details>
+
+						<Button
+							onClick={handleSave}
+							disabled={loading || !name.trim() || (!platform && !customPlatform.trim()) || !date}
+							className="w-full bg-red-600 hover:bg-red-700"
+						>
+							{loading ? "Creating..." : "Create Lead"}
+						</Button>
+					</CardContent>
+				</Card>
 			</DialogContent>
 		</Dialog>
 	);
