@@ -15,7 +15,7 @@ interface PlatformChartProps {
 	month: string;
 }
 
-export default function PlatformChart({ data, totalSales, month }: PlatformChartProps) {
+export default function PlatformChart({ data, totalSales }: PlatformChartProps) {
 	const formatCurrency = (amount: number) => {
 		return `RM${amount.toLocaleString()}`;
 	};
@@ -56,13 +56,13 @@ export default function PlatformChart({ data, totalSales, month }: PlatformChart
 			</CardHeader>
 			<CardContent>
 				<div className="space-y-6">
-					{data.map((item, index) => {
+					{data.map((item) => {
 						const colors = getPlatformColor(item.platform);
 						const closedHeight = maxLeads > 0 ? (item.closedLeads / maxLeads) * 200 : 0;
 						const notClosedHeight = maxLeads > 0 ? (item.notClosedLeads / maxLeads) * 200 : 0;
 
 						return (
-							<div key={index} className="flex items-end gap-2">
+							<div key={item.platform || crypto.randomUUID()} className="flex items-end gap-2">
 								<div className="flex min-h-[220px] flex-1 items-end justify-center gap-1">
 									{/* Closed leads bar */}
 									<div className="flex flex-col items-center">

@@ -6,21 +6,21 @@ import { authClient } from "@/lib/auth-client";
 
 export default function Login() {
 	const navigate = useNavigate();
-	const { data: session, isLoading, error } = authClient.useSession();
+	const { data: session, isPending, error } = authClient.useSession();
 
 	useEffect(() => {
 		console.log("Login component state:", {
-			isLoading,
+			isPending,
 			hasSession: !!session,
 			error: error?.message,
 		});
 
 		// Only redirect if we have a confirmed session and loading is complete
-		if (!isLoading && session?.user) {
+		if (!isPending && session?.user) {
 			console.log("User is authenticated, redirecting to leads");
 			navigate("/leads", { replace: true });
 		}
-	}, [session, isLoading, navigate, error]);
+	}, [session, isPending, navigate, error]);
 
 	// Add timeout for login page loading as well
 	useEffect(() => {
@@ -31,7 +31,7 @@ export default function Login() {
 		return () => clearTimeout(timeout);
 	}, []);
 
-	if (isLoading) {
+	if (isPending) {
 		return (
 			<div className="flex items-center justify-center h-screen">
 				<Loader />

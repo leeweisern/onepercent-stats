@@ -1,5 +1,5 @@
 import { Trash2, UserPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -46,6 +46,9 @@ interface User {
 }
 
 export default function AdminPage() {
+	const _nameInputId = useId();
+	const _emailInputId = useId();
+	const _passwordInputId = useId();
 	const [users, setUsers] = useState<User[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -55,7 +58,7 @@ export default function AdminPage() {
 	// Check if current user is admin
 	const isAdmin = session?.user && users.find((u) => u.id === session.user.id)?.role === "admin";
 
-	const fetchUsers = async () => {
+	const fetchUsers = useCallback(async () => {
 		try {
 			const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/admin/users`, {
 				credentials: "include",
@@ -77,7 +80,7 @@ export default function AdminPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
 
 	const createUser = async (userData: {
 		name: string;
@@ -288,11 +291,11 @@ function CreateUserDialog({
 				<form onSubmit={handleSubmit}>
 					<div className="grid gap-4 py-4">
 						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="name" className="text-right">
+							<Label htmlFor={nameInputId} className="text-right">
 								Name
 							</Label>
 							<Input
-								id="name"
+								id={nameInputId}
 								value={formData.name}
 								onChange={(e) => setFormData({ ...formData, name: e.target.value })}
 								className="col-span-3"
@@ -300,11 +303,11 @@ function CreateUserDialog({
 							/>
 						</div>
 						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="email" className="text-right">
+							<Label htmlFor={emailInputId} className="text-right">
 								Email
 							</Label>
 							<Input
-								id="email"
+								id={emailInputId}
 								type="email"
 								value={formData.email}
 								onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -313,11 +316,11 @@ function CreateUserDialog({
 							/>
 						</div>
 						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="password" className="text-right">
+							<Label htmlFor={passwordInputId} className="text-right">
 								Password
 							</Label>
 							<Input
-								id="password"
+								id={passwordInputId}
 								type="password"
 								value={formData.password}
 								onChange={(e) => setFormData({ ...formData, password: e.target.value })}

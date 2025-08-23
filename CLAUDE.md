@@ -2,37 +2,39 @@
 
 This repository contains the source code for the One Percent Stats application, a web-based analytics dashboard for tracking and visualizing leads data.
 
-## Coding Guidelines
+## 🎯 Quick Reference
 
-- **Language**: The project is written in TypeScript.
-- **Frameworks**:
-  - **Backend**: Hono on Cloudflare Workers.
-  - **Frontend**: React with Vite.
-- **Database**: D1, Cloudflare's serverless database.
-- **ORM**: Drizzle ORM.
-- **Authentication**: better-auth.
-- **UI Components**: shadcn/ui with Tailwind CSS.
-- **Linting and Formatting**: Biome.
-- **Package Manager**: Always use Bun instead of npm for all package management and script execution.
+**Language**: TypeScript  
+**Package Manager**: Bun (not npm/yarn/pnpm)  
+**Backend**: Hono on Cloudflare Workers  
+**Frontend**: React with Vite (see `apps/web/CLAUDE.md` for detailed web guidelines)  
+**Database**: D1 (Cloudflare's serverless database)  
+**ORM**: Drizzle ORM  
+**Authentication**: better-auth  
+**Linting**: Biome
 
-## UI Component Guidelines
+## 🏗️ Monorepo Structure
 
-- **Component Library**: Use shadcn/ui components for consistent design system
-- **Available Components**: Badge, Button, Card, Dialog, Table, Skeleton, and more in `src/components/ui/`
-- **Component Priority**: Always try to use existing shadcn/ui components first. If unsure about available components, browse https://ui.shadcn.com/docs/components to check for new or additional components that might be useful
-- **Charts**: Use shadcn/ui Chart components built on Recharts for data visualization. Supports Bar, Line, Area, Pie charts with built-in theming, tooltips, and legends
-- **Styling**: Tailwind CSS with custom CSS variables for theming
-- **Patterns**:
-  - Use Badge components for status indicators (platform, status, etc.)
-  - Implement Dialog components for detailed views and modals
-  - Apply proper truncation with clickable rows for data tables
-  - Include hover states and transitions for better UX
-  - Use proper event handling with `stopPropagation()` for nested interactive elements
-  - For charts, use ChartContainer, ChartTooltip, ChartLegend components with proper chart config
+The repository is a monorepo managed by Bun and Turborepo, divided into two main applications: `apps/server` and `apps/web`.
 
-## Codebase Layout
+### Essential Commands
 
-The repository is a monorepo managed by Bun. It is divided into two main applications: `apps/server` and `apps/web`.
+```bash
+# Development
+bun run dev              # Start both server and web in development
+bun run server:dev       # Start only server
+bun run web:dev          # Start only web
+
+# Build
+bun run build            # Build both applications
+bun run server:build     # Build only server
+bun run web:build        # Build only web
+
+# Database operations (from apps/server)
+cd apps/server
+bun run db:generate      # Generate migrations after schema changes
+bun run db:migrate       # Apply migrations locally
+```
 
 ### `apps/server`
 
@@ -62,27 +64,15 @@ This directory contains the backend application.
 
 ### `apps/web`
 
-This directory contains the frontend application.
+This directory contains the frontend React application built with Vite. 
 
-- **`public/`**: Public assets for the web application.
-- **`src/`**: The source code for the frontend.
-  - **`components/`**: Reusable React components.
-    - **`ui/`**: shadcn/ui components (Badge, Button, Card, Dialog, Table, etc.)
-    - **`header.tsx`**, **`theme-provider.tsx`**, etc.: Custom application components
-  - **`lib/`**: Shared libraries and utilities for the frontend.
-    - **`utils.ts`**: Utility functions including `cn()` for className merging
-    - **`auth-client.ts`**: Authentication client configuration
-  - **`routes/`**: The pages of the application.
-    - **`dashboard.tsx`**: Main dashboard with leads table and analytics
-    - **`login.tsx`**: Authentication page
-  - **`index.css`**: The main stylesheet with Tailwind CSS and custom properties.
-  - **`root.tsx`**: The root component of the application.
-  - **`routes.ts`**: The route definitions for the application.
-- **`.env.example`**: An example environment file.
-- **`package.json`**: The dependencies and scripts for the web application.
-- **`tsconfig.json`**: The TypeScript configuration for the web application.
-- **`vite.config.ts`**: The configuration file for Vite.
-- **`wrangler.jsonc`**: The configuration file for deploying the frontend to Cloudflare Pages.
+**📋 For detailed web development guidelines, component usage, authentication patterns, and styling conventions, see `apps/web/CLAUDE.md`.**
+
+## 📚 Documentation Structure
+
+- **Root CLAUDE.md** (this file): Monorepo overview, database operations, server guidelines
+- **`apps/web/CLAUDE.md`**: Frontend development guidelines, UI components, authentication
+- **`apps/server/`**: Backend-specific documentation and configurations
 
 ### Root
 

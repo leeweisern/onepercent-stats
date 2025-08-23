@@ -29,6 +29,26 @@ interface MonthlySalesChartProps {
 	dateType?: "lead" | "closed";
 }
 
+const formatCurrency = (amount: number) => {
+	return `RM${amount.toLocaleString()}`;
+};
+
+const CustomSalesTooltip = ({ active, payload, label }: any) => {
+	if (active && payload && payload.length) {
+		return (
+			<div className="rounded-lg border bg-white p-3 shadow-lg">
+				<p className="font-medium">{label}</p>
+				{payload.map((entry: any) => (
+					<p key={`${entry.name}-${entry.value}`} style={{ color: entry.color }}>
+						{entry.name}: {formatCurrency(entry.value)}
+					</p>
+				))}
+			</div>
+		);
+	}
+	return null;
+};
+
 export default function MonthlySalesChart({
 	selectedYear,
 	dateType = "lead",
@@ -65,26 +85,6 @@ export default function MonthlySalesChart({
 	useEffect(() => {
 		fetchSalesData();
 	}, [fetchSalesData]);
-
-	const formatCurrency = (amount: number) => {
-		return `RM ${amount.toLocaleString()}`;
-	};
-
-	const CustomTooltip = ({ active, payload, label }: any) => {
-		if (active && payload && payload.length) {
-			return (
-				<div className="rounded-lg border bg-white p-3 shadow-lg">
-					<p className="font-medium">{label}</p>
-					{payload.map((entry: any, index: number) => (
-						<p key={index} style={{ color: entry.color }}>
-							{entry.name}: {formatCurrency(entry.value)}
-						</p>
-					))}
-				</div>
-			);
-		}
-		return null;
-	};
 
 	if (loading) {
 		return (
@@ -145,7 +145,7 @@ export default function MonthlySalesChart({
 								height={60}
 							/>
 							<YAxis tick={{ fontSize: 12 }} />
-							<Tooltip content={<CustomTooltip />} />
+							<Tooltip content={<CustomSalesTooltip />} />
 							<Legend />
 							<Bar dataKey="totalSales" fill="#f59e0b" name="Total Sales" radius={[2, 2, 0, 0]} />
 						</BarChart>

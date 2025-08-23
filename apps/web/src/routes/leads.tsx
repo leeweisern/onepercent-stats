@@ -435,8 +435,8 @@ export default function Leads() {
 									<CardContent className="p-0">
 										{loading ? (
 											<div className="space-y-2 p-6">
-												{[...Array(5)].map((_, i) => (
-													<Skeleton key={`leads-skeleton-${i}`} className="h-12 w-full" />
+												{Array.from({ length: 5 }, () => (
+													<Skeleton key={crypto.randomUUID()} className="h-12 w-full" />
 												))}
 											</div>
 										) : (

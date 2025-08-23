@@ -46,8 +46,8 @@ const ChartTooltipContent = React.forwardRef<
 		>
 			<div className="grid gap-2">
 				{label && <div className="font-medium text-foreground">{label}</div>}
-				{payload.map((entry, index) => (
-					<div key={index} className="flex items-center gap-2">
+				{payload.map((entry) => (
+					<div key={`${entry.name}-${entry.value}`} className="flex items-center gap-2">
 						<div className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
 						<span className="text-muted-foreground text-sm">
 							{entry.name}: {entry.value}

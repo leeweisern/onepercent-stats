@@ -147,8 +147,8 @@ export default function FunnelChart({
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						{[...Array(3)].map((_, i) => (
-							<Skeleton key={`funnel-skeleton-${i}`} className="h-16 w-full" />
+						{Array.from({ length: 3 }, () => (
+							<Skeleton key={crypto.randomUUID()} className="h-16 w-full" />
 						))}
 					</div>
 				</CardContent>

@@ -128,8 +128,8 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 			<CardContent className="p-0">
 				{loading ? (
 					<div className="space-y-2 p-6">
-						{[...Array(4)].map((_, i) => (
-							<Skeleton key={`platform-skeleton-${i}`} className="h-12 w-full" />
+						{Array.from({ length: 4 }, () => (
+							<Skeleton key={crypto.randomUUID()} className="h-12 w-full" />
 						))}
 					</div>
 				) : (
@@ -144,8 +144,8 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{data?.breakdown.map((row, index) => (
-									<TableRow key={index} className="hover:bg-muted/30">
+								{data?.breakdown.map((row) => (
+									<TableRow key={row.platform || crypto.randomUUID()} className="hover:bg-muted/30">
 										<TableCell className="font-medium">
 											<div className="flex items-center gap-2">
 												<Badge variant={getPlatformVariant(row.platform)}>

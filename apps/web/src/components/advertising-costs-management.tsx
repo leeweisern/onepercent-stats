@@ -1,5 +1,5 @@
 import { Calendar, DollarSign, Edit, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +52,8 @@ const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
 export default function AdvertisingCostsManagement() {
+	const costInputId = useId();
+	const editCostInputId = useId();
 	const [costs, setCosts] = useState<AdvertisingCost[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -293,9 +295,9 @@ export default function AdvertisingCostsManagement() {
 									</div>
 									<div className="grid grid-cols-2 gap-4">
 										<div>
-											<Label htmlFor="cost">Cost</Label>
+											<Label htmlFor={costInputId}>Cost</Label>
 											<Input
-												id="cost"
+												id={costInputId}
 												type="number"
 												step="0.01"
 												placeholder="0.00"
@@ -337,8 +339,8 @@ export default function AdvertisingCostsManagement() {
 				<CardContent className="p-0">
 					{loading ? (
 						<div className="space-y-2 p-6">
-							{[...Array(5)].map((_, i) => (
-								<Skeleton key={`skeleton-${i}`} className="h-12 w-full" />
+							{Array.from({ length: 5 }, () => (
+								<Skeleton key={crypto.randomUUID()} className="h-12 w-full" />
 							))}
 						</div>
 					) : (
@@ -455,9 +457,9 @@ export default function AdvertisingCostsManagement() {
 						</div>
 						<div className="grid grid-cols-2 gap-4">
 							<div>
-								<Label htmlFor="edit-cost">Cost</Label>
+								<Label htmlFor={editCostInputId}>Cost</Label>
 								<Input
-									id="edit-cost"
+									id={editCostInputId}
 									type="number"
 									step="0.01"
 									placeholder="0.00"

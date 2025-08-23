@@ -53,7 +53,7 @@ const monthNames = [
 ];
 
 export default function AdvertisingCosts({ selectedMonth, selectedYear }: AdvertisingCostsProps) {
-	const skeletonId = useId();
+	const _skeletonId = useId();
 	const [costs, setCosts] = useState<AdvertisingCost[]>([]);
 	const [_leads, setLeads] = useState<Lead[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -178,8 +178,8 @@ export default function AdvertisingCosts({ selectedMonth, selectedYear }: Advert
 			<CardContent>
 				{loading ? (
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-						{[...Array(3)].map((_, i) => (
-							<Skeleton key={`${skeletonId}-${i}`} className="h-24 w-full" />
+						{Array.from({ length: 3 }, () => (
+							<Skeleton key={crypto.randomUUID()} className="h-24 w-full" />
 						))}
 					</div>
 				) : (

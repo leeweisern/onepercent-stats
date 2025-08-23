@@ -10,44 +10,38 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	const [hasChecked, setHasChecked] = useState(false);
 	const [timeoutReached, setTimeoutReached] = useState(false);
-	const {
-		data: session,
-		isLoading,
-		error,
-	} = authClient.useSession({
-		refreshInterval: 300_000, // 5 minutes
-	});
+	const { data: session, isPending, error } = authClient.useSession();
 
 	useEffect(() => {
-		if (!isLoading) {
+		if (!isPending) {
 			setHasChecked(true);
 		}
-	}, [isLoading]);
+	}, [isPending]);
 
 	// Failsafe timeout – only while still loading
 	useEffect(() => {
-		if (isLoading) {
+		if (isPending) {
 			const id = setTimeout(() => {
 				console.log("Auth timeout reached, redirecting to login");
 				setTimeoutReached(true);
 			}, 5000);
 			return () => clearTimeout(id);
 		}
-	}, [isLoading]);
+	}, [isPending]);
 
 	// Debug logging
 	useEffect(() => {
 		console.log("ProtectedRoute state:", {
-			isLoading,
+			isPending,
 			hasChecked,
 			timeoutReached,
 			hasSession: !!session,
 			error: error?.message,
 		});
-	}, [isLoading, hasChecked, timeoutReached, session, error]);
+	}, [isPending, hasChecked, timeoutReached, session, error]);
 
 	// Show loading while checking session (but only for a reasonable time)
-	if ((isLoading || !hasChecked) && !timeoutReached) {
+	if ((isPending || !hasChecked) && !timeoutReached) {
 		return (
 			<div className="flex items-center justify-center h-screen">
 				<Loader />

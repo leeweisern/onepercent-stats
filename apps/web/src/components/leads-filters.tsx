@@ -1,5 +1,5 @@
 import { Filter, Search, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,8 @@ export interface FilterState {
 }
 
 export function LeadsFilters({ onFiltersChange, totalResults }: LeadsFiltersProps) {
+	const searchInputId = useId();
+	const closedDateInputId = useId();
 	const [filters, setFilters] = useState<FilterState>({
 		search: "",
 		month: "",
@@ -116,11 +118,11 @@ export function LeadsFilters({ onFiltersChange, totalResults }: LeadsFiltersProp
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
 					{/* Search by Name or Phone */}
 					<div className="space-y-2">
-						<Label htmlFor="search">Search by Name or Phone</Label>
+						<Label htmlFor={searchInputId}>Search by Name or Phone</Label>
 						<div className="relative">
 							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
 							<Input
-								id="search"
+								id={searchInputId}
 								placeholder="Enter name or phone..."
 								value={filters.search}
 								onChange={(e) => updateFilter("search", e.target.value)}
@@ -260,9 +262,9 @@ export function LeadsFilters({ onFiltersChange, totalResults }: LeadsFiltersProp
 
 					{/* Closed Date Filter */}
 					<div className="space-y-2">
-						<Label htmlFor="closedDate">Closed Date</Label>
+						<Label htmlFor={closedDateInputId}>Closed Date</Label>
 						<Input
-							id="closedDate"
+							id={closedDateInputId}
 							type="date"
 							value={filters.closedDate}
 							onChange={(e) => updateFilter("closedDate", e.target.value)}
