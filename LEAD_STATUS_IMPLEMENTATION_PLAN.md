@@ -4,7 +4,7 @@
 
 This implementation plan outlines the transformation of the One Percent Stats lead management system from a dual-state tracking mechanism (using both `status` and `isClosed` fields) to a unified, status-driven workflow. The new system will implement a clear lead lifecycle with six distinct statuses, automated follow-up triggers, and improved data consistency.
 
-The primary goal is to eliminate redundancy, simplify lead tracking, and introduce intelligent automation for follow-ups. By removing the `isClosed` boolean field and relying solely on a comprehensive status field, the system will provide clearer insights into lead progression while reducing technical debt and potential data inconsistencies.
+**Simplified Approach**: Since the remote D1 database is not currently being used, we will perform all schema changes and data migration locally first, then replace the remote database entirely with the local snapshot. This eliminates the need for backward compatibility phases and reduces migration complexity and risk.
 
 ## Background & Context
 
@@ -88,7 +88,7 @@ The current lead management system suffers from:
 
 - **Performance**: Status checks should not add more than 100ms to API response times
 - **Data Integrity**: No data loss during migration
-- **Compatibility**: Maintain backward compatibility during transition period
+- **Compatibility**: No backward compatibility needed (complete local migration first)
 - **Scalability**: System should handle 100,000+ leads efficiently
 - **Date Format**: All dates must use DD/MM/YYYY format consistently
 
@@ -182,79 +182,68 @@ const LEAD_STATUSES = [
 ] as const;
 ```
 
-## Implementation Approach
+## Implementation Approach (Simplified Local-First Migration)
 
-### Phase 1: Foundation Setup (Day 1)
+### Phase 1: Local Development Setup (Day 1)
 
-**Step 1.1: Define Status Constants**
+**Step 1.1: Sync Remote Data to Local**
+```bash
+cd apps/server
+bun run db:sync  # Pull current remote data to local
+```
+
+**Step 1.2: Define Status Constants**
 - Create `apps/server/src/lib/status.ts` with canonical status values
 - Export `LEAD_STATUSES` constant array
 - Export type definitions for TypeScript
 
-**Step 1.2: Extend Date Utilities**
+**Step 1.3: Extend Date Utilities**
 - Update `apps/server/src/lib/date-utils.ts`
 - Add `addDaysToDDMMYYYY(date: string, days: number): string`
 - Add `compareDDMMYYYY(a: string, b: string): -1|0|1`
 - Add `todayDDMMYYYY(): string`
 - Add `daysBetweenDDMMYYYY(from: string, to: string): number`
 
-**Step 1.3: Environment Configuration**
+**Step 1.4: Environment Configuration**
 - Add `FOLLOW_UP_DAYS=3` to `apps/server/.env.example`
 - Document the new environment variable
 
 Estimated time: 1 day
 
-### Phase 2: Database Schema Changes - Additive (Day 2)
+### Phase 2: Complete Local Schema & Code Changes (Days 2-3)
 
-**Step 2.1: Update Schema Definition**
+**Step 2.1: Update Schema Definition (Remove isClosed Immediately)**
 - Modify `apps/server/src/db/schema/leads.ts`
+- Remove `isClosed` field completely
 - Add new fields: `contactedDate`, `nextFollowUpDate`, `lastActivityDate`, `updatedAt`
-- Update `status` field to include default value "New"
-- Keep `isClosed` temporarily for backward compatibility
+- Set `status` field default value to "New"
 
-**Step 2.2: Generate and Apply Migrations**
-- Run `bun run db:generate` to create migration files
-- Run `bun run db:migrate:local` for local testing
-- Verify new columns exist in database
+**Step 2.2: Generate and Apply Local Migrations**
+```bash
+cd apps/server
+bun run db:generate
+bun run db:migrate:local
+```
 
-Estimated time: 1 day
-
-### Phase 3: Data Migration Script (Day 3)
-
-**Step 3.1: Create Migration Script**
-- Create `apps/server/src/scripts/migrate-lead-status.ts`
-- Implement mapping logic:
-  - `isClosed = true` + `sales > 0` → `Closed Won`
-  - `isClosed = true` + `sales = 0` → `Closed Lost`
-  - Status `"Consult"` → `Consulted`
-  - Status `"No Reply"` → `Contacted`
-  - Status `null/empty` → `New`
-- Set date fields appropriately for each status
-
-**Step 3.2: Fix Existing Import Issues**
+**Step 2.3: Fix Import Issues**
 - Fix import in `apps/server/src/scripts/backfill-closed-month.ts`
 - Change import source from `../routers/analytics` to `../lib/date-utils`
 
-**Step 3.3: Test Migration Locally**
-- Run script against local database
-- Verify data integrity and mappings
-- Generate migration report
+Estimated time: 2 days
 
-Estimated time: 1 day
+### Phase 3: Complete Backend Code Updates (Days 4-5)
 
-### Phase 4: API Updates (Days 4-5)
-
-**Step 4.1: Update Analytics Router**
+**Step 3.1: Update Analytics Router**
 - Modify `apps/server/src/routers/analytics.ts`
-- Update all endpoints to use status instead of `isClosed`:
-  - `/leads/summary`: Count `Closed Won` for totalClosed
+- Replace all `isClosed` references with status checks:
+  - `/leads/summary`: Count `status = 'Closed Won'` for totalClosed
   - `/leads/platform-breakdown`: Use status for closed/not closed
   - `/leads/funnel`: Update status order and grouping
   - `/leads/options`: Return canonical status list
   - `/leads/filter-options`: Remove isClosed options
   - `/roas`: Use `Closed Won` for conversion metrics
 
-**Step 4.2: Update Lead CRUD Operations**
+**Step 3.2: Update Lead CRUD Operations**
 - POST `/leads`:
   - Default status to "New"
   - Auto-set `Closed Won` when sales > 0
@@ -264,102 +253,130 @@ Estimated time: 1 day
   - Sync sales amount with status changes
   - Update `updatedAt` on every modification
 
-**Step 4.3: Add Status Check Logic**
+**Step 3.3: Add Status Check Logic**
 - Create helper function to check for stale leads
 - Integrate into relevant API calls
 - Auto-promote `Contacted` to `Follow Up` after 3 days
 
-**Step 4.4: Add Follow-up Endpoints (Optional)**
-- GET `/leads/follow-ups/upcoming?days=7`
-- GET `/leads/follow-ups/overdue`
+Estimated time: 2 days
+
+### Phase 4: Complete Frontend Updates (Days 6-7)
+
+**Step 4.1: Update Lead Dialogs**
+- Modify `apps/web/src/components/create-lead-dialog.tsx`
+- Modify `apps/web/src/components/edit-lead-dialog.tsx`
+- Remove all `isClosed` references
+- Implement status-based logic
+
+**Step 4.2: Update Lead Table**
+- Modify `apps/web/src/components/leads-data-table.tsx`
+- Remove `isClosed` column
+- Add new date columns
+- Update status badges
+
+**Step 4.3: Update Filters and Analytics**
+- Modify `apps/web/src/components/leads-filters.tsx`
+- Update all analytics components
+- Replace boolean filters with status multi-select
 
 Estimated time: 2 days
 
-### Phase 5: Frontend Updates (Days 6-7)
+### Phase 5: Local Data Migration & Testing (Day 8)
 
-**Step 5.1: Update Lead Dialogs**
-- Modify `apps/web/src/components/create-lead-dialog.tsx`:
-  - Remove `isClosed` state and handling
-  - Default status to "New"
-  - Auto-set `Closed Won` when sales > 0
-- Modify `apps/web/src/components/edit-lead-dialog.tsx`:
-  - Similar changes as create dialog
-  - Handle status transitions properly
+**Step 5.1: Create and Run Migration Script**
+- Create `apps/server/src/scripts/migrate-lead-status.ts`
+- Implement data transformation:
+  ```typescript
+  // Migration rules:
+  // isClosed=true + sales>0 → status='Closed Won'
+  // isClosed=true + sales=0 → status='Closed Lost'
+  // status='Consult' → status='Consulted'
+  // status='No Reply' → status='Contacted'
+  // status=null/empty → status='New'
+  ```
 
-**Step 5.2: Update Lead Table**
-- Modify `apps/web/src/components/leads-data-table.tsx`:
-  - Remove `isClosed` column
-  - Add "Next Follow-up" column
-  - Add "Last Activity" column
-  - Implement overdue highlighting
-  - Update status badges with new color scheme
+**Step 5.2: Execute Local Migration**
+```bash
+cd apps/server
+bun run ./src/scripts/migrate-lead-status.ts
+```
 
-**Step 5.3: Update Filters**
-- Modify `apps/web/src/components/leads-filters.tsx`:
-  - Replace boolean closed filter with status multi-select
-  - Use canonical status list from API
+**Step 5.3: Verify Local Data**
+```bash
+# Check status distribution
+wrangler d1 execute onepercent-stats-new --local --command "SELECT status, COUNT(*) FROM leads GROUP BY status"
 
-**Step 5.4: Update Analytics Components**
-- Update `funnel-chart.tsx`, `platform-breakdown.tsx`, etc.
-- Remove `isClosed` references
-- Use new status-based calculations
+# Verify date format
+wrangler d1 execute onepercent-stats-new --local --command "SELECT COUNT(*) FROM leads WHERE date NOT LIKE '__/__/____'"
 
-Estimated time: 2 days
-
-### Phase 6: Testing and Validation (Day 8)
-
-**Step 6.1: Backend Testing**
-- Test all API endpoints with new status logic
-- Verify data migration completeness
-- Test status transition rules
-- Validate date calculations
-
-**Step 6.2: Frontend Testing**
-- Test lead creation with all status values
-- Test lead editing and status transitions
-- Verify table display and filtering
-- Test analytics dashboards
-
-**Step 6.3: Integration Testing**
-- End-to-end lead lifecycle testing
-- Follow-up automation verification
-- Performance testing
+# Test the application locally
+bun run dev
+```
 
 Estimated time: 1 day
 
-### Phase 7: Production Migration (Day 9)
+### Phase 6: Production Deployment (Day 9)
 
-**Step 7.1: Database Backup**
-- Run `wrangler d1 export onepercent-stats-new --remote --output backup.sql`
-- Store backup securely
+**Step 6.1: Backup Remote Database**
+```bash
+cd apps/server
+wrangler d1 export onepercent-stats-new --remote --output=./backups/remote-backup-$(date +%Y%m%d).sql
+```
 
-**Step 7.2: Deploy Code**
-- Deploy backend changes to Cloudflare Workers
-- Deploy frontend changes to Cloudflare Pages
+**Step 6.2: Export Local Data**
+```bash
+# Export only the data (schema will be applied via migrations)
+wrangler d1 export onepercent-stats-new --local --output=./.tmp/local-data.sql --no-schema
+```
 
-**Step 7.3: Run Production Migration**
-- Apply database migrations to remote
-- Run data migration script
-- Verify data integrity
+**Step 6.3: Apply Schema to Remote**
+```bash
+# Apply migrations to ensure remote schema matches local
+wrangler d1 migrations apply onepercent-stats-new --remote
+```
 
-**Step 7.4: Remove isClosed Column**
-- Update schema to remove `isClosed`
-- Generate and apply final migration
-- Verify system stability
+**Step 6.4: Replace Remote Data**
+```bash
+# Clear existing remote data
+wrangler d1 execute onepercent-stats-new --remote --command "PRAGMA defer_foreign_keys = true; DELETE FROM leads; DELETE FROM advertising_costs; DELETE FROM account; DELETE FROM session; DELETE FROM verification; DELETE FROM user;"
+
+# Import local data to remote
+wrangler d1 execute onepercent-stats-new --remote --file=./.tmp/local-data.sql
+```
+
+**Step 6.5: Deploy Application**
+```bash
+# Deploy using the existing deploy script
+cd ../..  # Back to root
+bun run deploy
+```
+
+**Step 6.6: Verify Deployment**
+```bash
+# Check remote status distribution
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT status, COUNT(*) FROM leads GROUP BY status"
+
+# Test the live application
+curl https://onepercent-stats-server.leeweisern.workers.dev/api/analytics/leads/summary
+```
 
 Estimated time: 1 day
 
-### Phase 8: Post-Migration Cleanup (Day 10)
+### Phase 7: Post-Migration Cleanup (Day 10)
 
-**Step 8.1: Code Cleanup**
-- Remove any commented code related to `isClosed`
+**Step 7.1: Update deploy.js for Future Migrations**
+- Add optional local-to-remote sync capability
+- Document the process for future reference
+
+**Step 7.2: Clean Up**
+- Remove migration scripts from production code
 - Update documentation
-- Clean up migration scripts
+- Archive backup files
 
-**Step 8.2: Monitoring**
-- Monitor system performance
-- Check for any data inconsistencies
-- Gather user feedback
+**Step 7.3: Monitor**
+- Check application logs
+- Verify analytics accuracy
+- Monitor performance
 
 Estimated time: 1 day
 
@@ -421,15 +438,15 @@ Estimated time: 1 day
 - [ ] Rollback plan documented
 - [ ] Team notified of deployment window
 
-### Deployment Process
-1. Set maintenance mode (if applicable)
-2. Backup production database
-3. Deploy backend code to Cloudflare Workers
-4. Apply database migrations
-5. Run data migration script
-6. Deploy frontend code to Cloudflare Pages
-7. Verify system functionality
-8. Remove maintenance mode
+### Deployment Process (Simplified)
+1. Complete all changes locally (schema, code, data migration)
+2. Test thoroughly in local environment
+3. Backup remote database
+4. Export local data (data only, not schema)
+5. Apply migrations to remote (schema changes)
+6. Clear remote data and import local data
+7. Deploy application code
+8. Verify system functionality
 
 ### Post-Deployment Validation
 - [ ] All API endpoints responding correctly
@@ -439,12 +456,13 @@ Estimated time: 1 day
 - [ ] No console errors in frontend
 - [ ] Performance metrics within acceptable range
 
-### Data Migration Steps
-1. Add new columns to database (non-breaking)
-2. Run migration script to populate new fields
-3. Deploy code that uses new fields
-4. Verify data integrity
-5. Remove old `isClosed` column (breaking change)
+### Data Migration Steps (Local-First Approach)
+1. Sync remote data to local environment
+2. Apply complete schema changes locally (including removing `isClosed`)
+3. Run migration script to transform data locally
+4. Test thoroughly with local development
+5. Export local data and replace remote entirely
+6. Deploy code that uses new schema
 
 ## Risk Analysis
 
@@ -456,7 +474,7 @@ Estimated time: 1 day
 
 **Risk 2: SQLite Column Drop Complexity**
 - Description: SQLite requires table rebuild to drop columns
-- Mitigation: Use phased migration approach, keep isClosed during transition
+- Mitigation: Perform all schema changes locally, then replace remote database entirely
 
 **Risk 3: Performance Degradation**
 - Description: Status checks on every API call could slow responses
@@ -484,13 +502,12 @@ Estimated time: 1 day
 - **User Satisfaction**: No critical bugs reported in first week
 
 ## Timeline & Milestones
-- **Day 1**: Foundation setup complete
-- **Day 2**: Database schema updated (additive)
-- **Day 3**: Data migration script ready and tested
+- **Day 1**: Local development setup and foundation complete
+- **Days 2-3**: Complete schema and initial code changes locally
 - **Days 4-5**: Backend API updates complete
 - **Days 6-7**: Frontend updates complete
-- **Day 8**: Full testing complete
-- **Day 9**: Production deployment
+- **Day 8**: Local data migration and testing complete
+- **Day 9**: Production deployment (remote data replacement)
 - **Day 10**: Post-migration cleanup and monitoring
 
 ## Appendix
@@ -503,6 +520,7 @@ Estimated time: 1 day
 3. Auto-set status to Closed Won when sales amount is entered
 4. Leave closedDate empty for Closed Lost, rely on updatedAt timestamp
 5. Keep the system simple, avoiding complexity of enterprise CRM systems
+6. **NEW**: Perform complete migration locally first, then replace remote database entirely (no backward compatibility phase)
 
 ### Status Transition Rules
 ```
@@ -530,6 +548,48 @@ Consulted → Closed Won/Lost (manual)
 - **D1**: Cloudflare's SQLite database service
 - **Drizzle ORM**: TypeScript ORM used for database operations
 
+### Migration Commands Reference
+
+**Sync remote to local:**
+```bash
+cd apps/server
+bun run db:sync
+```
+
+**Apply schema locally:**
+```bash
+bun run db:generate
+bun run db:migrate:local
+```
+
+**Export/Import operations:**
+```bash
+# Backup remote
+wrangler d1 export onepercent-stats-new --remote --output=backup.sql
+
+# Export local data only
+wrangler d1 export onepercent-stats-new --local --output=local-data.sql --no-schema
+
+# Apply schema to remote
+wrangler d1 migrations apply onepercent-stats-new --remote
+
+# Clear remote data
+wrangler d1 execute onepercent-stats-new --remote --command "PRAGMA defer_foreign_keys = true; DELETE FROM leads; DELETE FROM advertising_costs; DELETE FROM account; DELETE FROM session; DELETE FROM verification; DELETE FROM user;"
+
+# Import to remote
+wrangler d1 execute onepercent-stats-new --remote --file=local-data.sql
+```
+
+**Verification queries:**
+```bash
+# Check status distribution
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT status, COUNT(*) FROM leads GROUP BY status"
+
+# Check for invalid dates
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT COUNT(*) FROM leads WHERE date NOT LIKE '__/__/____'"
+```
+
 ---
 *Generated on: December 2024*
+*Updated to use simplified local-first migration approach*
 *Based on conversation about lead status management system implementation*
