@@ -14,8 +14,7 @@ import {
 
 // Helper function to format month display
 const _formatMonthDisplay = (monthString: string) => {
-	if (monthString === "All months" || !monthString)
-		return monthString || "All months";
+	if (monthString === "All months" || !monthString) return monthString || "All months";
 
 	// If it's already a month name (like "May"), return it as is
 	if (monthString.includes("-")) {
@@ -68,10 +67,7 @@ interface PlatformBreakdownProps {
 	selectedYear?: string;
 }
 
-export default function PlatformBreakdown({
-	selectedMonth,
-	selectedYear,
-}: PlatformBreakdownProps) {
+export default function PlatformBreakdown({ selectedMonth, selectedYear }: PlatformBreakdownProps) {
 	const [data, setData] = useState<PlatformBreakdownResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -82,9 +78,7 @@ export default function PlatformBreakdown({
 			if (selectedMonth) params.append("month", selectedMonth);
 			if (selectedYear) params.append("year", selectedYear);
 
-			const response = await fetch(
-				`/api/analytics/leads/platform-breakdown?${params}`,
-			);
+			const response = await fetch(`/api/analytics/leads/platform-breakdown?${params}`);
 			const breakdownData = await response.json();
 			setData(breakdownData);
 		} catch (error) {
@@ -144,15 +138,9 @@ export default function PlatformBreakdown({
 							<TableHeader>
 								<TableRow className="bg-muted/50 hover:bg-transparent">
 									<TableHead className="font-semibold">Platform</TableHead>
-									<TableHead className="text-center font-semibold">
-										Close
-									</TableHead>
-									<TableHead className="text-center font-semibold">
-										No Close
-									</TableHead>
-									<TableHead className="text-right font-semibold">
-										Total Sales
-									</TableHead>
+									<TableHead className="text-center font-semibold">Close</TableHead>
+									<TableHead className="text-center font-semibold">No Close</TableHead>
+									<TableHead className="text-right font-semibold">Total Sales</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -163,17 +151,11 @@ export default function PlatformBreakdown({
 												<Badge variant={getPlatformVariant(row.platform)}>
 													{row.platform?.toUpperCase() || "N/A"}
 												</Badge>
-												<span className="text-muted-foreground">
-													({row.totalLeads})
-												</span>
+												<span className="text-muted-foreground">({row.totalLeads})</span>
 											</div>
 										</TableCell>
-										<TableCell className="text-center font-medium">
-											{row.closedLeads}
-										</TableCell>
-										<TableCell className="text-center font-medium">
-											{row.notClosedLeads}
-										</TableCell>
+										<TableCell className="text-center font-medium">{row.closedLeads}</TableCell>
+										<TableCell className="text-center font-medium">{row.notClosedLeads}</TableCell>
 										<TableCell className="text-right font-medium text-green-600">
 											{formatCurrency(row.totalSales)}
 										</TableCell>
@@ -184,9 +166,7 @@ export default function PlatformBreakdown({
 										<TableCell className="font-bold">
 											<div className="flex items-center gap-2">
 												<span>Total</span>
-												<span className="text-muted-foreground">
-													({data.totals.totalLeads})
-												</span>
+												<span className="text-muted-foreground">({data.totals.totalLeads})</span>
 											</div>
 										</TableCell>
 										<TableCell className="text-center font-bold">

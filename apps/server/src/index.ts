@@ -41,15 +41,12 @@ app.on(["POST", "GET", "OPTIONS"], "/api/auth/**", async (c) => {
 		return response;
 	} catch (error) {
 		console.error("Auth error:", error);
-		return c.json(
-			{ error: "Authentication error", details: error.message },
-			500,
-		);
+		return c.json({ error: "Authentication error", details: error.message }, 500);
 	}
 });
 
-import analyticsRouter from "./routers/analytics";
 import adminRouter from "./routers/admin";
+import analyticsRouter from "./routers/analytics";
 
 app.route("/api/analytics", analyticsRouter);
 app.route("/api/admin", adminRouter);

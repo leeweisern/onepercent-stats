@@ -43,9 +43,7 @@ export default function MonthlySalesChart({
 			if (selectedYear) params.append("year", selectedYear);
 			params.append("dateType", dateType);
 
-			const response = await fetch(
-				`/api/analytics/leads/growth/monthly?${params}`,
-			);
+			const response = await fetch(`/api/analytics/leads/growth/monthly?${params}`);
 
 			if (!response.ok) {
 				console.error("Sales API error:", response.status, response.statusText);
@@ -128,8 +126,7 @@ export default function MonthlySalesChart({
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<DollarSign className="h-5 w-5" />
-					Monthly Sales{" "}
-					{dateType === "closed" ? "(by Sale Date)" : "(by Lead Date)"}
+					Monthly Sales {dateType === "closed" ? "(by Sale Date)" : "(by Lead Date)"}
 					<Badge variant="outline" className="ml-auto">
 						{salesData.year}
 					</Badge>
@@ -150,12 +147,7 @@ export default function MonthlySalesChart({
 							<YAxis tick={{ fontSize: 12 }} />
 							<Tooltip content={<CustomTooltip />} />
 							<Legend />
-							<Bar
-								dataKey="totalSales"
-								fill="#f59e0b"
-								name="Total Sales"
-								radius={[2, 2, 0, 0]}
-							/>
+							<Bar dataKey="totalSales" fill="#f59e0b" name="Total Sales" radius={[2, 2, 0, 0]} />
 						</BarChart>
 					</ResponsiveContainer>
 				</div>

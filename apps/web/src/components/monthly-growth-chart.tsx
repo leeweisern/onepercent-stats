@@ -30,12 +30,8 @@ interface MonthlyGrowthChartProps {
 	selectedYear?: string;
 }
 
-export default function MonthlyGrowthChart({
-	selectedYear,
-}: MonthlyGrowthChartProps) {
-	const [growthData, setGrowthData] = useState<MonthlyGrowthResponse | null>(
-		null,
-	);
+export default function MonthlyGrowthChart({ selectedYear }: MonthlyGrowthChartProps) {
+	const [growthData, setGrowthData] = useState<MonthlyGrowthResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	const fetchGrowthData = useCallback(async () => {
@@ -44,16 +40,10 @@ export default function MonthlyGrowthChart({
 			const params = new URLSearchParams();
 			if (selectedYear) params.append("year", selectedYear);
 
-			const response = await fetch(
-				`/api/analytics/leads/growth/monthly?${params}`,
-			);
+			const response = await fetch(`/api/analytics/leads/growth/monthly?${params}`);
 
 			if (!response.ok) {
-				console.error(
-					"Growth API error:",
-					response.status,
-					response.statusText,
-				);
+				console.error("Growth API error:", response.status, response.statusText);
 				setGrowthData(null);
 				return;
 			}
@@ -85,9 +75,7 @@ export default function MonthlyGrowthChart({
 					{payload.map((entry: any, index: number) => (
 						<p key={index} style={{ color: entry.color }}>
 							{entry.name}:{" "}
-							{entry.name === "Total Sales"
-								? formatCurrency(entry.value)
-								: entry.value}
+							{entry.name === "Total Sales" ? formatCurrency(entry.value) : entry.value}
 						</p>
 					))}
 				</div>
@@ -155,11 +143,7 @@ export default function MonthlyGrowthChart({
 								height={60}
 							/>
 							<YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-							<YAxis
-								yAxisId="right"
-								orientation="right"
-								tick={{ fontSize: 12 }}
-							/>
+							<YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
 							<Tooltip content={<CustomTooltip />} />
 							<Legend />
 							<Bar

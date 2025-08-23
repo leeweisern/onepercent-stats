@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
 import { spawn } from "bun";
-import { existsSync, unlinkSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
+import { join } from "path";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -18,9 +18,7 @@ const DATABASE_NAME = "onepercent-stats-new";
 
 if (!ACCOUNT_ID || !DATABASE_ID || !API_TOKEN) {
 	console.error("❌ Missing required environment variables:");
-	console.error(
-		"   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_DATABASE_ID, CLOUDFLARE_D1_TOKEN",
-	);
+	console.error("   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_DATABASE_ID, CLOUDFLARE_D1_TOKEN");
 	console.error("   Make sure your .env file is properly configured.");
 	process.exit(1);
 }
@@ -60,13 +58,7 @@ async function exportRemoteDatabase() {
 	try {
 		await runCommand(
 			"wrangler",
-			[
-				"d1",
-				"export",
-				DATABASE_NAME,
-				"--remote",
-				`--output=${remoteExportPath}`,
-			],
+			["d1", "export", DATABASE_NAME, "--remote", `--output=${remoteExportPath}`],
 			{
 				CLOUDFLARE_API_TOKEN: API_TOKEN,
 			},
@@ -90,15 +82,10 @@ function sanitizeSqlFile() {
 	let sqlContent = readFileSync(remoteExportPath, "utf-8");
 
 	// Remove BEGIN TRANSACTION and COMMIT statements
-	sqlContent = sqlContent
-		.replace(/^BEGIN TRANSACTION;?\s*$/gm, "")
-		.replace(/^COMMIT;?\s*$/gm, "");
+	sqlContent = sqlContent.replace(/^BEGIN TRANSACTION;?\s*$/gm, "").replace(/^COMMIT;?\s*$/gm, "");
 
 	// Quote ISO timestamps (YYYY-MM-DDTHH:mm:ss.sssZ)
-	sqlContent = sqlContent.replace(
-		/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/g,
-		"'$1'",
-	);
+	sqlContent = sqlContent.replace(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/g, "'$1'");
 
 	// Extract only INSERT statements (skip CREATE TABLE, CREATE INDEX, etc.)
 	const lines = sqlContent.split("\n");
@@ -119,22 +106,14 @@ function sanitizeSqlFile() {
 	].join("\n");
 
 	writeFileSync(remoteFixedPath, finalContent);
-	console.log(
-		`✅ SQL file sanitized (${insertLines.length} INSERT statements extracted)`,
-	);
+	console.log(`✅ SQL file sanitized (${insertLines.length} INSERT statements extracted)`);
 }
 
 async function applyLocalMigrations() {
 	console.log("🔄 Applying local migrations...");
 
 	try {
-		await runCommand("wrangler", [
-			"d1",
-			"migrations",
-			"apply",
-			DATABASE_NAME,
-			"--local",
-		]);
+		await runCommand("wrangler", ["d1", "migrations", "apply", DATABASE_NAME, "--local"]);
 
 		console.log("✅ Local migrations applied");
 	} catch (error) {
@@ -194,10 +173,7 @@ async function importToLocalDatabase() {
 	} catch (error) {
 		console.error("❌ Failed to import data:", error);
 		console.error("   This might be due to foreign key constraints.");
-		console.error(
-			"   The sanitized SQL file is available at:",
-			remoteFixedPath,
-		);
+		console.error("   The sanitized SQL file is available at:", remoteFixedPath);
 		process.exit(1);
 	}
 }

@@ -29,8 +29,7 @@ async function importCsvToD1() {
 			}
 
 			// Parse close status
-			const isClosed =
-				record["Close/ Non  close"]?.toLowerCase().includes("close") || false;
+			const isClosed = record["Close/ Non  close"]?.toLowerCase().includes("close") || false;
 
 			// Clean platform name
 			let platform = record["PlatFBorm "] || record.Platform || "";
@@ -72,7 +71,7 @@ async function importCsvToD1() {
 export { importCsvToD1 };
 
 // Run if called directly (Bun-specific)
-// @ts-ignore - import.meta.main is Bun-specific
+// @ts-expect-error - import.meta.main is Bun-specific
 if (import.meta.main) {
 	importCsvToD1()
 		.then((records) => {

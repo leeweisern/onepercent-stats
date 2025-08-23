@@ -52,10 +52,7 @@ const monthNames = [
 	"December",
 ];
 
-export default function AdvertisingCosts({
-	selectedMonth,
-	selectedYear,
-}: AdvertisingCostsProps) {
+export default function AdvertisingCosts({ selectedMonth, selectedYear }: AdvertisingCostsProps) {
 	const [costs, setCosts] = useState<AdvertisingCost[]>([]);
 	const [_leads, setLeads] = useState<Lead[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -191,13 +188,9 @@ export default function AdvertisingCosts({
 								<DollarSign className="h-6 w-6 text-white" />
 							</div>
 							<div className="space-y-1">
-								<div className="font-bold text-2xl text-green-600">
-									{formatCurrency(totalCost)}
-								</div>
+								<div className="font-bold text-2xl text-green-600">{formatCurrency(totalCost)}</div>
 								<div className="text-muted-foreground text-sm">Total Leads</div>
-								<div className="mt-1 text-muted-foreground text-xs">
-									For selected period
-								</div>
+								<div className="mt-1 text-muted-foreground text-xs">For selected period</div>
 								<div className="mt-1 text-muted-foreground text-xs">
 									{filteredCosts.length} cost entr
 									{filteredCosts.length === 1 ? "y" : "ies"}
@@ -208,14 +201,10 @@ export default function AdvertisingCosts({
 						{/* Total Leads */}
 						<div className="rounded-lg border p-4 text-center">
 							<div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-blue-600">
-								<span className="font-semibold text-lg text-white">
-									{totalLeads}
-								</span>
+								<span className="font-semibold text-lg text-white">{totalLeads}</span>
 							</div>
 							<div className="space-y-1">
-								<div className="font-bold text-2xl text-blue-600">
-									{totalLeads}
-								</div>
+								<div className="font-bold text-2xl text-blue-600">{totalLeads}</div>
 								<div className="text-muted-foreground text-sm">Total Leads</div>
 							</div>
 						</div>
@@ -229,13 +218,9 @@ export default function AdvertisingCosts({
 								<div className="font-bold text-2xl text-orange-600">
 									{totalLeads > 0 ? formatCurrency(costPerLead) : "N/A"}
 								</div>
-								<div className="text-muted-foreground text-sm">
-									Cost Per Lead
-								</div>
+								<div className="text-muted-foreground text-sm">Cost Per Lead</div>
 								{totalLeads === 0 && (
-									<div className="mt-1 text-orange-600 text-xs">
-										No leads for this period
-									</div>
+									<div className="mt-1 text-orange-600 text-xs">No leads for this period</div>
 								)}
 							</div>
 						</div>

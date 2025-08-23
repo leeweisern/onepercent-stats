@@ -44,9 +44,7 @@ export default function MonthlyLeadsChart({
 			if (selectedYear) params.append("year", selectedYear);
 			params.append("dateType", dateType);
 
-			const response = await fetch(
-				`/api/analytics/leads/growth/monthly?${params}`,
-			);
+			const response = await fetch(`/api/analytics/leads/growth/monthly?${params}`);
 
 			if (!response.ok) {
 				console.error("Leads API error:", response.status, response.statusText);
@@ -125,8 +123,7 @@ export default function MonthlyLeadsChart({
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<Users className="h-5 w-5" />
-					Monthly Leads{" "}
-					{dateType === "closed" ? "(by Sale Date)" : "(by Lead Date)"}
+					Monthly Leads {dateType === "closed" ? "(by Sale Date)" : "(by Lead Date)"}
 					<Badge variant="outline" className="ml-auto">
 						{leadsData.year}
 					</Badge>
@@ -147,18 +144,8 @@ export default function MonthlyLeadsChart({
 							<YAxis tick={{ fontSize: 12 }} />
 							<Tooltip content={<CustomTooltip />} />
 							<Legend />
-							<Bar
-								dataKey="totalLeads"
-								fill="#3b82f6"
-								name="Total Leads"
-								radius={[2, 2, 0, 0]}
-							/>
-							<Bar
-								dataKey="closedLeads"
-								fill="#10b981"
-								name="Closed Leads"
-								radius={[2, 2, 0, 0]}
-							/>
+							<Bar dataKey="totalLeads" fill="#3b82f6" name="Total Leads" radius={[2, 2, 0, 0]} />
+							<Bar dataKey="closedLeads" fill="#10b981" name="Closed Leads" radius={[2, 2, 0, 0]} />
 						</BarChart>
 					</ResponsiveContainer>
 				</div>

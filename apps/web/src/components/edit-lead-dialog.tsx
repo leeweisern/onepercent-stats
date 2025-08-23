@@ -1,23 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-	convertToDateInputFormat,
 	convertFromDateInputFormat,
+	convertToDateInputFormat,
 	getMonthFromDate,
 } from "@/lib/date-utils";
 
@@ -53,12 +43,7 @@ interface Options {
 	isClosed: boolean[];
 }
 
-export function EditLeadDialog({
-	lead,
-	open,
-	onOpenChange,
-	onSave,
-}: EditLeadDialogProps) {
+export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDialogProps) {
 	const [name, setName] = useState("");
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [platform, setPlatform] = useState("");
@@ -292,12 +277,7 @@ export function EditLeadDialog({
 					{/* Date */}
 					<div className="space-y-2">
 						<Label htmlFor="date">Date</Label>
-						<Input
-							id="date"
-							type="date"
-							value={date}
-							onChange={(e) => setDate(e.target.value)}
-						/>
+						<Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
 					</div>
 
 					{/* Closed Date */}

@@ -8,11 +8,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-export default function SignInForm({
-	onSwitchToSignUp,
-}: {
-	onSwitchToSignUp?: () => void;
-} = {}) {
+export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp?: () => void } = {}) {
 	const navigate = useNavigate();
 	const { isPending } = authClient.useSession();
 

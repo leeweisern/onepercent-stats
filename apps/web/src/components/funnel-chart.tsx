@@ -56,9 +56,7 @@ export default function FunnelChart({
 	const [funnelData, setFunnelData] = useState<FunnelData | null>(null);
 	const [summaryData, setSummaryData] = useState<any>(null);
 	const [loading, setLoading] = useState(true);
-	const [currentPlatform, setCurrentPlatform] = useState<string>(
-		selectedPlatform || "",
-	);
+	const [currentPlatform, setCurrentPlatform] = useState<string>(selectedPlatform || "");
 	const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([]);
 
 	const fetchFunnelData = useCallback(async () => {
@@ -93,14 +91,9 @@ export default function FunnelChart({
 
 			// Calculate filtered summary
 			const totalLeads = leads.length;
-			const totalConsults = leads.filter(
-				(lead: any) => lead.status === "Consult",
-			).length;
+			const totalConsults = leads.filter((lead: any) => lead.status === "Consult").length;
 			const totalClosed = leads.filter((lead: any) => lead.isClosed).length;
-			const totalSales = leads.reduce(
-				(sum: number, lead: any) => sum + (lead.sales || 0),
-				0,
-			);
+			const totalSales = leads.reduce((sum: number, lead: any) => sum + (lead.sales || 0), 0);
 
 			setSummaryData({
 				totalLeads,
@@ -134,13 +127,7 @@ export default function FunnelChart({
 	};
 
 	const _getStageColor = (_status: string, index: number) => {
-		const colors = [
-			"bg-blue-500",
-			"bg-yellow-500",
-			"bg-green-500",
-			"bg-purple-500",
-			"bg-red-500",
-		];
+		const colors = ["bg-blue-500", "bg-yellow-500", "bg-green-500", "bg-purple-500", "bg-red-500"];
 		return colors[index % colors.length];
 	};
 
@@ -172,10 +159,7 @@ export default function FunnelChart({
 	if (!funnelData) return null;
 
 	const _maxCount = Math.max(...funnelData.funnel.map((stage) => stage.count));
-	const _totalLeads = funnelData.funnel.reduce(
-		(sum, stage) => sum + stage.count,
-		0,
-	);
+	const _totalLeads = funnelData.funnel.reduce((sum, stage) => sum + stage.count, 0);
 
 	return (
 		<Card>
@@ -185,10 +169,8 @@ export default function FunnelChart({
 					Sales Funnel
 					<Badge variant="outline" className="ml-auto">
 						{funnelData.month}
-						{funnelData.year && funnelData.year !== "All years"
-							? ` ${funnelData.year}`
-							: ""}{" "}
-						• {funnelData.platform}
+						{funnelData.year && funnelData.year !== "All years" ? ` ${funnelData.year}` : ""} •{" "}
+						{funnelData.platform}
 					</Badge>
 				</CardTitle>
 				<div className="flex flex-wrap gap-2">
@@ -228,19 +210,13 @@ export default function FunnelChart({
 								{ status: "sales", displayName: "Sales", count: totalSales },
 							];
 
-							const maxCount = Math.max(
-								...simplifiedFunnel.map((s) => s.count),
-							);
+							const maxCount = Math.max(...simplifiedFunnel.map((s) => s.count));
 
 							return simplifiedFunnel.map((stage, index) => {
-								const height =
-									maxCount > 0 ? (stage.count / maxCount) * 250 : 0;
+								const height = maxCount > 0 ? (stage.count / maxCount) * 250 : 0;
 
 								return (
-									<div
-										key={stage.status}
-										className="flex flex-col items-center gap-3"
-									>
+									<div key={stage.status} className="flex flex-col items-center gap-3">
 										<div className="min-h-[20px] text-center font-medium text-sm">
 											{stage.count}
 										</div>
@@ -249,11 +225,7 @@ export default function FunnelChart({
 											style={{
 												height: `${Math.max(height, 20)}px`,
 												backgroundColor:
-													index === 0
-														? "#3b82f6"
-														: index === 1
-															? "#93c5fd"
-															: "#1e40af",
+													index === 0 ? "#3b82f6" : index === 1 ? "#93c5fd" : "#1e40af",
 											}}
 										/>
 										<div className="text-center text-muted-foreground text-xs">
@@ -271,16 +243,11 @@ export default function FunnelChart({
 							<div className="space-y-2">
 								<div className="font-bold text-3xl text-blue-600">
 									{summaryData.totalLeads > 0
-										? (
-												(summaryData.totalClosed / summaryData.totalLeads) *
-												100
-											).toFixed(1)
+										? ((summaryData.totalClosed / summaryData.totalLeads) * 100).toFixed(1)
 										: "0.0"}
 									%
 								</div>
-								<div className="text-muted-foreground text-sm">
-									Total Conversion
-								</div>
+								<div className="text-muted-foreground text-sm">Total Conversion</div>
 							</div>
 						)}
 					</div>
@@ -307,29 +274,22 @@ export default function FunnelChart({
 									status: "consults",
 									displayName: "Consult",
 									count: consultCount,
-									conversionRate:
-										totalLeads > 0 ? (consultCount / totalLeads) * 100 : 0,
+									conversionRate: totalLeads > 0 ? (consultCount / totalLeads) * 100 : 0,
 									totalSales: 0,
 								},
 								{
 									status: "sales",
 									displayName: "Sales",
 									count: salesCount,
-									conversionRate:
-										totalLeads > 0 ? (salesCount / totalLeads) * 100 : 0,
+									conversionRate: totalLeads > 0 ? (salesCount / totalLeads) * 100 : 0,
 									totalSales: totalSalesAmount,
 								},
 							];
 
 							return simplifiedStats.map((stage) => (
-								<div
-									key={stage.status}
-									className="rounded-lg bg-muted/50 p-4 text-center"
-								>
+								<div key={stage.status} className="rounded-lg bg-muted/50 p-4 text-center">
 									<div className="font-bold text-2xl">{stage.count}</div>
-									<div className="text-muted-foreground text-sm">
-										{stage.displayName}
-									</div>
+									<div className="text-muted-foreground text-sm">{stage.displayName}</div>
 									<div className="mt-1 text-muted-foreground text-xs">
 										{stage.conversionRate.toFixed(1)}%
 									</div>

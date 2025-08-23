@@ -3,9 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import Papa from "papaparse";
 
-const csvFilePath = path.resolve(
-	"../../One Percent Enquiries All Data (dd-mm-yyyy).csv",
-);
+const csvFilePath = path.resolve("../../One Percent Enquiries All Data (dd-mm-yyyy).csv");
 const csvFile = fs.readFileSync(csvFilePath, "utf8");
 
 const cleanData = (row: any) => {
@@ -62,24 +60,16 @@ Papa.parse(csvFile, {
 				console.log(
 					`Importing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(cleanedData.length / batchSize)}...`,
 				);
-				execSync(
-					`npx wrangler d1 execute onepercent-stats-db --remote --command="${sql}"`,
-					{
-						stdio: "inherit",
-						cwd: process.cwd(),
-					},
-				);
+				execSync(`npx wrangler d1 execute onepercent-stats-db --remote --command="${sql}"`, {
+					stdio: "inherit",
+					cwd: process.cwd(),
+				});
 			} catch (error) {
-				console.error(
-					`Error importing batch ${Math.floor(i / batchSize) + 1}:`,
-					error,
-				);
+				console.error(`Error importing batch ${Math.floor(i / batchSize) + 1}:`, error);
 				break;
 			}
 		}
 
-		console.log(
-			`Data import completed! ${cleanedData.length} records processed.`,
-		);
+		console.log(`Data import completed! ${cleanedData.length} records processed.`);
 	},
 });

@@ -27,14 +27,14 @@
 	"dependencies": {
 		"better-sqlite3": "^12.2.0",
 		"papaparse": "^5.5.3",
-		"wrangler": "^4.27.0"
+		"wrangler": "^4.32.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.1.2",
+		"@biomejs/biome": "^2.2.0",
 		"@types/papaparse": "^5.3.16",
 		"husky": "^9.1.7",
-		"lint-staged": "^16.1.2",
-		"turbo": "^2.5.4"
+		"lint-staged": "^16.1.5",
+		"turbo": "^2.5.6"
 	},
 	"packageManager": "bun@1.2.19"
 }

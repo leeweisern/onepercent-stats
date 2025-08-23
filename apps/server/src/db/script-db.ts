@@ -1,5 +1,5 @@
 // This file is only used for local scripts, not in the Cloudflare Workers environment
-// @ts-ignore - bun:sqlite is only available in Bun runtime
+// @ts-expect-error - bun:sqlite is only available in Bun runtime
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 

@@ -4,9 +4,7 @@ import Papa from "papaparse";
 import { leads } from "../db/schema/leads";
 import { db } from "../db/script-db";
 
-const csvFilePath = path.resolve(
-	"../../One Percent Enquiries All Data (dd-mm-yyyy).csv",
-);
+const csvFilePath = path.resolve("../../One Percent Enquiries All Data (dd-mm-yyyy).csv");
 const csvFile = fs.readFileSync(csvFilePath, "utf8");
 
 const cleanData = (row: any) => {
@@ -41,8 +39,6 @@ Papa.parse(csvFile, {
 			await db.insert(leads).values(row).onConflictDoNothing();
 		}
 
-		console.log(
-			`Data imported successfully! ${cleanedData.length} records processed.`,
-		);
+		console.log(`Data imported successfully! ${cleanedData.length} records processed.`);
 	},
 });

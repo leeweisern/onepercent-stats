@@ -14,8 +14,7 @@ try {
 	// Set environment
 	const env = {
 		...process.env,
-		CLOUDFLARE_API_TOKEN:
-			process.env.CLOUDFLARE_D1_TOKEN || process.env.CLOUDFLARE_API_TOKEN,
+		CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_D1_TOKEN || process.env.CLOUDFLARE_API_TOKEN,
 	};
 
 	// Step 1: Build web application
@@ -23,7 +22,7 @@ try {
 
 	// Load production environment variables
 	const prodEnvPath = path.join(WEB_DIR, ".env.production");
-	let prodEnvVars = {};
+	const prodEnvVars = {};
 	if (fs.existsSync(prodEnvPath)) {
 		const prodEnvContent = fs.readFileSync(prodEnvPath, "utf8");
 		prodEnvContent.split("\n").forEach((line) => {
@@ -32,10 +31,7 @@ try {
 				prodEnvVars[key.trim()] = value.trim();
 			}
 		});
-		console.log(
-			"📋 Loaded production environment variables:",
-			Object.keys(prodEnvVars),
-		);
+		console.log("📋 Loaded production environment variables:", Object.keys(prodEnvVars));
 	}
 
 	execSync("bun run build", {
@@ -72,9 +68,7 @@ try {
 			console.log("ℹ️  No migration files found\n");
 		}
 	} catch (_error) {
-		console.log(
-			"⚠️  Could not check migrations (this is okay if no migrations directory exists)\n",
-		);
+		console.log("⚠️  Could not check migrations (this is okay if no migrations directory exists)\n");
 	}
 
 	// Step 3: Deploy Worker with static assets
@@ -104,12 +98,9 @@ try {
 
 	// Test frontend
 	try {
-		execSync(
-			'curl -s "https://onepercent-stats-server.leeweisern.workers.dev" | head -1',
-			{
-				stdio: "inherit",
-			},
-		);
+		execSync('curl -s "https://onepercent-stats-server.leeweisern.workers.dev" | head -1', {
+			stdio: "inherit",
+		});
 		console.log("✅ Frontend serving correctly");
 	} catch (_error) {
 		console.log("⚠️  Could not verify frontend");
@@ -120,15 +111,9 @@ try {
 		"🌐 Your application is live at: https://onepercent-stats-server.leeweisern.workers.dev",
 	);
 	console.log("\n📊 Available endpoints:");
-	console.log(
-		"   Frontend: https://onepercent-stats-server.leeweisern.workers.dev",
-	);
-	console.log(
-		"   API: https://onepercent-stats-server.leeweisern.workers.dev/api/analytics/leads",
-	);
-	console.log(
-		"   Auth: https://onepercent-stats-server.leeweisern.workers.dev/api/auth",
-	);
+	console.log("   Frontend: https://onepercent-stats-server.leeweisern.workers.dev");
+	console.log("   API: https://onepercent-stats-server.leeweisern.workers.dev/api/analytics/leads");
+	console.log("   Auth: https://onepercent-stats-server.leeweisern.workers.dev/api/auth");
 } catch (error) {
 	console.error("\n❌ Deployment failed:", error.message);
 	console.error("\n🔧 Troubleshooting tips:");

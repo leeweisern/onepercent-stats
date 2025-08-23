@@ -24,10 +24,7 @@ interface ROASMetricsProps {
 	selectedYear: string;
 }
 
-export default function ROASMetrics({
-	selectedMonth,
-	selectedYear,
-}: ROASMetricsProps) {
+export default function ROASMetrics({ selectedMonth, selectedYear }: ROASMetricsProps) {
 	const [data, setData] = useState<ROASData | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -129,13 +126,9 @@ export default function ROASMetrics({
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<TrendingUp className="h-4 w-4 text-green-600" />
-							<span className="font-medium text-muted-foreground text-sm">
-								ROAS
-							</span>
+							<span className="font-medium text-muted-foreground text-sm">ROAS</span>
 						</div>
-						<div className="font-bold text-2xl text-green-600">
-							{data.roas}x
-						</div>
+						<div className="font-bold text-2xl text-green-600">{data.roas}x</div>
 						<p className="text-muted-foreground text-xs">Return on Ad Spend</p>
 					</div>
 
@@ -143,9 +136,7 @@ export default function ROASMetrics({
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<DollarSign className="h-4 w-4 text-blue-600" />
-							<span className="font-medium text-muted-foreground text-sm">
-								Total Sales
-							</span>
+							<span className="font-medium text-muted-foreground text-sm">Total Sales</span>
 						</div>
 						<div className="font-bold text-2xl text-blue-600">
 							{formatCurrency(data.totalSales)}
@@ -157,25 +148,19 @@ export default function ROASMetrics({
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Target className="h-4 w-4 text-orange-600" />
-							<span className="font-medium text-muted-foreground text-sm">
-								Ad Spend
-							</span>
+							<span className="font-medium text-muted-foreground text-sm">Ad Spend</span>
 						</div>
 						<div className="font-bold text-2xl text-orange-600">
 							{formatCurrency(data.totalAdCost)}
 						</div>
-						<p className="text-muted-foreground text-xs">
-							Total advertising cost
-						</p>
+						<p className="text-muted-foreground text-xs">Total advertising cost</p>
 					</div>
 
 					{/* Conversion Rate */}
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Users className="h-4 w-4 text-purple-600" />
-							<span className="font-medium text-muted-foreground text-sm">
-								Conversion
-							</span>
+							<span className="font-medium text-muted-foreground text-sm">Conversion</span>
 						</div>
 						<div className="font-bold text-2xl text-purple-600">
 							{formatPercentage(data.conversionRate)}
@@ -187,45 +172,33 @@ export default function ROASMetrics({
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<DollarSign className="h-4 w-4 text-gray-600" />
-							<span className="font-medium text-muted-foreground text-sm">
-								Cost/Lead
-							</span>
+							<span className="font-medium text-muted-foreground text-sm">Cost/Lead</span>
 						</div>
 						<div className="font-bold text-gray-600 text-xl">
 							{formatCurrency(data.costPerLead)}
 						</div>
-						<p className="text-muted-foreground text-xs">
-							Per lead acquisition
-						</p>
+						<p className="text-muted-foreground text-xs">Per lead acquisition</p>
 					</div>
 
 					{/* Cost Per Acquisition */}
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Target className="h-4 w-4 text-red-600" />
-							<span className="font-medium text-muted-foreground text-sm">
-								Cost/Sale
-							</span>
+							<span className="font-medium text-muted-foreground text-sm">Cost/Sale</span>
 						</div>
 						<div className="font-bold text-red-600 text-xl">
 							{formatCurrency(data.costPerAcquisition)}
 						</div>
-						<p className="text-muted-foreground text-xs">
-							Per sale acquisition
-						</p>
+						<p className="text-muted-foreground text-xs">Per sale acquisition</p>
 					</div>
 
 					{/* Total Leads */}
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Users className="h-4 w-4 text-indigo-600" />
-							<span className="font-medium text-muted-foreground text-sm">
-								Total Leads
-							</span>
+							<span className="font-medium text-muted-foreground text-sm">Total Leads</span>
 						</div>
-						<div className="font-bold text-indigo-600 text-xl">
-							{data.totalLeads}
-						</div>
+						<div className="font-bold text-indigo-600 text-xl">{data.totalLeads}</div>
 						<p className="text-muted-foreground text-xs">Leads generated</p>
 					</div>
 
@@ -233,16 +206,10 @@ export default function ROASMetrics({
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
 							<Users className="h-4 w-4 text-green-600" />
-							<span className="font-medium text-muted-foreground text-sm">
-								Closed Leads
-							</span>
+							<span className="font-medium text-muted-foreground text-sm">Closed Leads</span>
 						</div>
-						<div className="font-bold text-green-600 text-xl">
-							{data.closedLeads}
-						</div>
-						<p className="text-muted-foreground text-xs">
-							Successful conversions
-						</p>
+						<div className="font-bold text-green-600 text-xl">{data.closedLeads}</div>
+						<p className="text-muted-foreground text-xs">Successful conversions</p>
 					</div>
 				</div>
 			</CardContent>

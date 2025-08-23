@@ -6,9 +6,7 @@ import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Select({
-	...props
-}: React.ComponentProps<typeof SelectPrimitive.Root>) {
+function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
 	return <SelectPrimitive.Root {...props} />;
 }
 
@@ -39,10 +37,7 @@ function SelectScrollUpButton({
 }: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
 	return (
 		<SelectPrimitive.ScrollUpButton
-			className={cn(
-				"flex cursor-default items-center justify-center py-1",
-				className,
-			)}
+			className={cn("flex cursor-default items-center justify-center py-1", className)}
 			{...props}
 		>
 			<ChevronUpIcon className="h-4 w-4" />
@@ -56,10 +51,7 @@ function SelectScrollDownButton({
 }: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
 	return (
 		<SelectPrimitive.ScrollDownButton
-			className={cn(
-				"flex cursor-default items-center justify-center py-1",
-				className,
-			)}
+			className={cn("flex cursor-default items-center justify-center py-1", className)}
 			{...props}
 		>
 			<ChevronDownIcon className="h-4 w-4" />
@@ -101,10 +93,7 @@ function SelectContent({
 	);
 }
 
-function SelectLabel({
-	className,
-	...props
-}: React.ComponentProps<typeof SelectPrimitive.Label>) {
+function SelectLabel({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Label>) {
 	return (
 		<SelectPrimitive.Label
 			className={cn("py-1.5 pr-2 pl-8 font-semibold text-sm", className)}
@@ -137,10 +126,7 @@ function SelectItem({
 	);
 }
 
-function SelectValue({
-	className,
-	...props
-}: React.ComponentProps<typeof SelectPrimitive.Value>) {
+function SelectValue({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
 	return <SelectPrimitive.Value className={cn(className)} {...props} />;
 }
 
@@ -149,10 +135,7 @@ function SelectSeparator({
 	...props
 }: React.ComponentProps<typeof SelectPrimitive.Separator>) {
 	return (
-		<SelectPrimitive.Separator
-			className={cn("-mx-1 my-1 h-px bg-muted", className)}
-			{...props}
-		/>
+		<SelectPrimitive.Separator className={cn("-mx-1 my-1 h-px bg-muted", className)} {...props} />
 	);
 }
 

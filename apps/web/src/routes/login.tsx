@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { authClient } from "@/lib/auth-client";
-import SignInForm from "@/components/sign-in-form";
 import Loader from "@/components/loader";
+import SignInForm from "@/components/sign-in-form";
+import { authClient } from "@/lib/auth-client";
 
 export default function Login() {
 	const navigate = useNavigate();

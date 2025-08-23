@@ -1,12 +1,12 @@
-import { Hono } from "hono";
-import { createAuth } from "../lib/auth";
-import { db } from "../db";
-import { user, account } from "../db/schema/auth";
-import { eq } from "drizzle-orm";
+import { zValidator } from "@hono/zod-validator";
 import { generateId } from "better-auth";
 import { hashPassword } from "better-auth/crypto";
-import { zValidator } from "@hono/zod-validator";
+import { eq } from "drizzle-orm";
+import { Hono } from "hono";
 import { z } from "zod";
+import { db } from "../db";
+import { account, user } from "../db/schema/auth";
+import { createAuth } from "../lib/auth";
 
 type Env = {
 	DB: D1Database;
@@ -29,11 +29,7 @@ const adminMiddleware = async (c: any, next: any) => {
 	}
 
 	// Get user from database to check role
-	const dbUser = await db
-		.select()
-		.from(user)
-		.where(eq(user.id, session.user.id))
-		.get();
+	const dbUser = await db.select().from(user).where(eq(user.id, session.user.id)).get();
 
 	if (!dbUser || dbUser.role !== "admin") {
 		return c.json({ error: "Admin access required" }, 403);
@@ -80,11 +76,7 @@ app.post("/users", zValidator("json", createUserSchema), async (c) => {
 		const { name, email, password, role } = c.req.valid("json");
 
 		// Check if user already exists
-		const existingUser = await db
-			.select()
-			.from(user)
-			.where(eq(user.email, email))
-			.get();
+		const existingUser = await db.select().from(user).where(eq(user.email, email)).get();
 		if (existingUser) {
 			return c.json({ error: "User with this email already exists" }, 400);
 		}
@@ -130,21 +122,14 @@ app.delete("/users/:id", async (c) => {
 		const userId = c.req.param("id");
 
 		// Check if user exists
-		const existingUser = await db
-			.select()
-			.from(user)
-			.where(eq(user.id, userId))
-			.get();
+		const existingUser = await db.select().from(user).where(eq(user.id, userId)).get();
 		if (!existingUser) {
 			return c.json({ error: "User not found" }, 404);
 		}
 
 		// Don't allow deleting the last admin
 		if (existingUser.role === "admin") {
-			const adminCount = await db
-				.select()
-				.from(user)
-				.where(eq(user.role, "admin"));
+			const adminCount = await db.select().from(user).where(eq(user.role, "admin"));
 			if (adminCount.length <= 1) {
 				return c.json({ error: "Cannot delete the last admin user" }, 400);
 			}

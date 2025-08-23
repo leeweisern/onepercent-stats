@@ -12,12 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -63,9 +58,7 @@ export default function AdvertisingCostsManagement() {
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [editingCost, setEditingCost] = useState<AdvertisingCost | null>(null);
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-	const [costToDelete, setCostToDelete] = useState<AdvertisingCost | null>(
-		null,
-	);
+	const [costToDelete, setCostToDelete] = useState<AdvertisingCost | null>(null);
 
 	// Form state
 	const [formData, setFormData] = useState({
@@ -141,29 +134,22 @@ export default function AdvertisingCostsManagement() {
 		if (!editingCost) return;
 
 		try {
-			const response = await fetch(
-				`/api/analytics/advertising-costs/${editingCost.id}`,
-				{
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						month: Number.parseInt(formData.month),
-						year: Number.parseInt(formData.year),
-						cost: Number.parseFloat(formData.cost),
-						currency: formData.currency,
-					}),
+			const response = await fetch(`/api/analytics/advertising-costs/${editingCost.id}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
 				},
-			);
+				body: JSON.stringify({
+					month: Number.parseInt(formData.month),
+					year: Number.parseInt(formData.year),
+					cost: Number.parseFloat(formData.cost),
+					currency: formData.currency,
+				}),
+			});
 
 			if (response.ok) {
 				const updatedCost = await response.json();
-				setCosts(
-					costs.map((cost) =>
-						cost.id === editingCost.id ? updatedCost : cost,
-					),
-				);
+				setCosts(costs.map((cost) => (cost.id === editingCost.id ? updatedCost : cost)));
 				setIsEditDialogOpen(false);
 				setEditingCost(null);
 				resetForm();
@@ -181,12 +167,9 @@ export default function AdvertisingCostsManagement() {
 		if (!costToDelete) return;
 
 		try {
-			const response = await fetch(
-				`/api/analytics/advertising-costs/${costToDelete.id}`,
-				{
-					method: "DELETE",
-				},
-			);
+			const response = await fetch(`/api/analytics/advertising-costs/${costToDelete.id}`, {
+				method: "DELETE",
+			});
 
 			if (response.ok) {
 				setCosts(costs.filter((cost) => cost.id !== costToDelete.id));
@@ -235,9 +218,7 @@ export default function AdvertisingCostsManagement() {
 				<CardContent>
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 						<div className="rounded-lg border p-4 text-center">
-							<div className="font-bold text-2xl text-green-600">
-								{formatCurrency(totalCost)}
-							</div>
+							<div className="font-bold text-2xl text-green-600">{formatCurrency(totalCost)}</div>
 							<div className="text-muted-foreground text-sm">Total Spent</div>
 						</div>
 						<div className="rounded-lg border p-4 text-center">
@@ -246,13 +227,9 @@ export default function AdvertisingCostsManagement() {
 						</div>
 						<div className="rounded-lg border p-4 text-center">
 							<div className="font-bold text-2xl">
-								{costs.length > 0
-									? formatCurrency(totalCost / costs.length)
-									: formatCurrency(0)}
+								{costs.length > 0 ? formatCurrency(totalCost / costs.length) : formatCurrency(0)}
 							</div>
-							<div className="text-muted-foreground text-sm">
-								Average per Month
-							</div>
+							<div className="text-muted-foreground text-sm">Average per Month</div>
 						</div>
 					</div>
 				</CardContent>
@@ -264,10 +241,7 @@ export default function AdvertisingCostsManagement() {
 					<CardTitle className="flex items-center gap-2">
 						<Calendar className="h-5 w-5" />
 						Manage Advertising Costs
-						<Dialog
-							open={isCreateDialogOpen}
-							onOpenChange={setIsCreateDialogOpen}
-						>
+						<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
 							<DialogTrigger asChild>
 								<Button size="sm" className="ml-auto" onClick={resetForm}>
 									<Plus className="mr-1 h-4 w-4" />
@@ -284,9 +258,7 @@ export default function AdvertisingCostsManagement() {
 											<Label htmlFor="month">Month</Label>
 											<Select
 												value={formData.month}
-												onValueChange={(value) =>
-													setFormData({ ...formData, month: value })
-												}
+												onValueChange={(value) => setFormData({ ...formData, month: value })}
 											>
 												<SelectTrigger>
 													{formData.month
@@ -295,10 +267,7 @@ export default function AdvertisingCostsManagement() {
 												</SelectTrigger>{" "}
 												<SelectContent>
 													{monthNames.map((month, index) => (
-														<SelectItem
-															key={month}
-															value={(index + 1).toString()}
-														>
+														<SelectItem key={month} value={(index + 1).toString()}>
 															{month}
 														</SelectItem>
 													))}
@@ -309,13 +278,9 @@ export default function AdvertisingCostsManagement() {
 											<Label htmlFor="year">Year</Label>
 											<Select
 												value={formData.year}
-												onValueChange={(value) =>
-													setFormData({ ...formData, year: value })
-												}
+												onValueChange={(value) => setFormData({ ...formData, year: value })}
 											>
-												<SelectTrigger>
-													{formData.year || "Select year"}
-												</SelectTrigger>{" "}
+												<SelectTrigger>{formData.year || "Select year"}</SelectTrigger>{" "}
 												<SelectContent>
 													{years.map((year) => (
 														<SelectItem key={year} value={year.toString()}>
@@ -335,9 +300,7 @@ export default function AdvertisingCostsManagement() {
 												step="0.01"
 												placeholder="0.00"
 												value={formData.cost}
-												onChange={(e) =>
-													setFormData({ ...formData, cost: e.target.value })
-												}
+												onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
 												required
 											/>
 										</div>
@@ -345,9 +308,7 @@ export default function AdvertisingCostsManagement() {
 											<Label htmlFor="currency">Currency</Label>
 											<Select
 												value={formData.currency}
-												onValueChange={(value) =>
-													setFormData({ ...formData, currency: value })
-												}
+												onValueChange={(value) => setFormData({ ...formData, currency: value })}
 											>
 												<SelectTrigger>{formData.currency}</SelectTrigger>{" "}
 												<SelectContent>
@@ -386,24 +347,15 @@ export default function AdvertisingCostsManagement() {
 								<TableHeader>
 									<TableRow className="bg-muted/50 hover:bg-transparent">
 										<TableHead className="font-semibold">Period</TableHead>
-										<TableHead className="text-right font-semibold">
-											Cost
-										</TableHead>
-										<TableHead className="text-center font-semibold">
-											Added
-										</TableHead>
-										<TableHead className="w-[100px] text-center font-semibold">
-											Actions
-										</TableHead>
+										<TableHead className="text-right font-semibold">Cost</TableHead>
+										<TableHead className="text-center font-semibold">Added</TableHead>
+										<TableHead className="w-[100px] text-center font-semibold">Actions</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
 									{costs.length === 0 ? (
 										<TableRow>
-											<TableCell
-												colSpan={4}
-												className="py-8 text-center text-muted-foreground"
-											>
+											<TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
 												No advertising costs found. Add your first entry above.
 											</TableCell>
 										</TableRow>
@@ -468,9 +420,7 @@ export default function AdvertisingCostsManagement() {
 								<Label htmlFor="edit-month">Month</Label>
 								<Select
 									value={formData.month}
-									onValueChange={(value) =>
-										setFormData({ ...formData, month: value })
-									}
+									onValueChange={(value) => setFormData({ ...formData, month: value })}
 								>
 									<SelectTrigger>
 										{formData.month
@@ -490,13 +440,9 @@ export default function AdvertisingCostsManagement() {
 								<Label htmlFor="edit-year">Year</Label>
 								<Select
 									value={formData.year}
-									onValueChange={(value) =>
-										setFormData({ ...formData, year: value })
-									}
+									onValueChange={(value) => setFormData({ ...formData, year: value })}
 								>
-									<SelectTrigger>
-										{formData.year || "Select year"}
-									</SelectTrigger>
+									<SelectTrigger>{formData.year || "Select year"}</SelectTrigger>
 									<SelectContent>
 										{years.map((year) => (
 											<SelectItem key={year} value={year.toString()}>
@@ -516,9 +462,7 @@ export default function AdvertisingCostsManagement() {
 									step="0.01"
 									placeholder="0.00"
 									value={formData.cost}
-									onChange={(e) =>
-										setFormData({ ...formData, cost: e.target.value })
-									}
+									onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
 									required
 								/>
 							</div>
@@ -526,9 +470,7 @@ export default function AdvertisingCostsManagement() {
 								<Label htmlFor="edit-currency">Currency</Label>
 								<Select
 									value={formData.currency}
-									onValueChange={(value) =>
-										setFormData({ ...formData, currency: value })
-									}
+									onValueChange={(value) => setFormData({ ...formData, currency: value })}
 								>
 									<SelectTrigger>{formData.currency}</SelectTrigger>
 									<SelectContent>
@@ -540,11 +482,7 @@ export default function AdvertisingCostsManagement() {
 							</div>
 						</div>
 						<div className="flex justify-end gap-2">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => setIsEditDialogOpen(false)}
-							>
+							<Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
 								Cancel
 							</Button>
 							<Button type="submit">Update Cost</Button>
@@ -563,17 +501,13 @@ export default function AdvertisingCostsManagement() {
 						<p className="text-muted-foreground text-sm">
 							Are you sure you want to delete the advertising cost for{" "}
 							<span className="font-medium text-foreground">
-								{costToDelete &&
-									`${monthNames[costToDelete.month - 1]} ${costToDelete.year}`}
+								{costToDelete && `${monthNames[costToDelete.month - 1]} ${costToDelete.year}`}
 							</span>
 							? This action cannot be undone.
 						</p>
 					</div>
 					<div className="flex justify-end gap-2">
-						<Button
-							variant="outline"
-							onClick={() => setDeleteConfirmOpen(false)}
-						>
+						<Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
 							Cancel
 						</Button>
 						<Button variant="destructive" onClick={handleDelete}>

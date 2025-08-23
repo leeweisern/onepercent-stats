@@ -1,7 +1,5 @@
-import { BarChart3, DollarSign, Users, Settings } from "lucide-react";
+import { BarChart3, DollarSign, Settings, Users } from "lucide-react";
 import { Link, useLocation } from "react-router";
-import { authClient } from "@/lib/auth-client";
-
 import {
 	Sidebar,
 	SidebarContent,
@@ -13,6 +11,7 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
+import { authClient } from "@/lib/auth-client";
 
 interface AppSidebarProps {
 	variant?: "sidebar" | "floating" | "inset";

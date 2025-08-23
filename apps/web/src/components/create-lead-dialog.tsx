@@ -1,25 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	convertFromDateInputFormat,
-	getMonthFromDate,
-	getTodayYYYYMMDD,
-} from "@/lib/date-utils";
+import { convertFromDateInputFormat, getMonthFromDate, getTodayYYYYMMDD } from "@/lib/date-utils";
 
 interface CreateLeadDialogProps {
 	open: boolean;
@@ -34,11 +20,7 @@ interface Options {
 	isClosed: boolean[];
 }
 
-export function CreateLeadDialog({
-	open,
-	onOpenChange,
-	onSave,
-}: CreateLeadDialogProps) {
+export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialogProps) {
 	const [name, setName] = useState("");
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [platform, setPlatform] = useState("");
@@ -272,12 +254,7 @@ export function CreateLeadDialog({
 					{/* Date */}
 					<div className="space-y-2">
 						<Label htmlFor="date">Date *</Label>
-						<Input
-							id="date"
-							type="date"
-							value={date}
-							onChange={(e) => setDate(e.target.value)}
-						/>
+						<Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
 					</div>
 
 					{/* Closed Date */}
@@ -327,12 +304,7 @@ export function CreateLeadDialog({
 					</Button>
 					<Button
 						onClick={handleSave}
-						disabled={
-							loading ||
-							!name.trim() ||
-							(!platform && !customPlatform.trim()) ||
-							!date
-						}
+						disabled={loading || !name.trim() || (!platform && !customPlatform.trim()) || !date}
 					>
 						{loading ? "Creating..." : "Create Lead"}
 					</Button>

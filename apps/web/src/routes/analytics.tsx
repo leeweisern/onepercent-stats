@@ -56,9 +56,7 @@ export default function Analytics() {
 										<span className="font-medium text-sm">Date type:</span>
 										<select
 											value={dateType}
-											onChange={(e) =>
-												setDateType(e.target.value as "lead" | "closed")
-											}
+											onChange={(e) => setDateType(e.target.value as "lead" | "closed")}
 											className="rounded-md border bg-white px-3 py-2 text-sm"
 										>
 											<option value="lead">Lead Date</option>
@@ -66,9 +64,7 @@ export default function Analytics() {
 										</select>
 									</div>
 									<div className="flex items-center gap-2">
-										<span className="font-medium text-sm">
-											Filter by month:
-										</span>
+										<span className="font-medium text-sm">Filter by month:</span>
 										<select
 											value={selectedMonth}
 											onChange={(e) => setSelectedMonth(e.target.value)}
@@ -99,31 +95,16 @@ export default function Analytics() {
 									</div>
 								</div>
 								<div className="space-y-6">
-									<ROASMetrics
-										selectedMonth={selectedMonth}
-										selectedYear={selectedYear}
-									/>
+									<ROASMetrics selectedMonth={selectedMonth} selectedYear={selectedYear} />
 
 									{/* Monthly Charts */}
 									<div className="grid gap-6 md:grid-cols-2">
-										<MonthlyLeadsChart
-											selectedYear={selectedYear}
-											dateType={dateType}
-										/>
-										<MonthlySalesChart
-											selectedYear={selectedYear}
-											dateType={dateType}
-										/>
+										<MonthlyLeadsChart selectedYear={selectedYear} dateType={dateType} />
+										<MonthlySalesChart selectedYear={selectedYear} dateType={dateType} />
 									</div>
 
-									<PlatformBreakdown
-										selectedMonth={selectedMonth}
-										selectedYear={selectedYear}
-									/>
-									<FunnelChart
-										selectedMonth={selectedMonth}
-										selectedYear={selectedYear}
-									/>
+									<PlatformBreakdown selectedMonth={selectedMonth} selectedYear={selectedYear} />
+									<FunnelChart selectedMonth={selectedMonth} selectedYear={selectedYear} />
 								</div>{" "}
 							</div>
 						</div>

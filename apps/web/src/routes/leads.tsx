@@ -23,12 +23,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -113,9 +108,7 @@ export default function Leads() {
 			filtered = filtered.filter(
 				(lead) =>
 					lead.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-					lead.phoneNumber
-						?.toLowerCase()
-						.includes(filters.search.toLowerCase()),
+					lead.phoneNumber?.toLowerCase().includes(filters.search.toLowerCase()),
 			);
 		}
 
@@ -153,9 +146,7 @@ export default function Leads() {
 
 		// Filter by trainer
 		if (filters.trainer) {
-			filtered = filtered.filter(
-				(lead) => lead.trainerHandle === filters.trainer,
-			);
+			filtered = filtered.filter((lead) => lead.trainerHandle === filters.trainer);
 		}
 
 		// Filter by closed status
@@ -286,11 +277,7 @@ export default function Leads() {
 
 			if (response.ok) {
 				const updatedLead = await response.json();
-				setLeads(
-					leads.map((lead) =>
-						lead.id === leadId ? { ...lead, ...updatedLead } : lead,
-					),
-				);
+				setLeads(leads.map((lead) => (lead.id === leadId ? { ...lead, ...updatedLead } : lead)));
 			}
 		} catch (error) {
 			console.error("Failed to update lead:", error);
@@ -380,22 +367,16 @@ export default function Leads() {
 								<div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-4">
 									<Card>
 										<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-											<CardTitle className="font-medium text-sm">
-												Total Leads
-											</CardTitle>
+											<CardTitle className="font-medium text-sm">Total Leads</CardTitle>
 											<Users className="h-4 w-4 text-muted-foreground" />
 										</CardHeader>
 										<CardContent>
-											<div className="font-bold text-2xl">
-												{filteredLeads.length}
-											</div>
+											<div className="font-bold text-2xl">{filteredLeads.length}</div>
 										</CardContent>
 									</Card>
 									<Card>
 										<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-											<CardTitle className="font-medium text-sm">
-												Closed Leads
-											</CardTitle>
+											<CardTitle className="font-medium text-sm">Closed Leads</CardTitle>
 											<CheckCircle className="h-4 w-4 text-muted-foreground" />
 										</CardHeader>
 										<CardContent>
@@ -406,27 +387,20 @@ export default function Leads() {
 									</Card>
 									<Card>
 										<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-											<CardTitle className="font-medium text-sm">
-												Total Sales
-											</CardTitle>
+											<CardTitle className="font-medium text-sm">Total Sales</CardTitle>
 											<TrendingUp className="h-4 w-4 text-muted-foreground" />
 										</CardHeader>
 										<CardContent>
 											<div className="font-bold text-2xl">
 												{formatCurrency(
-													filteredLeads.reduce(
-														(sum, lead) => sum + (lead.sales || 0),
-														0,
-													),
+													filteredLeads.reduce((sum, lead) => sum + (lead.sales || 0), 0),
 												)}
 											</div>
 										</CardContent>
 									</Card>
 									<Card>
 										<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-											<CardTitle className="font-medium text-sm">
-												Conversion Rate
-											</CardTitle>
+											<CardTitle className="font-medium text-sm">Conversion Rate</CardTitle>
 											<BarChart3 className="h-4 w-4 text-muted-foreground" />
 										</CardHeader>
 										<CardContent>
@@ -488,15 +462,9 @@ export default function Leads() {
 																</Button>
 															</TableHead>
 															<TableHead className="w-[140px]">Phone</TableHead>
-															<TableHead className="w-[100px]">
-																Platform
-															</TableHead>
-															<TableHead className="w-[100px]">
-																Status
-															</TableHead>
-															<TableHead className="w-[80px] text-center">
-																Closed
-															</TableHead>
+															<TableHead className="w-[100px]">Platform</TableHead>
+															<TableHead className="w-[100px]">Status</TableHead>
+															<TableHead className="w-[80px] text-center">Closed</TableHead>
 															<TableHead className="w-[100px] p-0">
 																<Button
 																	variant="ghost"
@@ -514,9 +482,7 @@ export default function Leads() {
 																	</span>
 																</Button>
 															</TableHead>
-															<TableHead className="w-[80px]">
-																Trainer
-															</TableHead>
+															<TableHead className="w-[80px]">Trainer</TableHead>
 															<TableHead className="w-[100px] p-0">
 																<Button
 																	variant="ghost"
@@ -534,12 +500,8 @@ export default function Leads() {
 																	</span>
 																</Button>
 															</TableHead>
-															<TableHead className="w-[100px]">
-																Closed Date
-															</TableHead>
-															<TableHead className="w-[100px]">
-																Remark
-															</TableHead>
+															<TableHead className="w-[100px]">Closed Date</TableHead>
+															<TableHead className="w-[100px]">Remark</TableHead>
 															<TableHead className="w-[60px]" />
 														</TableRow>
 													</TableHeader>
@@ -555,9 +517,7 @@ export default function Leads() {
 																		<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 font-medium text-sm text-white">
 																			{(lead.name || "N")[0].toUpperCase()}
 																		</div>
-																		<span className="truncate">
-																			{lead.name || "N/A"}
-																		</span>
+																		<span className="truncate">{lead.name || "N/A"}</span>
 																	</div>
 																</TableCell>
 																<TableCell>
@@ -573,9 +533,7 @@ export default function Leads() {
 																				className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
 																				onClick={(e) => {
 																					e.stopPropagation();
-																					copyToClipboard(
-																						lead.phoneNumber || "",
-																					);
+																					copyToClipboard(lead.phoneNumber || "");
 																				}}
 																			>
 																				<Copy className="h-3 w-3" />
@@ -584,16 +542,12 @@ export default function Leads() {
 																	</div>
 																</TableCell>
 																<TableCell>
-																	<Badge
-																		variant={getPlatformVariant(lead.platform)}
-																	>
+																	<Badge variant={getPlatformVariant(lead.platform)}>
 																		{lead.platform || "N/A"}
 																	</Badge>
 																</TableCell>
 																<TableCell>
-																	<Badge
-																		variant={getStatusVariant(lead.status)}
-																	>
+																	<Badge variant={getStatusVariant(lead.status)}>
 																		{lead.status || "N/A"}
 																	</Badge>
 																</TableCell>
@@ -609,9 +563,7 @@ export default function Leads() {
 																		) : (
 																			<div className="flex items-center gap-1">
 																				<XCircle className="h-4 w-4 text-red-600" />
-																				<span className="font-medium text-red-600 text-xs">
-																					No
-																				</span>
+																				<span className="font-medium text-red-600 text-xs">No</span>
 																			</div>
 																		)}
 																	</div>
@@ -639,17 +591,13 @@ export default function Leads() {
 																<TableCell>
 																	<div className="flex items-center gap-1">
 																		<Calendar className="h-3 w-3 text-muted-foreground" />
-																		<span className="text-sm">
-																			{formatDate(lead.date)}
-																		</span>
+																		<span className="text-sm">{formatDate(lead.date)}</span>
 																	</div>
 																</TableCell>
 																<TableCell>
 																	<div className="flex items-center gap-1">
 																		<Calendar className="h-3 w-3 text-muted-foreground" />
-																		<span className="text-sm">
-																			{formatDate(lead.closedDate)}
-																		</span>
+																		<span className="text-sm">{formatDate(lead.closedDate)}</span>
 																	</div>
 																</TableCell>
 
@@ -725,17 +673,12 @@ export default function Leads() {
 						<div className="py-4">
 							<p className="text-muted-foreground text-sm">
 								Are you sure you want to delete the lead for{" "}
-								<span className="font-medium text-foreground">
-									{leadToDelete?.name || "N/A"}
-								</span>
-								? This action cannot be undone.
+								<span className="font-medium text-foreground">{leadToDelete?.name || "N/A"}</span>?
+								This action cannot be undone.
 							</p>
 						</div>
 						<div className="flex justify-end gap-2">
-							<Button
-								variant="outline"
-								onClick={() => setDeleteConfirmOpen(false)}
-							>
+							<Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
 								Cancel
 							</Button>
 							<Button variant="destructive" onClick={handleDeleteConfirm}>

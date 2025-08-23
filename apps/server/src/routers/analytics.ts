@@ -146,9 +146,7 @@ app.get("/leads/platform-breakdown", async (c) => {
 		.select({
 			platform: leads.platform,
 			totalLeads: count().as("total_leads"),
-			closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`).as(
-				"closed_leads",
-			),
+			closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`).as("closed_leads"),
 			notClosedLeads: count(
 				sql`CASE WHEN ${leads.isClosed} = 0 OR ${leads.isClosed} IS NULL THEN 1 END`,
 			).as("not_closed_leads"),
@@ -292,20 +290,16 @@ app.get("/leads/funnel", async (c) => {
 });
 
 app.get("/leads/options", async (c) => {
-	const [statusOptions, platformOptions, monthOptions, trainerOptions] =
-		await Promise.all([
-			db.select({ value: leads.status }).from(leads).groupBy(leads.status),
-			db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
-			db
-				.select({ value: leads.month })
-				.from(leads)
-				.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
-				.groupBy(leads.month),
-			db
-				.select({ value: leads.trainerHandle })
-				.from(leads)
-				.groupBy(leads.trainerHandle),
-		]);
+	const [statusOptions, platformOptions, monthOptions, trainerOptions] = await Promise.all([
+		db.select({ value: leads.status }).from(leads).groupBy(leads.status),
+		db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
+		db
+			.select({ value: leads.month })
+			.from(leads)
+			.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
+			.groupBy(leads.month),
+		db.select({ value: leads.trainerHandle }).from(leads).groupBy(leads.trainerHandle),
+	]);
 
 	return c.json({
 		status: statusOptions.map((s) => s.value).filter(Boolean),
@@ -317,29 +311,22 @@ app.get("/leads/options", async (c) => {
 });
 
 app.get("/leads/filter-options", async (c) => {
-	const [
-		statusOptions,
-		platformOptions,
-		monthOptions,
-		trainerOptions,
-		dateOptions,
-	] = await Promise.all([
-		db.select({ value: leads.status }).from(leads).groupBy(leads.status),
-		db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
-		db
-			.select({ value: leads.month })
-			.from(leads)
-			.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
-			.groupBy(leads.month),
-		db
-			.select({ value: leads.trainerHandle })
-			.from(leads)
-			.where(
-				sql`${leads.trainerHandle} IS NOT NULL AND ${leads.trainerHandle} != ''`,
-			)
-			.groupBy(leads.trainerHandle),
-		db.select({ value: leads.date }).from(leads).groupBy(leads.date),
-	]);
+	const [statusOptions, platformOptions, monthOptions, trainerOptions, dateOptions] =
+		await Promise.all([
+			db.select({ value: leads.status }).from(leads).groupBy(leads.status),
+			db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
+			db
+				.select({ value: leads.month })
+				.from(leads)
+				.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
+				.groupBy(leads.month),
+			db
+				.select({ value: leads.trainerHandle })
+				.from(leads)
+				.where(sql`${leads.trainerHandle} IS NOT NULL AND ${leads.trainerHandle} != ''`)
+				.groupBy(leads.trainerHandle),
+			db.select({ value: leads.date }).from(leads).groupBy(leads.date),
+		]);
 
 	// Extract unique years from dates
 	const years = Array.from(
@@ -395,8 +382,7 @@ app.post("/leads", async (c) => {
 	}
 
 	// Auto-set isClosed based on sales (unless explicitly provided)
-	const isClosedValue =
-		body.isClosed !== undefined ? body.isClosed : salesValue > 0;
+	const isClosedValue = body.isClosed !== undefined ? body.isClosed : salesValue > 0;
 
 	// Derive closedMonth and closedYear from closedDateValue
 	let closedMonthValue = "";
@@ -451,8 +437,7 @@ app.put("/leads/:id", async (c) => {
 	if (body.platform !== undefined) updateData.platform = body.platform;
 	if (body.status !== undefined) updateData.status = body.status;
 	if (body.remark !== undefined) updateData.remark = body.remark;
-	if (body.trainerHandle !== undefined)
-		updateData.trainerHandle = body.trainerHandle;
+	if (body.trainerHandle !== undefined) updateData.trainerHandle = body.trainerHandle;
 
 	// Handle date updates with standardization
 	if (body.date !== undefined) {
@@ -511,11 +496,7 @@ app.put("/leads/:id", async (c) => {
 		updateData.closedYear = "";
 	}
 
-	const updatedLead = await db
-		.update(leads)
-		.set(updateData)
-		.where(eq(leads.id, id))
-		.returning();
+	const updatedLead = await db.update(leads).set(updateData).where(eq(leads.id, id)).returning();
 
 	return c.json(updatedLead[0]);
 });
@@ -536,10 +517,7 @@ app.delete("/leads/:id", async (c) => {
 		}
 
 		// Delete the lead
-		const deletedLead = await db
-			.delete(leads)
-			.where(eq(leads.id, id))
-			.returning();
+		const deletedLead = await db.delete(leads).where(eq(leads.id, id)).returning();
 
 		return c.json({
 			message: "Lead deleted successfully",
@@ -574,9 +552,7 @@ app.get("/advertising-costs/:year/:month", async (c) => {
 	const cost = await db
 		.select()
 		.from(advertisingCosts)
-		.where(
-			and(eq(advertisingCosts.year, year), eq(advertisingCosts.month, month)),
-		);
+		.where(and(eq(advertisingCosts.year, year), eq(advertisingCosts.month, month)));
 
 	if (cost.length === 0) {
 		return c.json({ error: "Advertising cost not found" }, 404);
@@ -598,13 +574,7 @@ app.post("/advertising-costs", async (c) => {
 	const year = Number.parseInt(body.year);
 	const cost = Number.parseFloat(body.cost);
 
-	if (
-		Number.isNaN(month) ||
-		Number.isNaN(year) ||
-		Number.isNaN(cost) ||
-		month < 1 ||
-		month > 12
-	) {
+	if (Number.isNaN(month) || Number.isNaN(year) || Number.isNaN(cost) || month < 1 || month > 12) {
 		return c.json({ error: "Invalid month, year, or cost value" }, 400);
 	}
 
@@ -612,15 +582,10 @@ app.post("/advertising-costs", async (c) => {
 	const existing = await db
 		.select()
 		.from(advertisingCosts)
-		.where(
-			and(eq(advertisingCosts.year, year), eq(advertisingCosts.month, month)),
-		);
+		.where(and(eq(advertisingCosts.year, year), eq(advertisingCosts.month, month)));
 
 	if (existing.length > 0) {
-		return c.json(
-			{ error: "Advertising cost already exists for this month and year" },
-			409,
-		);
+		return c.json({ error: "Advertising cost already exists for this month and year" }, 409);
 	}
 
 	const costData = {
@@ -631,10 +596,7 @@ app.post("/advertising-costs", async (c) => {
 	};
 
 	try {
-		const newCost = await db
-			.insert(advertisingCosts)
-			.values(costData)
-			.returning();
+		const newCost = await db.insert(advertisingCosts).values(costData).returning();
 		return c.json(newCost[0], 201);
 	} catch (error) {
 		console.error("Error creating advertising cost:", error);
@@ -784,9 +746,7 @@ app.get("/roas", async (c) => {
 						"total_sales",
 					),
 				totalLeads: count().as("total_leads"),
-				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`).as(
-					"closed_leads",
-				),
+				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`).as("closed_leads"),
 			})
 			.from(leads);
 
@@ -814,10 +774,7 @@ app.get("/roas", async (c) => {
 					.select({ cost: advertisingCosts.cost })
 					.from(advertisingCosts)
 					.where(
-						and(
-							eq(advertisingCosts.month, monthNumber),
-							eq(advertisingCosts.year, yearNumber),
-						),
+						and(eq(advertisingCosts.month, monthNumber), eq(advertisingCosts.year, yearNumber)),
 					);
 
 				totalAdCost = Number(costResult[0]?.cost) || 0;
@@ -863,8 +820,7 @@ app.get("/roas", async (c) => {
 		const roas = totalAdCost > 0 ? totalSales / totalAdCost : 0;
 		const costPerLead = totalLeads > 0 ? totalAdCost / totalLeads : 0;
 		const costPerAcquisition = closedLeads > 0 ? totalAdCost / closedLeads : 0;
-		const conversionRate =
-			totalLeads > 0 ? (closedLeads / totalLeads) * 100 : 0;
+		const conversionRate = totalLeads > 0 ? (closedLeads / totalLeads) * 100 : 0;
 
 		return c.json({
 			roas: Number(roas.toFixed(2)),
@@ -883,14 +839,10 @@ app.get("/roas", async (c) => {
 		});
 	} catch (error) {
 		console.error("Error calculating ROAS:", error);
-		const errorMessage =
-			error instanceof Error ? error.message : "Unknown error";
+		const errorMessage = error instanceof Error ? error.message : "Unknown error";
 		const errorStack = error instanceof Error ? error.stack : undefined;
 		console.error("Error details:", errorMessage, errorStack);
-		return c.json(
-			{ error: "Failed to calculate ROAS", details: errorMessage },
-			500,
-		);
+		return c.json({ error: "Failed to calculate ROAS", details: errorMessage }, 500);
 	}
 });
 
@@ -899,12 +851,7 @@ app.get("/leads/growth/monthly", async (c) => {
 	try {
 		const year = c.req.query("year");
 		const dateType = c.req.query("dateType") || "lead"; // Default to 'lead' for backward compatibility
-		console.log(
-			"Monthly growth request for year:",
-			year,
-			"dateType:",
-			dateType,
-		);
+		console.log("Monthly growth request for year:", year, "dateType:", dateType);
 
 		// Sort by month order
 		const monthOrder = [
@@ -975,9 +922,7 @@ app.get("/leads/growth/monthly", async (c) => {
 			});
 		}
 		// Default behavior: aggregate by lead creation date (original logic)
-		const leadConditions = [
-			sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`,
-		];
+		const leadConditions = [sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`];
 
 		if (year) {
 			leadConditions.push(
@@ -1000,9 +945,7 @@ app.get("/leads/growth/monthly", async (c) => {
 		console.log("Leads created data:", leadsCreatedData);
 
 		// Get monthly data for sales closure
-		const salesConditions = [
-			sql`${leads.closedMonth} IS NOT NULL AND ${leads.closedMonth} != ''`,
-		];
+		const salesConditions = [sql`${leads.closedMonth} IS NOT NULL AND ${leads.closedMonth} != ''`];
 
 		if (year) {
 			salesConditions.push(eq(leads.closedYear, year));
@@ -1076,8 +1019,7 @@ app.get("/leads/growth/monthly", async (c) => {
 		});
 	} catch (error) {
 		console.error("Error fetching monthly growth data:", error);
-		const errorMessage =
-			error instanceof Error ? error.message : "Unknown error";
+		const errorMessage = error instanceof Error ? error.message : "Unknown error";
 		const errorStack = error instanceof Error ? error.stack : undefined;
 		console.error("Error details:", errorMessage, errorStack);
 		return c.json(
@@ -1108,9 +1050,7 @@ app.get("/leads/growth/yearly", async (c) => {
 				sales: leads.sales,
 			})
 			.from(leads)
-			.where(
-				sql`${leads.closedYear} IS NOT NULL AND ${leads.closedYear} != ''`,
-			);
+			.where(sql`${leads.closedYear} IS NOT NULL AND ${leads.closedYear} != ''`);
 
 		// Group by year for creation
 		const yearlyCreatedData: Record<string, { totalLeads: number }> = {};
@@ -1125,10 +1065,7 @@ app.get("/leads/growth/yearly", async (c) => {
 		}
 
 		// Group by year for closure
-		const yearlyClosedData: Record<
-			string,
-			{ closedLeads: number; totalSales: number }
-		> = {};
+		const yearlyClosedData: Record<string, { closedLeads: number; totalSales: number }> = {};
 		for (const lead of allLeadsClosed) {
 			const year = lead.closedYear;
 			if (!year) continue;

@@ -110,9 +110,7 @@ export function getTodayYYYYMMDD(): string {
 /**
  * Validates if a date string is in DD/MM/YYYY format
  */
-export function isValidDDMMYYYYFormat(
-	dateStr: string | null | undefined,
-): boolean {
+export function isValidDDMMYYYYFormat(dateStr: string | null | undefined): boolean {
 	if (!dateStr) return false;
 	return /^\d{2}\/\d{2}\/\d{4}$/.test(dateStr.trim());
 }

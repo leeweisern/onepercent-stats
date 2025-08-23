@@ -2,9 +2,7 @@
  * Standardizes date format to DD/MM/YYYY
  * Accepts various input formats and converts them to consistent DD/MM/YYYY
  */
-export function standardizeDate(
-	dateStr: string | null | undefined,
-): string | null {
+export function standardizeDate(dateStr: string | null | undefined): string | null {
 	if (!dateStr || typeof dateStr !== "string") return null;
 
 	// Remove any extra whitespace

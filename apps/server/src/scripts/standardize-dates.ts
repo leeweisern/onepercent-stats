@@ -1,6 +1,6 @@
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { leads } from "../db/schema/leads";
-import { eq } from "drizzle-orm";
 
 // Function to standardize date format to DD/MM/YYYY
 function standardizeDate(dateStr: string | null): string | null {
@@ -59,9 +59,7 @@ export async function standardizeDatesInDatabase(db: any) {
 				console.log(`  Date: ${lead.date} -> ${updates.date}`);
 			}
 			if (updates.closedDate) {
-				console.log(
-					`  Closed Date: ${lead.closedDate} -> ${updates.closedDate}`,
-				);
+				console.log(`  Closed Date: ${lead.closedDate} -> ${updates.closedDate}`);
 			}
 		}
 	}

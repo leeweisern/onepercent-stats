@@ -4,12 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 
 // Helper function to get display text for month filter
 const getMonthDisplayText = (month: string | null) => {
@@ -41,10 +36,7 @@ export interface FilterState {
 	closedDate: string;
 }
 
-export function LeadsFilters({
-	onFiltersChange,
-	totalResults,
-}: LeadsFiltersProps) {
+export function LeadsFilters({ onFiltersChange, totalResults }: LeadsFiltersProps) {
 	const [filters, setFilters] = useState<FilterState>({
 		search: "",
 		month: "",
@@ -113,12 +105,7 @@ export function LeadsFilters({
 					<Filter className="h-5 w-5" />
 					Filters
 					{hasActiveFilters && (
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={clearFilters}
-							className="ml-auto"
-						>
+						<Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto">
 							<X className="mr-1 h-4 w-4" />
 							Clear All
 						</Button>
@@ -147,9 +134,7 @@ export function LeadsFilters({
 						<Label htmlFor="month">Month</Label>
 						<Select
 							value={filters.month || "all"}
-							onValueChange={(value) =>
-								updateFilter("month", value === "all" ? "" : value)
-							}
+							onValueChange={(value) => updateFilter("month", value === "all" ? "" : value)}
 						>
 							<SelectTrigger>
 								<span>{getMonthDisplayText(filters.month)}</span>
@@ -170,9 +155,7 @@ export function LeadsFilters({
 						<Label htmlFor="year">Year</Label>
 						<Select
 							value={filters.year || "all"}
-							onValueChange={(value) =>
-								updateFilter("year", value === "all" ? "" : value)
-							}
+							onValueChange={(value) => updateFilter("year", value === "all" ? "" : value)}
 						>
 							<SelectTrigger>
 								<span>{filters.year || "All years"}</span>
@@ -193,9 +176,7 @@ export function LeadsFilters({
 						<Label htmlFor="platform">Platform</Label>
 						<Select
 							value={filters.platform || "all"}
-							onValueChange={(value) =>
-								updateFilter("platform", value === "all" ? "" : value)
-							}
+							onValueChange={(value) => updateFilter("platform", value === "all" ? "" : value)}
 						>
 							<SelectTrigger>
 								<span>{filters.platform || "All platforms"}</span>
@@ -216,9 +197,7 @@ export function LeadsFilters({
 						<Label htmlFor="status">Status</Label>
 						<Select
 							value={filters.status || "all"}
-							onValueChange={(value) =>
-								updateFilter("status", value === "all" ? "" : value)
-							}
+							onValueChange={(value) => updateFilter("status", value === "all" ? "" : value)}
 						>
 							<SelectTrigger>
 								<span>{filters.status || "All statuses"}</span>
@@ -239,9 +218,7 @@ export function LeadsFilters({
 						<Label htmlFor="trainer">Trainer</Label>
 						<Select
 							value={filters.trainer || "all"}
-							onValueChange={(value) =>
-								updateFilter("trainer", value === "all" ? "" : value)
-							}
+							onValueChange={(value) => updateFilter("trainer", value === "all" ? "" : value)}
 						>
 							<SelectTrigger>
 								<span>{filters.trainer || "All trainers"}</span>
@@ -262,9 +239,7 @@ export function LeadsFilters({
 						<Label htmlFor="closed">Closed Status</Label>
 						<Select
 							value={filters.isClosed || "all"}
-							onValueChange={(value) =>
-								updateFilter("isClosed", value === "all" ? "" : value)
-							}
+							onValueChange={(value) => updateFilter("isClosed", value === "all" ? "" : value)}
 						>
 							<SelectTrigger>
 								<span>
@@ -298,9 +273,7 @@ export function LeadsFilters({
 					<div className="flex items-end space-y-2">
 						<div className="text-muted-foreground text-sm">
 							<span className="font-medium">{totalResults}</span> results found
-							{hasActiveFilters && (
-								<div className="mt-1 text-xs">Filters applied</div>
-							)}
+							{hasActiveFilters && <div className="mt-1 text-xs">Filters applied</div>}
 						</div>
 					</div>
 				</div>

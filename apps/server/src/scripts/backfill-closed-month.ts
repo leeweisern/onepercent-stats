@@ -25,15 +25,10 @@ export async function backfillClosedMonth(env: { DB: any }) {
 			const closedMonth = getMonthFromDate(lead.closedDate || "");
 			const closedYear = getYearFromDate(lead.closedDate || "");
 
-			await db
-				.update(leads)
-				.set({ closedMonth, closedYear })
-				.where(eq(leads.id, lead.id));
+			await db.update(leads).set({ closedMonth, closedYear }).where(eq(leads.id, lead.id));
 
 			updatedCount++;
-			console.log(
-				`Updated lead ${lead.id}: closedMonth=${closedMonth}, closedYear=${closedYear}`,
-			);
+			console.log(`Updated lead ${lead.id}: closedMonth=${closedMonth}, closedYear=${closedYear}`);
 		} catch (error) {
 			console.error(`Error updating lead ${lead.id}:`, error);
 		}

@@ -15,11 +15,7 @@ interface PlatformChartProps {
 	month: string;
 }
 
-export default function PlatformChart({
-	data,
-	totalSales,
-	month,
-}: PlatformChartProps) {
+export default function PlatformChart({ data, totalSales, month }: PlatformChartProps) {
 	const formatCurrency = (amount: number) => {
 		return `RM${amount.toLocaleString()}`;
 	};
@@ -62,10 +58,8 @@ export default function PlatformChart({
 				<div className="space-y-6">
 					{data.map((item, index) => {
 						const colors = getPlatformColor(item.platform);
-						const closedHeight =
-							maxLeads > 0 ? (item.closedLeads / maxLeads) * 200 : 0;
-						const notClosedHeight =
-							maxLeads > 0 ? (item.notClosedLeads / maxLeads) * 200 : 0;
+						const closedHeight = maxLeads > 0 ? (item.closedLeads / maxLeads) * 200 : 0;
+						const notClosedHeight = maxLeads > 0 ? (item.notClosedLeads / maxLeads) * 200 : 0;
 
 						return (
 							<div key={index} className="flex items-end gap-2">
@@ -88,8 +82,7 @@ export default function PlatformChart({
 								<div className="min-w-[100px] text-center">
 									<div className="mb-1 font-medium text-sm">
 										<Badge variant="secondary">
-											{item.platform?.toUpperCase() || "N/A"} ({item.totalLeads}
-											)
+											{item.platform?.toUpperCase() || "N/A"} ({item.totalLeads})
 										</Badge>
 									</div>
 								</div>

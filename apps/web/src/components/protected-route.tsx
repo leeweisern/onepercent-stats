@@ -1,7 +1,7 @@
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router";
 import { authClient } from "@/lib/auth-client";
 import Loader from "./loader";
-import { useEffect, useState } from "react";
 
 interface ProtectedRouteProps {
 	children: React.ReactNode;
