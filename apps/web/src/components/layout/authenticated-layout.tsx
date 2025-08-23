@@ -2,7 +2,7 @@ import { LayoutProvider } from "../../context/layout-provider";
 import { authClient } from "../../lib/auth-client";
 import { getCookie } from "../../lib/cookies";
 import { cn } from "../../lib/utils";
-import { ThemeSwitch } from "../theme-switch";
+
 import {
 	SidebarContent,
 	SidebarFooter,
@@ -59,9 +59,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 					)}
 				>
 					<Header>
-						<div className="ms-auto flex items-center space-x-4">
-							<ThemeSwitch />
-						</div>
+						<div className="ms-auto flex items-center space-x-4"></div>
 					</Header>
 					<Main>{children}</Main>
 				</SidebarInset>

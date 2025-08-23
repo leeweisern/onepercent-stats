@@ -1,7 +1,6 @@
 import {
 	type ColumnDef,
 	getCoreRowModel,
-	getPaginationRowModel,
 	getSortedRowModel,
 	type SortingState,
 	useReactTable,
@@ -12,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTableColumnHeader } from "./data-table/column-header";
 import { DataTable } from "./data-table/data-table";
-import { DataTablePagination } from "./data-table/pagination";
 
 // Helper function to format month display
 const _formatMonthDisplay = (monthString: string) => {
@@ -131,19 +129,25 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 		},
 		{
 			accessorKey: "closedLeads",
-			header: ({ column }) => <DataTableColumnHeader column={column} title="Close" />,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Close" className="justify-center" />
+			),
 			cell: ({ row }) => <div className="text-center font-medium">{row.original.closedLeads}</div>,
 		},
 		{
 			accessorKey: "notClosedLeads",
-			header: ({ column }) => <DataTableColumnHeader column={column} title="No Close" />,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="No Close" className="justify-center" />
+			),
 			cell: ({ row }) => (
 				<div className="text-center font-medium">{row.original.notClosedLeads}</div>
 			),
 		},
 		{
 			accessorKey: "totalSales",
-			header: ({ column }) => <DataTableColumnHeader column={column} title="Total Sales" />,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Total Sales" className="justify-end" />
+			),
 			cell: ({ row }) => (
 				<div className="text-right font-medium text-green-600">
 					{formatCurrency(row.original.totalSales)}
@@ -152,12 +156,11 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 		},
 	];
 
-	const table = useReactTable({
+	const _table = useReactTable({
 		data: data?.breakdown || [],
 		columns,
 		onSortingChange: setSorting,
 		getCoreRowModel: getCoreRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		state: {
 			sorting,
@@ -179,16 +182,13 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 				</CardTitle>{" "}
 			</CardHeader>
 			<CardContent>
-				<div className="space-y-4">
-					<DataTable
-						columns={columns}
-						data={data?.breakdown || []}
-						state={{ sorting }}
-						onSortingChange={setSorting}
-						isLoading={loading}
-					/>
-					{data?.breakdown && data.breakdown.length > 0 && <DataTablePagination table={table} />}
-				</div>
+				<DataTable
+					columns={columns}
+					data={data?.breakdown || []}
+					state={{ sorting }}
+					onSortingChange={setSorting}
+					isLoading={loading}
+				/>
 
 				{/* Totals Row */}
 				{data && !loading && (

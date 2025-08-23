@@ -1,7 +1,6 @@
 import {
 	type ColumnDef,
 	getCoreRowModel,
-	getPaginationRowModel,
 	getSortedRowModel,
 	type SortingState,
 	useReactTable,
@@ -35,7 +34,6 @@ import {
 } from "@/components/ui/select";
 import { DataTableColumnHeader } from "./data-table/column-header";
 import { DataTable } from "./data-table/data-table";
-import { DataTablePagination } from "./data-table/pagination";
 
 interface AdvertisingCost {
 	id: number;
@@ -229,20 +227,17 @@ export default function AdvertisingCostsManagement() {
 			cell: ({ row }) => {
 				const cost = row.original;
 				return (
-					<div className="flex items-center gap-2">
-						<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 font-medium text-white text-xs">
-							{monthNames[cost.month - 1]?.slice(0, 3)}
-						</div>
-						<span className="font-medium">
-							{monthNames[cost.month - 1]} {cost.year}
-						</span>
+					<div className="font-medium">
+						{monthNames[cost.month - 1]} {cost.year}
 					</div>
 				);
 			},
 		},
 		{
 			accessorKey: "cost",
-			header: ({ column }) => <DataTableColumnHeader column={column} title="Cost" />,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Cost" className="justify-end" />
+			),
 			cell: ({ row }) => {
 				const cost = row.original;
 				return (
@@ -254,7 +249,9 @@ export default function AdvertisingCostsManagement() {
 		},
 		{
 			accessorKey: "createdAt",
-			header: ({ column }) => <DataTableColumnHeader column={column} title="Added" />,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Added" className="justify-center" />
+			),
 			cell: ({ row }) => {
 				const createdAt = row.getValue("createdAt") as string;
 				return (
@@ -266,7 +263,7 @@ export default function AdvertisingCostsManagement() {
 		},
 		{
 			id: "actions",
-			header: "Actions",
+			header: () => <div className="text-center">Actions</div>,
 			cell: ({ row }) => {
 				const cost = row.original;
 				return (
@@ -298,12 +295,11 @@ export default function AdvertisingCostsManagement() {
 		},
 	];
 
-	const table = useReactTable({
+	const _table = useReactTable({
 		data: costs,
 		columns,
 		onSortingChange: setSorting,
 		getCoreRowModel: getCoreRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		state: {
 			sorting,
@@ -447,16 +443,13 @@ export default function AdvertisingCostsManagement() {
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="space-y-4">
-						<DataTable
-							columns={columns}
-							data={costs}
-							state={{ sorting }}
-							onSortingChange={setSorting}
-							isLoading={loading}
-						/>
-						{costs.length > 0 && <DataTablePagination table={table} />}
-					</div>
+					<DataTable
+						columns={columns}
+						data={costs}
+						state={{ sorting }}
+						onSortingChange={setSorting}
+						isLoading={loading}
+					/>
 				</CardContent>
 			</Card>
 

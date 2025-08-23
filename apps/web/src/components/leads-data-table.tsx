@@ -18,7 +18,6 @@ import { DataTablePagination } from "./data-table/pagination";
 import { DataTableToolbar } from "./data-table/toolbar";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Checkbox } from "./ui/checkbox";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -51,28 +50,6 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
 	const columns: ColumnDef<Lead>[] = [
-		{
-			id: "select",
-			header: ({ table }) => (
-				<Checkbox
-					checked={
-						table.getIsAllPageRowsSelected() ||
-						(table.getIsSomePageRowsSelected() && "indeterminate")
-					}
-					onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-					aria-label="Select all"
-				/>
-			),
-			cell: ({ row }) => (
-				<Checkbox
-					checked={row.getIsSelected()}
-					onCheckedChange={(value) => row.toggleSelected(!!value)}
-					aria-label="Select row"
-				/>
-			),
-			enableSorting: false,
-			enableHiding: false,
-		},
 		{
 			accessorKey: "name",
 			header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
