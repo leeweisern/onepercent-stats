@@ -55,7 +55,9 @@ try {
 
 		if (migrationFiles.length > 0) {
 			console.log(`📋 Found ${migrationFiles.length} migration file(s):`);
-			migrationFiles.forEach((file) => console.log(`   - ${file}`));
+			migrationFiles.forEach((file) => {
+				console.log(`   - ${file}`);
+			});
 
 			console.log("🔄 Applying migrations to remote database...");
 			execSync(`wrangler d1 migrations apply ${DB_NAME} --remote`, {

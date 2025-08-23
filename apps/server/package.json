@@ -8,7 +8,7 @@
 		"dev": "wrangler dev --port=3000",
 		"deploy": "wrangler deploy",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate:local": "wrangler d1 migrations apply onepercent-stats-new --local",
+		"db:migrate:local": "drizzle-kit push --config=drizzle.local.config.ts",
 		"db:migrate:remote": "wrangler d1 migrations apply onepercent-stats-new --remote",
 		"db:studio": "drizzle-kit studio",
 		"db:sync": "bun run ./scripts/sync-local-db.ts"
@@ -27,6 +27,8 @@
 		"tsdown": "^0.12.9",
 		"typescript": "^5.8.2",
 		"drizzle-kit": "^0.31.2",
-		"wrangler": "^4.27.0"
+		"wrangler": "^4.27.0",
+		"glob": "^11.0.0",
+		"@types/glob": "^8.1.0"
 	}
 }

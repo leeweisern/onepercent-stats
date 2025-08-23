@@ -33,7 +33,7 @@ const _formatMonthDisplay = (monthString: string) => {
 			"November",
 			"December",
 		];
-		const monthIndex = Number.parseInt(month) - 1;
+		const monthIndex = Number.parseInt(month, 10) - 1;
 		const monthName = monthNames[monthIndex] || month;
 		return `${monthName} ${year}`;
 	}
@@ -129,7 +129,7 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 				{loading ? (
 					<div className="space-y-2 p-6">
 						{[...Array(4)].map((_, i) => (
-							<Skeleton key={i} className="h-12 w-full" />
+							<Skeleton key={`platform-skeleton-${i}`} className="h-12 w-full" />
 						))}
 					</div>
 				) : (

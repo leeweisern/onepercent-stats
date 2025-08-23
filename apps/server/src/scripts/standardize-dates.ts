@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { leads } from "../db/schema/leads";
 
 // Function to standardize date format to DD/MM/YYYY

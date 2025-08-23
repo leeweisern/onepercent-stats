@@ -30,6 +30,26 @@ interface MonthlyGrowthChartProps {
 	selectedYear?: string;
 }
 
+const formatCurrency = (amount: number) => {
+	return `RM ${amount.toLocaleString()}`;
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+	if (active && payload && payload.length) {
+		return (
+			<div className="rounded-lg border bg-white p-3 shadow-lg">
+				<p className="font-medium">{label}</p>
+				{payload.map((entry: any, index: number) => (
+					<p key={index} style={{ color: entry.color }}>
+						{entry.name}: {entry.name === "Total Sales" ? formatCurrency(entry.value) : entry.value}
+					</p>
+				))}
+			</div>
+		);
+	}
+	return null;
+};
+
 export default function MonthlyGrowthChart({ selectedYear }: MonthlyGrowthChartProps) {
 	const [growthData, setGrowthData] = useState<MonthlyGrowthResponse | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -62,27 +82,6 @@ export default function MonthlyGrowthChart({ selectedYear }: MonthlyGrowthChartP
 	useEffect(() => {
 		fetchGrowthData();
 	}, [fetchGrowthData]);
-
-	const formatCurrency = (amount: number) => {
-		return `RM ${amount.toLocaleString()}`;
-	};
-
-	const CustomTooltip = ({ active, payload, label }: any) => {
-		if (active && payload && payload.length) {
-			return (
-				<div className="rounded-lg border bg-white p-3 shadow-lg">
-					<p className="font-medium">{label}</p>
-					{payload.map((entry: any, index: number) => (
-						<p key={index} style={{ color: entry.color }}>
-							{entry.name}:{" "}
-							{entry.name === "Total Sales" ? formatCurrency(entry.value) : entry.value}
-						</p>
-					))}
-				</div>
-			);
-		}
-		return null;
-	};
 
 	if (loading) {
 		return (

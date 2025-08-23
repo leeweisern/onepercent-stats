@@ -138,7 +138,7 @@ export default function AdminPage() {
 
 	useEffect(() => {
 		fetchUsers();
-	}, []);
+	}, [fetchUsers]);
 
 	const content = () => {
 		if (loading) {

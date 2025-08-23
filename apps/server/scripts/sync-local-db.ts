@@ -1,9 +1,13 @@
 #!/usr/bin/env bun
 
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { spawn } from "bun";
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
-import { tmpdir } from "os";
-import { join } from "path";
+import { count } from "drizzle-orm";
+import * as authSchema from "../db/schema/auth";
+import * as leadsSchema from "../db/schema/leads";
+import { db } from "../db/script-db";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -28,7 +32,8 @@ const workDir = tmpdir();
 const remoteExportPath = join(workDir, "remote-export.sql");
 const remoteFixedPath = join(workDir, "remote-fixed.sql");
 
-console.log("🔄 Starting database sync...");
+console.log("🔄 Starting database data sync...");
+console.log("   (Schema migrations should be run separately with 'bun run db:migrate:local')");
 console.log(`📁 Working directory: ${workDir}`);
 
 async function runCommand(
@@ -81,13 +86,13 @@ function sanitizeSqlFile() {
 
 	let sqlContent = readFileSync(remoteExportPath, "utf-8");
 
-	// Remove BEGIN TRANSACTION and COMMIT statements
+	// Remove transaction statements and schema definitions
 	sqlContent = sqlContent.replace(/^BEGIN TRANSACTION;?\s*$/gm, "").replace(/^COMMIT;?\s*$/gm, "");
 
 	// Quote ISO timestamps (YYYY-MM-DDTHH:mm:ss.sssZ)
 	sqlContent = sqlContent.replace(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/g, "'$1'");
 
-	// Extract only INSERT statements (skip CREATE TABLE, CREATE INDEX, etc.)
+	// Extract only INSERT statements
 	const lines = sqlContent.split("\n");
 	const insertLines = lines.filter(
 		(line) =>
@@ -97,58 +102,24 @@ function sanitizeSqlFile() {
 			!line.includes("sqlite_sequence"),
 	);
 
-	// Add PRAGMA to defer foreign keys and disable them temporarily
-	const finalContent = [
-		"PRAGMA foreign_keys=OFF;",
-		"PRAGMA defer_foreign_keys=TRUE;",
-		...insertLines,
-		"PRAGMA foreign_keys=ON;",
-	].join("\n");
+	const finalContent = insertLines.join("\n");
 
 	writeFileSync(remoteFixedPath, finalContent);
 	console.log(`✅ SQL file sanitized (${insertLines.length} INSERT statements extracted)`);
 }
 
-async function applyLocalMigrations() {
-	console.log("🔄 Applying local migrations...");
-
-	try {
-		await runCommand("wrangler", ["d1", "migrations", "apply", DATABASE_NAME, "--local"]);
-
-		console.log("✅ Local migrations applied");
-	} catch (error) {
-		console.error("❌ Failed to apply migrations:", error);
-		process.exit(1);
-	}
-}
-
 async function clearLocalData() {
 	console.log("🗑️  Clearing existing local data...");
-
-	const clearCommands = [
-		"DELETE FROM account;",
-		"DELETE FROM session;",
-		"DELETE FROM verification;",
-		"DELETE FROM user;",
-		"DELETE FROM leads;",
-		"DELETE FROM advertising_costs;",
-	];
-
 	try {
-		for (const command of clearCommands) {
-			await runCommand("wrangler", [
-				"d1",
-				"execute",
-				DATABASE_NAME,
-				"--local",
-				`--command=${command}`,
-			]);
-		}
-
+		await db.delete(leadsSchema.advertisingCosts);
+		await db.delete(leadsSchema.leads);
+		await db.delete(authSchema.session);
+		await db.delete(authSchema.account);
+		await db.delete(authSchema.verification);
+		await db.delete(authSchema.user);
 		console.log("✅ Local data cleared");
 	} catch (error) {
 		console.error("❌ Failed to clear local data:", error);
-		// Don't exit here - the tables might be empty already
 	}
 }
 
@@ -161,18 +132,16 @@ async function importToLocalDatabase() {
 	}
 
 	try {
-		await runCommand("wrangler", [
-			"d1",
-			"execute",
-			DATABASE_NAME,
-			"--local",
-			`--file=${remoteFixedPath}`,
-		]);
-
+		const sql = readFileSync(remoteFixedPath, "utf-8");
+		const statements = sql.split(";").filter((s) => s.trim().length > 0);
+		db.transaction(() => {
+			for (const statement of statements) {
+				db.run(`${statement};`);
+			}
+		});
 		console.log("✅ Data imported to local database");
 	} catch (error) {
 		console.error("❌ Failed to import data:", error);
-		console.error("   This might be due to foreign key constraints.");
 		console.error("   The sanitized SQL file is available at:", remoteFixedPath);
 		process.exit(1);
 	}
@@ -181,33 +150,19 @@ async function importToLocalDatabase() {
 async function verifySync() {
 	console.log("🔍 Verifying sync...");
 
-	const countQuery =
-		"SELECT 'leads' as table_name, COUNT(*) as count FROM leads UNION ALL SELECT 'advertising_costs', COUNT(*) FROM advertising_costs UNION ALL SELECT 'user', COUNT(*) FROM user UNION ALL SELECT 'account', COUNT(*) FROM account";
-
 	try {
-		// Get remote counts
-		const remoteOutput = await runCommand(
-			"wrangler",
-			["d1", "execute", DATABASE_NAME, "--remote", `--command=${countQuery}`],
-			{
-				CLOUDFLARE_API_TOKEN: API_TOKEN,
-			},
-		);
-
 		// Get local counts
-		const localOutput = await runCommand("wrangler", [
-			"d1",
-			"execute",
-			DATABASE_NAME,
-			"--local",
-			`--command=${countQuery}`,
+		const localLeads = await db.select({ count: count() }).from(leadsSchema.leads);
+		const localCosts = await db.select({ count: count() }).from(leadsSchema.advertisingCosts);
+		const localUsers = await db.select({ count: count() }).from(authSchema.user);
+
+		console.log("\n📊 Local Database Record Counts:");
+		console.table([
+			{ table: "leads", count: localLeads[0]?.count || 0 },
+			{ table: "advertising_costs", count: localCosts[0]?.count || 0 },
+			{ table: "user", count: localUsers[0]?.count || 0 },
 		]);
 
-		console.log("\n📊 Database Record Counts:");
-		console.log("=".repeat(50));
-
-		// Simple verification - just show that both commands succeeded
-		console.log("✅ Remote and local databases queried successfully");
 		console.log("✅ Sync verification completed");
 	} catch (error) {
 		console.error("❌ Failed to verify sync:", error);
@@ -234,7 +189,6 @@ function cleanup() {
 
 async function main() {
 	try {
-		// Phase 1: Export and sanitize
 		await exportRemoteDatabase();
 		sanitizeSqlFile();
 
@@ -244,13 +198,11 @@ async function main() {
 			return;
 		}
 
-		// Phase 2: Import to local
-		await applyLocalMigrations();
 		await clearLocalData();
 		await importToLocalDatabase();
 		await verifySync();
 
-		console.log("\n🎉 Database sync completed successfully!");
+		console.log("\n🎉 Database data sync completed successfully!");
 	} catch (error) {
 		console.error("💥 Sync failed:", error);
 		process.exit(1);

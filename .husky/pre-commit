@@ -1,0 +1,2 @@
+bunx biome check --write --unsafe . || true
+git add -A

@@ -8,7 +8,7 @@ const csvFile = fs.readFileSync(csvFilePath, "utf8");
 
 const cleanData = (row: any) => {
 	const salesString = row.Sales || "0";
-	const sales = Number.parseInt(salesString.replace(/[^0-9.-]+/g, "")) || 0;
+	const sales = Number.parseInt(salesString.replace(/[^0-9.-]+/g, ""), 10) || 0;
 
 	return {
 		month: row.Month || null,

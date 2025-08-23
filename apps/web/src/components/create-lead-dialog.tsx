@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,17 @@ interface Options {
 }
 
 export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialogProps) {
+	const nameId = useId();
+	const phoneId = useId();
+	const platformId = useId();
+	const customPlatformId = useId();
+	const statusId = useId();
+	const salesId = useId();
+	const dateId = useId();
+	const closedDateId = useId();
+	const trainerId = useId();
+	const remarkId = useId();
+
 	const [name, setName] = useState("");
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [platform, setPlatform] = useState("");
@@ -92,7 +103,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 	// Auto-update closed and status when sales changes
 	useEffect(() => {
-		const salesValue = sales ? Number.parseInt(sales) : 0;
+		const salesValue = sales ? Number.parseInt(sales, 10) : 0;
 
 		if (salesValue > 0) {
 			setIsClosed(true);
@@ -126,7 +137,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 				platform: isCustomPlatform ? customPlatform.trim() : platform,
 				status: status,
 				isClosed: isClosed,
-				sales: sales ? Number.parseInt(sales) : 0,
+				sales: sales ? Number.parseInt(sales, 10) : 0,
 				date: convertFromDateInputFormat(date),
 				month: month,
 				closedDate: convertFromDateInputFormat(closedDate),
@@ -155,9 +166,9 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 					{/* Basic Information */}
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
-							<Label htmlFor="name">Name *</Label>
+							<Label htmlFor={nameId}>Name *</Label>
 							<Input
-								id="name"
+								id={nameId}
 								value={name}
 								onChange={(e) => setName(e.target.value)}
 								placeholder="Enter name"
@@ -165,9 +176,9 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 							/>
 						</div>
 						<div className="space-y-2">
-							<Label htmlFor="phone">Phone Number</Label>
+							<Label htmlFor={phoneId}>Phone Number</Label>
 							<Input
-								id="phone"
+								id={phoneId}
 								value={phoneNumber}
 								onChange={(e) => setPhoneNumber(e.target.value)}
 								placeholder="60161111111"
@@ -179,7 +190,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
 							<div className="flex h-5 items-center justify-between">
-								<Label htmlFor="platform">Platform *</Label>
+								<Label htmlFor={platformId}>Platform *</Label>
 								<Button
 									type="button"
 									variant="ghost"
@@ -199,7 +210,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 							</div>
 							{isCustomPlatform ? (
 								<Input
-									id="custom-platform"
+									id={customPlatformId}
 									value={customPlatform}
 									onChange={(e) => setCustomPlatform(e.target.value)}
 									placeholder="Enter new platform name"
@@ -221,7 +232,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 						</div>
 						<div className="space-y-2">
 							<div className="flex h-5 items-center">
-								<Label htmlFor="status">Status</Label>
+								<Label htmlFor={statusId}>Status</Label>
 							</div>
 							<Select value={status} onValueChange={setStatus}>
 								<SelectTrigger>
@@ -240,9 +251,9 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 					{/* Sales */}
 					<div className="space-y-2">
-						<Label htmlFor="sales">Sales (RM)</Label>
+						<Label htmlFor={salesId}>Sales (RM)</Label>
 						<Input
-							id="sales"
+							id={salesId}
 							type="number"
 							value={sales}
 							onChange={(e) => setSales(e.target.value)}
@@ -253,15 +264,15 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 					{/* Date */}
 					<div className="space-y-2">
-						<Label htmlFor="date">Date *</Label>
-						<Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+						<Label htmlFor={dateId}>Date *</Label>
+						<Input id={dateId} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
 					</div>
 
 					{/* Closed Date */}
 					<div className="space-y-2">
-						<Label htmlFor="closedDate">Closed Date</Label>
+						<Label htmlFor={closedDateId}>Closed Date</Label>
 						<Input
-							id="closedDate"
+							id={closedDateId}
 							type="date"
 							value={closedDate}
 							onChange={(e) => setClosedDate(e.target.value)}
@@ -270,7 +281,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 					{/* Trainer */}
 					<div className="space-y-2">
-						<Label htmlFor="trainer">Trainer Handle</Label>
+						<Label htmlFor={trainerId}>Trainer Handle</Label>
 						<Select value={trainerHandle} onValueChange={setTrainerHandle}>
 							<SelectTrigger>
 								<span>{trainerHandle || "Select trainer"}</span>
@@ -287,9 +298,9 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 					{/* Remark */}
 					<div className="space-y-2">
-						<Label htmlFor="remark">Remark</Label>
+						<Label htmlFor={remarkId}>Remark</Label>
 						<Textarea
-							id="remark"
+							id={remarkId}
 							value={remark}
 							onChange={(e) => setRemark(e.target.value)}
 							placeholder="Enter remarks"

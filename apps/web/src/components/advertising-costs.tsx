@@ -1,5 +1,5 @@
 import { DollarSign } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +53,7 @@ const monthNames = [
 ];
 
 export default function AdvertisingCosts({ selectedMonth, selectedYear }: AdvertisingCostsProps) {
+	const skeletonId = useId();
 	const [costs, setCosts] = useState<AdvertisingCost[]>([]);
 	const [_leads, setLeads] = useState<Lead[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -75,9 +76,35 @@ export default function AdvertisingCosts({ selectedMonth, selectedYear }: Advert
 			setCosts(costsData);
 			setLeads(leadsData);
 
-			// Filter and calculate totals based on selected filters
-			const filteredCosts = filterCosts(costsData);
-			const filteredLeads = filterLeads(leadsData);
+			// Filter costs
+			let filteredCosts = [...costsData];
+			if (selectedMonth && selectedMonth !== "") {
+				const monthIndex = monthNames.indexOf(selectedMonth) + 1;
+				if (monthIndex > 0) {
+					filteredCosts = filteredCosts.filter((cost) => cost.month === monthIndex);
+				}
+			}
+			if (selectedYear && selectedYear !== "") {
+				const year = Number.parseInt(selectedYear, 10);
+				filteredCosts = filteredCosts.filter((cost) => cost.year === year);
+			}
+
+			// Filter leads
+			let filteredLeads = [...leadsData];
+			if (selectedMonth && selectedMonth !== "") {
+				filteredLeads = filteredLeads.filter((lead) => lead.month === selectedMonth);
+			}
+			if (selectedYear && selectedYear !== "") {
+				filteredLeads = filteredLeads.filter((lead) => {
+					if (!lead.date) return false;
+					const parts = lead.date.split("/");
+					if (parts.length === 3) {
+						const year = parts[2];
+						return year === selectedYear;
+					}
+					return false;
+				});
+			}
 
 			const total = filteredCosts.reduce((sum, cost) => sum + cost.cost, 0);
 			const leadCount = filteredLeads.length;
@@ -109,33 +136,8 @@ export default function AdvertisingCosts({ selectedMonth, selectedYear }: Advert
 
 		// Filter by year if selected
 		if (selectedYear && selectedYear !== "") {
-			const year = Number.parseInt(selectedYear);
+			const year = Number.parseInt(selectedYear, 10);
 			filtered = filtered.filter((cost) => cost.year === year);
-		}
-
-		return filtered;
-	};
-
-	const filterLeads = (allLeads: Lead[]) => {
-		let filtered = [...allLeads];
-
-		// Filter by month if selected (leads use month name like "May")
-		if (selectedMonth && selectedMonth !== "") {
-			filtered = filtered.filter((lead) => lead.month === selectedMonth);
-		}
-
-		// Filter by year if selected (extract year from date field DD/MM/YYYY)
-		if (selectedYear && selectedYear !== "") {
-			filtered = filtered.filter((lead) => {
-				if (!lead.date) return false;
-				// Parse DD/MM/YYYY format to extract year
-				const parts = lead.date.split("/");
-				if (parts.length === 3) {
-					const year = parts[2];
-					return year === selectedYear;
-				}
-				return false;
-			});
 		}
 
 		return filtered;
@@ -177,7 +179,7 @@ export default function AdvertisingCosts({ selectedMonth, selectedYear }: Advert
 				{loading ? (
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 						{[...Array(3)].map((_, i) => (
-							<Skeleton key={i} className="h-24 w-full" />
+							<Skeleton key={`${skeletonId}-${i}`} className="h-24 w-full" />
 						))}
 					</div>
 				) : (

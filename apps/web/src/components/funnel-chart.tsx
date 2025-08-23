@@ -23,7 +23,7 @@ const _formatMonthDisplay = (monthString: string) => {
 		"November",
 		"December",
 	];
-	const monthIndex = Number.parseInt(month) - 1;
+	const monthIndex = Number.parseInt(month, 10) - 1;
 	const monthName = monthNames[monthIndex] || month;
 	return `${monthName} ${year}`;
 };
@@ -148,7 +148,7 @@ export default function FunnelChart({
 				<CardContent>
 					<div className="space-y-4">
 						{[...Array(3)].map((_, i) => (
-							<Skeleton key={i} className="h-16 w-full" />
+							<Skeleton key={`funnel-skeleton-${i}`} className="h-16 w-full" />
 						))}
 					</div>
 				</CardContent>
@@ -295,7 +295,7 @@ export default function FunnelChart({
 									</div>
 									{stage.totalSales > 0 && (
 										<div className="mt-1 text-green-600 text-xs">
-											{formatCurrency(Number.parseInt(stage.totalSales))}
+											{formatCurrency(Number.parseInt(stage.totalSales, 10))}
 										</div>
 									)}
 								</div>

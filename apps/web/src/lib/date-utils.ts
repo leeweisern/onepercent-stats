@@ -23,7 +23,7 @@ export function convertFromDateInputFormat(dateString: string): string {
 /**
  * Converts from database format (DD/MM/YYYY) to HTML date input format (YYYY-MM-DD)
  */
-export function convertToDateInputFormat(dateString: string | null): string {
+export function convertToDateInputFormat(dateString: string | null | undefined): string {
 	if (!dateString) return "";
 
 	// Parse DD/MM/YYYY format and convert to YYYY-MM-DD

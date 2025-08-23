@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function NewLead() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const firstNameId = useId();
+	const lastNameId = useId();
+	const emailId = useId();
+	const phoneId = useId();
+	const notesId = useId();
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -57,23 +62,23 @@ export default function NewLead() {
 						<form onSubmit={handleSubmit} className="space-y-4">
 							<div className="grid grid-cols-2 gap-4">
 								<div className="space-y-2">
-									<Label htmlFor="firstName">First Name</Label>
-									<Input id="firstName" name="firstName" required />
+									<Label htmlFor={firstNameId}>First Name</Label>
+									<Input id={firstNameId} name="firstName" required />
 								</div>
 								<div className="space-y-2">
-									<Label htmlFor="lastName">Last Name</Label>
-									<Input id="lastName" name="lastName" required />
+									<Label htmlFor={lastNameId}>Last Name</Label>
+									<Input id={lastNameId} name="lastName" required />
 								</div>
 							</div>
 
 							<div className="space-y-2">
-								<Label htmlFor="email">Email</Label>
-								<Input id="email" name="email" type="email" required />
+								<Label htmlFor={emailId}>Email</Label>
+								<Input id={emailId} name="email" type="email" required />
 							</div>
 
 							<div className="space-y-2">
-								<Label htmlFor="phone">Phone</Label>
-								<Input id="phone" name="phone" type="tel" />
+								<Label htmlFor={phoneId}>Phone</Label>
+								<Input id={phoneId} name="phone" type="tel" />
 							</div>
 
 							<div className="space-y-2">
@@ -109,8 +114,8 @@ export default function NewLead() {
 							</div>
 
 							<div className="space-y-2">
-								<Label htmlFor="notes">Notes</Label>
-								<Textarea id="notes" name="notes" rows={3} />
+								<Label htmlFor={notesId}>Notes</Label>
+								<Textarea id={notesId} name="notes" rows={3} />
 							</div>
 
 							<Button type="submit" className="w-full" disabled={isSubmitting}>

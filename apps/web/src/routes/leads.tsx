@@ -163,9 +163,9 @@ export default function Leads() {
 				const parts = lead.closedDate.split("/");
 				if (parts.length === 3) {
 					const leadDate = new Date(
-						Number.parseInt(parts[2]),
-						Number.parseInt(parts[1]) - 1,
-						Number.parseInt(parts[0]),
+						Number.parseInt(parts[2], 10),
+						Number.parseInt(parts[1], 10) - 1,
+						Number.parseInt(parts[0], 10),
 					);
 					// Parse YYYY-MM-DD format from filter input
 					const filterDate = new Date(filters.closedDate);
@@ -436,7 +436,7 @@ export default function Leads() {
 										{loading ? (
 											<div className="space-y-2 p-6">
 												{[...Array(5)].map((_, i) => (
-													<Skeleton key={i} className="h-12 w-full" />
+													<Skeleton key={`leads-skeleton-${i}`} className="h-12 w-full" />
 												))}
 											</div>
 										) : (

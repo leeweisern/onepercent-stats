@@ -107,8 +107,8 @@ export default function AdvertisingCostsManagement() {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({
-					month: Number.parseInt(formData.month),
-					year: Number.parseInt(formData.year),
+					month: Number.parseInt(formData.month, 10),
+					year: Number.parseInt(formData.year, 10),
 					cost: Number.parseFloat(formData.cost),
 					currency: formData.currency,
 				}),
@@ -140,8 +140,8 @@ export default function AdvertisingCostsManagement() {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({
-					month: Number.parseInt(formData.month),
-					year: Number.parseInt(formData.year),
+					month: Number.parseInt(formData.month, 10),
+					year: Number.parseInt(formData.year, 10),
 					cost: Number.parseFloat(formData.cost),
 					currency: formData.currency,
 				}),
@@ -262,7 +262,7 @@ export default function AdvertisingCostsManagement() {
 											>
 												<SelectTrigger>
 													{formData.month
-														? monthNames[Number.parseInt(formData.month) - 1]
+														? monthNames[Number.parseInt(formData.month, 10) - 1]
 														: "Select month"}
 												</SelectTrigger>{" "}
 												<SelectContent>
@@ -338,7 +338,7 @@ export default function AdvertisingCostsManagement() {
 					{loading ? (
 						<div className="space-y-2 p-6">
 							{[...Array(5)].map((_, i) => (
-								<Skeleton key={i} className="h-12 w-full" />
+								<Skeleton key={`skeleton-${i}`} className="h-12 w-full" />
 							))}
 						</div>
 					) : (
@@ -424,7 +424,7 @@ export default function AdvertisingCostsManagement() {
 								>
 									<SelectTrigger>
 										{formData.month
-											? monthNames[Number.parseInt(formData.month) - 1]
+											? monthNames[Number.parseInt(formData.month, 10) - 1]
 											: "Select month"}
 									</SelectTrigger>
 									<SelectContent>

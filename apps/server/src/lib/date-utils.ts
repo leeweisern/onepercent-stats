@@ -24,7 +24,7 @@ export function standardizeDate(dateStr: string | null | undefined): string | nu
 	const monthNum = parseInt(month, 10);
 	const yearNum = parseInt(year, 10);
 
-	if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) return null;
+	if (Number.isNaN(dayNum) || Number.isNaN(monthNum) || Number.isNaN(yearNum)) return null;
 	if (dayNum < 1 || dayNum > 31) return null;
 	if (monthNum < 1 || monthNum > 12) return null;
 	if (yearNum < 1900 || yearNum > 2100) return null;
@@ -64,3 +64,76 @@ export function parseDDMMYYYY(dateStr: string): Date | null {
 	const [day, month, year] = dateStr.split("/").map((num) => parseInt(num, 10));
 	return new Date(year, month - 1, day);
 }
+
+/**
+ * Extracts the month name from a date string.
+ * Handles DD/MM/YYYY and YYYY-MM-DD formats.
+ */
+export const getMonthFromDate = (dateString: string): string => {
+	if (!dateString) return "";
+
+	// Handle DD/MM/YYYY format
+	const parts = dateString.split("/");
+	if (parts.length === 3) {
+		const monthIndex = Number.parseInt(parts[1] || "0", 10) - 1;
+		const monthNames = [
+			"January",
+			"February",
+			"March",
+			"April",
+			"May",
+			"June",
+			"July",
+			"August",
+			"September",
+			"October",
+			"November",
+			"December",
+		];
+		return monthNames[monthIndex] || "";
+	}
+
+	// Handle YYYY-MM-DD format
+	const date = new Date(dateString);
+	if (!Number.isNaN(date.getTime())) {
+		const monthNames = [
+			"January",
+			"February",
+			"March",
+			"April",
+			"May",
+			"June",
+			"July",
+			"August",
+			"September",
+			"October",
+			"November",
+			"December",
+		];
+		return monthNames[date.getMonth()] || "";
+	}
+
+	return "";
+};
+
+/**
+ * Extracts the year from a date string.
+ * Handles DD/MM/YYYY and YYYY-MM-DD formats.
+ */
+export const getYearFromDate = (dateString: string): string => {
+	if (!dateString) return "";
+
+	// Handle DD/MM/YYYY format
+	const parts = dateString.split("/");
+	if (parts.length === 3) {
+		return parts[2] || "";
+	}
+
+	// Handle YYYY-MM-DD format
+	const date = new Date(dateString);
+	if (!Number.isNaN(date.getTime())) {
+		return date.getFullYear().toString();
+	}
+
+	return "";
+};
