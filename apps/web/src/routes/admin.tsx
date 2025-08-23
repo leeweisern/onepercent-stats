@@ -46,9 +46,6 @@ interface User {
 }
 
 export default function AdminPage() {
-	const _nameInputId = useId();
-	const _emailInputId = useId();
-	const _passwordInputId = useId();
 	const [users, setUsers] = useState<User[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -253,6 +250,9 @@ function CreateUserDialog({
 	onOpenChange: (open: boolean) => void;
 	onCreateUser: (userData: { name: string; email: string; password: string; role: string }) => void;
 }) {
+	const nameInputId = useId();
+	const emailInputId = useId();
+	const passwordInputId = useId();
 	const [formData, setFormData] = useState({
 		name: "",
 		email: "",
