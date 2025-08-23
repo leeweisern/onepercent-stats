@@ -1,12 +1,4 @@
-import {
-	BarChart3,
-	LayoutDashboard,
-	Settings,
-	Shield,
-	TrendingUp,
-	UserPlus,
-	Users,
-} from "lucide-react";
+import { BarChart3, Shield, TrendingUp, UserPlus, Users } from "lucide-react";
 import type { SidebarData } from "../types";
 
 export const sidebarData: SidebarData = {
@@ -15,22 +7,10 @@ export const sidebarData: SidebarData = {
 		name: "admin@onepercent.com",
 		logo: "/One Percent Fitness Favicon.svg",
 	},
-	teams: [
-		{
-			name: "OnePercent Stats",
-			logo: TrendingUp,
-			plan: "Analytics Dashboard",
-		},
-	],
 	navGroups: [
 		{
 			title: "Analytics",
 			items: [
-				{
-					title: "Dashboard",
-					url: "/",
-					icon: LayoutDashboard,
-				},
 				{
 					title: "Analytics",
 					url: "/analytics",
@@ -60,16 +40,6 @@ export const sidebarData: SidebarData = {
 					title: "Admin",
 					url: "/admin",
 					icon: Shield,
-				},
-			],
-		},
-		{
-			title: "Settings",
-			items: [
-				{
-					title: "Login",
-					url: "/login",
-					icon: Settings,
 				},
 			],
 		},

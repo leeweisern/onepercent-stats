@@ -10,7 +10,7 @@ import {
 	useReactTable,
 	type VisibilityState,
 } from "@tanstack/react-table";
-import { Edit, MoreHorizontal, Phone, Trash2 } from "lucide-react";
+import { CheckCircle, Edit, MoreHorizontal, Phone, Trash2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { DataTableColumnHeader } from "./data-table/column-header";
 import { DataTable } from "./data-table/data-table";
@@ -45,7 +45,7 @@ export interface Lead {
 }
 
 export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: boolean }) {
-	const [sorting, setSorting] = useState<SortingState>([]);
+	const [sorting, setSorting] = useState<SortingState>([{ id: "date", desc: true }]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -138,6 +138,43 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 			},
 		},
 		{
+			accessorKey: "isClosed",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Closed" />,
+			cell: ({ row }) => {
+				const isClosed = row.getValue("isClosed") as boolean;
+				return (
+					<div className="flex w-[70px] items-center">
+						{isClosed ? (
+							<Badge variant="default" className="bg-green-100 text-green-800">
+								<CheckCircle className="mr-1 h-3 w-3" />
+								Closed
+							</Badge>
+						) : (
+							<Badge variant="secondary">
+								<XCircle className="mr-1 h-3 w-3" />
+								Open
+							</Badge>
+						)}
+					</div>
+				);
+			},
+			filterFn: (row, id, value) => {
+				const isClosed = row.getValue(id);
+				return value.includes(String(isClosed));
+			},
+		},
+		{
+			accessorKey: "trainerHandle",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Trainer" />,
+			cell: ({ row }) => {
+				const trainer = row.getValue("trainerHandle") as string;
+				return trainer ? <Badge variant="outline">{trainer}</Badge> : null;
+			},
+			filterFn: (row, id, value) => {
+				return value.includes(row.getValue(id));
+			},
+		},
+		{
 			id: "actions",
 			cell: ({ row }) => {
 				return (
@@ -175,6 +212,18 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
+		globalFilterFn: (row, _columnId, filterValue) => {
+			const searchValue = filterValue.toLowerCase();
+			const name = String(row.getValue("name") || "").toLowerCase();
+			const phone = String(row.getValue("phoneNumber") || "").toLowerCase();
+			return name.includes(searchValue) || phone.includes(searchValue);
+		},
+		initialState: {
+			pagination: {
+				pageSize: 20,
+			},
+			sorting: [{ id: "date", desc: true }],
+		},
 		state: {
 			sorting,
 			columnFilters,
@@ -183,24 +232,60 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 		},
 	});
 
+	// Get unique values for filters
+	const platforms = Array.from(new Set(data.map((lead) => lead.platform).filter(Boolean))).sort();
+	const statuses = Array.from(new Set(data.map((lead) => lead.status).filter(Boolean))).sort();
+	const trainers = Array.from(
+		new Set(data.map((lead) => lead.trainerHandle).filter(Boolean)),
+	).sort();
+
+	const filterOptions = [
+		{
+			columnId: "isClosed",
+			title: "Status",
+			options: [
+				{ label: "Closed", value: "true", icon: CheckCircle },
+				{ label: "Open", value: "false", icon: XCircle },
+			],
+		},
+		{
+			columnId: "platform",
+			title: "Platform",
+			options: platforms.map((platform) => ({
+				label: platform,
+				value: platform,
+			})),
+		},
+		{
+			columnId: "status",
+			title: "Lead Status",
+			options: statuses.map((status) => ({
+				label: status,
+				value: status,
+			})),
+		},
+		...(trainers.length > 0
+			? [
+					{
+						columnId: "trainerHandle",
+						title: "Trainer",
+						options: trainers.map((trainer) => ({
+							label: trainer,
+							value: trainer,
+						})),
+					},
+				]
+			: []),
+	];
+
 	return (
-		<div className="space-y-4">
-			<DataTableToolbar table={table} searchKey="name" searchPlaceholder="Filter by name..." />
-			<DataTable
-				columns={columns}
-				data={data}
-				state={{
-					sorting,
-					columnFilters,
-					columnVisibility,
-					rowSelection,
-				}}
-				onSortingChange={setSorting}
-				onColumnFiltersChange={setColumnFilters}
-				onColumnVisibilityChange={setColumnVisibility}
-				onRowSelectionChange={setRowSelection}
-				isLoading={isLoading}
+		<div className="w-full space-y-4">
+			<DataTableToolbar
+				table={table}
+				searchPlaceholder="Search by name or phone..."
+				filters={filterOptions}
 			/>
+			<DataTable table={table} isLoading={isLoading} />
 			<DataTablePagination table={table} />
 		</div>
 	);

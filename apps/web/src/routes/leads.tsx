@@ -1,6 +1,7 @@
 import { BarChart3, Plus, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { CreateLeadDialog } from "../components/create-lead-dialog";
 import { type Lead, LeadsDataTable } from "../components/leads-data-table";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -13,6 +14,7 @@ export default function LeadsPage() {
 		totalClosed: 0,
 		totalSales: 0,
 	});
+	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
 	// Fetch leads from API
 	useEffect(() => {
@@ -46,6 +48,39 @@ export default function LeadsPage() {
 	const conversionRate =
 		summary.totalLeads > 0 ? Math.round((summary.totalClosed / summary.totalLeads) * 100) : 0;
 
+	// Handle creating a new lead
+	const handleCreateLead = async (leadData: any) => {
+		try {
+			const response = await fetch("/api/analytics/leads", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(leadData),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to create lead");
+			}
+
+			// Reload leads and summary after creation
+			const leadsResponse = await fetch("/api/analytics/leads");
+			const summaryResponse = await fetch("/api/analytics/leads/summary");
+
+			if (leadsResponse.ok && summaryResponse.ok) {
+				const leadsData = await leadsResponse.json();
+				const summaryData = await summaryResponse.json();
+				setLeads(leadsData);
+				setSummary(summaryData);
+			}
+
+			toast.success("Lead created successfully!");
+		} catch (error) {
+			console.error("Error creating lead:", error);
+			throw error; // Re-throw to let the dialog handle the error display
+		}
+	};
+
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
 			{/* Page Header */}
@@ -54,7 +89,7 @@ export default function LeadsPage() {
 					<h1 className="text-3xl font-bold tracking-tight">Leads</h1>
 					<p className="text-muted-foreground">Manage your leads and track conversions</p>
 				</div>
-				<Button>
+				<Button onClick={() => setIsCreateDialogOpen(true)}>
 					<Plus className="mr-2 h-4 w-4" />
 					Add Lead
 				</Button>
@@ -118,6 +153,13 @@ export default function LeadsPage() {
 					<LeadsDataTable data={leads} isLoading={isLoading} />
 				</CardContent>
 			</Card>
+
+			{/* Create Lead Dialog */}
+			<CreateLeadDialog
+				open={isCreateDialogOpen}
+				onOpenChange={setIsCreateDialogOpen}
+				onSave={handleCreateLead}
+			/>
 		</div>
 	);
 }

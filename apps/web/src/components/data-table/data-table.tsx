@@ -7,6 +7,7 @@ import {
 	getPaginationRowModel,
 	getSortedRowModel,
 	type OnChangeFn,
+	type Table as ReactTable,
 	type RowSelectionState,
 	type SortingState,
 	useReactTable,
@@ -19,8 +20,9 @@ import { Skeleton } from "../ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
 interface DataTableProps<TData, TValue> {
-	columns: ColumnDef<TData, TValue>[];
-	data: TData[];
+	table?: ReactTable<TData>;
+	columns?: ColumnDef<TData, TValue>[];
+	data?: TData[];
 	state?: {
 		sorting?: SortingState;
 		columnFilters?: ColumnFiltersState;
@@ -36,6 +38,7 @@ interface DataTableProps<TData, TValue> {
 }
 
 export function DataTable<TData, TValue>({
+	table: externalTable,
 	columns,
 	data,
 	state,
@@ -57,9 +60,9 @@ export function DataTable<TData, TValue>({
 		state?.rowSelection || {},
 	);
 
-	const table = useReactTable({
-		data,
-		columns,
+	const internalTable = useReactTable({
+		data: data || [],
+		columns: columns || [],
 		onSortingChange: onSortingChange || setSorting,
 		onColumnFiltersChange: onColumnFiltersChange || setColumnFilters,
 		onColumnVisibilityChange: onColumnVisibilityChange || setColumnVisibility,
@@ -75,6 +78,8 @@ export function DataTable<TData, TValue>({
 			rowSelection: state?.rowSelection || rowSelection,
 		},
 	});
+
+	const table = externalTable || internalTable;
 
 	return (
 		<div className={cn("space-y-4", className)}>
@@ -100,7 +105,7 @@ export function DataTable<TData, TValue>({
 							// Loading skeleton rows
 							Array.from({ length: 5 }).map((_, index) => (
 								<TableRow key={`loading-${index}`}>
-									{columns.map((_, colIndex) => (
+									{table.getAllColumns().map((_, colIndex) => (
 										<TableCell key={`loading-cell-${colIndex}`}>
 											<Skeleton className="h-4 w-[100px]" />
 										</TableCell>
@@ -108,18 +113,25 @@ export function DataTable<TData, TValue>({
 								</TableRow>
 							))
 						) : table.getRowModel().rows?.length ? (
-							table.getRowModel().rows.map((row) => (
-								<TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id}>
-											{flexRender(cell.column.columnDef.cell, cell.getContext())}
-										</TableCell>
-									))}
-								</TableRow>
-							))
+							table.getRowModel().rows.map((row) => {
+								const isClosed = (row.original as any)?.isClosed;
+								return (
+									<TableRow
+										key={row.id}
+										data-state={row.getIsSelected() && "selected"}
+										className={isClosed ? "bg-red-50/50 hover:bg-red-50/80" : ""}
+									>
+										{row.getVisibleCells().map((cell) => (
+											<TableCell key={cell.id}>
+												{flexRender(cell.column.columnDef.cell, cell.getContext())}
+											</TableCell>
+										))}
+									</TableRow>
+								);
+							})
 						) : (
 							<TableRow>
-								<TableCell colSpan={columns.length} className="h-24 text-center">
+								<TableCell colSpan={table.getAllColumns().length} className="h-24 text-center">
 									No results.
 								</TableCell>
 							</TableRow>

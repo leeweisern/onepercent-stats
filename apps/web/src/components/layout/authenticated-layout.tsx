@@ -2,7 +2,6 @@ import { LayoutProvider } from "../../context/layout-provider";
 import { authClient } from "../../lib/auth-client";
 import { getCookie } from "../../lib/cookies";
 import { cn } from "../../lib/utils";
-import { ProfileDropdown } from "../profile-dropdown";
 import { ThemeSwitch } from "../theme-switch";
 import {
 	SidebarContent,
@@ -13,12 +12,11 @@ import {
 	SidebarRail,
 } from "../ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
-import { getSidebarData } from "./data/sidebar-data";
+import { sidebarData } from "./data/sidebar-data";
 import { Header } from "./header";
 import { LogoHeader } from "./logo-header";
 import { Main } from "./main";
 import { NavGroup } from "./nav-group";
-import { NavUser } from "./nav-user";
 
 type AuthenticatedLayoutProps = {
 	children?: React.ReactNode;
@@ -27,7 +25,7 @@ type AuthenticatedLayoutProps = {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 	const defaultOpen = getCookie("sidebar_state") !== "false";
 	const { data: session } = authClient.useSession();
-	const sidebarData = getSidebarData(session);
+	const currentSidebarData = sidebarData;
 
 	return (
 		<SidebarProvider defaultOpen={defaultOpen}>
@@ -37,13 +35,12 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 						<LogoHeader />
 					</SidebarHeader>
 					<SidebarContent>
-						{sidebarData.navGroups.map((props) => (
+						{currentSidebarData.navGroups.map((props) => (
 							<NavGroup key={props.title} {...props} />
 						))}
 					</SidebarContent>
-					<SidebarFooter>
-						<NavUser user={sidebarData.user} />
-					</SidebarFooter>
+					<SidebarFooter></SidebarFooter>
+
 					<SidebarRail />
 				</AppSidebar>
 				<SidebarInset
@@ -64,7 +61,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 					<Header>
 						<div className="ms-auto flex items-center space-x-4">
 							<ThemeSwitch />
-							<ProfileDropdown />
 						</div>
 					</Header>
 					<Main>{children}</Main>
