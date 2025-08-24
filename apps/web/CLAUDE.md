@@ -89,8 +89,20 @@ Current components in `src/components/ui/`:
 
 ### Component Usage Patterns
 ```tsx
-// Badge for status indicators
-<Badge variant="success">Closed</Badge>
+// Badge for status indicators with color coding
+const getStatusVariant = (status: string) => {
+  switch (status) {
+    case "New": return "secondary"
+    case "Contacted": return "default"
+    case "Follow Up": return "destructive"
+    case "Consulted": return "outline"
+    case "Closed Won": return "success"
+    case "Closed Lost": return "destructive"
+    default: return "secondary"
+  }
+}
+
+<Badge variant={getStatusVariant(lead.status)}>{lead.status}</Badge>
 <Badge variant="secondary">{lead.platform}</Badge>
 
 // Cards for content sections
@@ -263,17 +275,20 @@ useEffect(() => {
 
 ### Local State Patterns
 ```tsx
-// Form state
+// Form state with status management
 const [formData, setFormData] = useState({
   name: '',
   email: '',
-  platform: ''
+  platform: '',
+  status: 'New',
+  sales: 0
 })
 
-// Filter state
+// Filter state with multi-select status
 const [filters, setFilters] = useState({
   platform: '',
-  status: '',
+  status: [], // Array for multi-select
+  dateType: 'lead', // "lead" or "closed"
   dateRange: null
 })
 
@@ -321,7 +336,7 @@ const handleSave = async () => {
 
 ### Form Handling
 ```tsx
-// Basic form with validation
+// Form with status-based validation and auto-updates
 const handleSubmit = (e: React.FormEvent) => {
   e.preventDefault()
   
@@ -331,8 +346,23 @@ const handleSubmit = (e: React.FormEvent) => {
     return
   }
   
+  // Status-based validation
+  if (formData.status === 'Closed Won' && formData.sales <= 0) {
+    toast.error('Sales amount required for Closed Won status')
+    return
+  }
+  
   // Submit form
   handleSave()
+}
+
+// Auto-update status when sales entered
+const handleSalesChange = (value: number) => {
+  setFormData(prev => ({
+    ...prev,
+    sales: value,
+    status: value > 0 ? 'Closed Won' : prev.status
+  }))
 }
 
 <form onSubmit={handleSubmit}>
@@ -395,6 +425,8 @@ const handleSubmit = (e: React.FormEvent) => {
 - Ignore TypeScript errors
 - Use `any` type without good reason
 - Mix different state management patterns inconsistently
+- Use legacy `isClosed` field (removed from schema)
+- Hardcode status values (use canonical LEAD_STATUSES instead)
 
 ### ✅ DO
 - Extend shadcn/ui components by creating wrapper components
@@ -405,6 +437,9 @@ const handleSubmit = (e: React.FormEvent) => {
 - Follow the established file structure
 - Use the `cn` utility for conditional classes
 - Keep components focused and single-purpose
+- Use canonical status values from server API
+- Implement status-based UI logic (colors, validation, auto-updates)
+- Support `dateType` filtering across analytics components
 
 ## 🔧 Development Tools
 

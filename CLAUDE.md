@@ -89,14 +89,17 @@ wrangler d1 execute onepercent-stats-new --remote --command "SELECT COUNT(*) as 
 # Get leads by platform
 wrangler d1 execute onepercent-stats-new --remote --command "SELECT platform, COUNT(*) as count FROM leads GROUP BY platform ORDER BY count DESC"
 
-# Get conversion data
-wrangler d1 execute onepercent-stats-new --remote --command "SELECT is_closed, COUNT(*) as count, SUM(sales) as total_sales FROM leads GROUP BY is_closed"
+# Get conversion data by status
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT status, COUNT(*) as count, SUM(sales) as total_sales FROM leads GROUP BY status"
 
 # Get recent leads
 wrangler d1 execute onepercent-stats-new --remote --command "SELECT id, name, platform, sales, created_at FROM leads ORDER BY created_at DESC LIMIT 10"
 
-# Get leads with sales data
-wrangler d1 execute onepercent-stats-new --remote --command "SELECT * FROM leads WHERE sales > 0 ORDER BY sales DESC"
+# Get leads with sales data (Closed Won status)
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT * FROM leads WHERE status = 'Closed Won' ORDER BY sales DESC"
+
+# Get leads requiring follow-up
+wrangler d1 execute onepercent-stats-new --remote --command "SELECT id, name, status, next_follow_up_date FROM leads WHERE status = 'Follow Up' ORDER BY next_follow_up_date"
 ```
 
 #### Database Schema
@@ -110,15 +113,18 @@ The main tables in the database:
 - `name` (TEXT) - Lead's name
 - `phone_number` (TEXT) - Phone number
 - `platform` (TEXT) - Marketing platform (Facebook, Google, etc.)
-- `is_closed` (INTEGER) - Boolean (0/1) indicating if lead is closed
-- `status` (TEXT) - Lead status
+- `status` (TEXT, DEFAULT "New") - Lead status: New, Contacted, Follow Up, Consulted, Closed Won, Closed Lost
 - `sales` (INTEGER) - Sales amount in RM
 - `remark` (TEXT) - Additional notes
 - `trainer_handle` (TEXT) - Trainer identifier
 - `closed_date` (TEXT) - Date when lead was closed (DD/MM/YYYY)
 - `closed_month` (TEXT) - Month when lead was closed
 - `closed_year` (TEXT) - Year when lead was closed
+- `contacted_date` (TEXT) - Date when lead was first contacted (DD/MM/YYYY)
+- `next_follow_up_date` (TEXT) - Scheduled follow-up date (DD/MM/YYYY)
+- `last_activity_date` (TEXT) - Last activity date (DD/MM/YYYY)
 - `created_at` (TEXT) - Timestamp when record was created
+- `updated_at` (TEXT) - Timestamp when record was last modified
 
 **advertising_costs table:**
 - `id` (INTEGER, PRIMARY KEY)
@@ -195,7 +201,7 @@ wrangler d1 export onepercent-stats-new --remote --output=./schema-only.sql --no
 wrangler d1 execute onepercent-stats-new --local --file=./backup.sql
 
 # Clear local database tables before import
-wrangler d1 execute onepercent-stats-new --local --command "DROP TABLE IF EXISTS leads; DROP TABLE IF EXISTS advertising_costs; DROP TABLE IF EXISTS account; DROP TABLE IF EXISTS session; DROP TABLE IF EXISTS verification; DROP TABLE IF EXISTS user;"
+wrangler d1 execute onepercent-stats-new --local --command "PRAGMA defer_foreign_keys = true; DELETE FROM leads; DELETE FROM advertising_costs; DELETE FROM account; DELETE FROM session; DELETE FROM verification; DELETE FROM user;"
 ```
 
 ## 🚀 Getting Started

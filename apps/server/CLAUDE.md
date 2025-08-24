@@ -26,7 +26,9 @@ src/
 │   └── script-db.ts             # Separate connection for scripts
 ├── lib/
 │   ├── auth.ts                  # better-auth configuration
-│   └── date-utils.ts            # Date formatting utilities
+│   ├── date-utils.ts            # Date formatting utilities
+│   ├── status.ts                # Lead status constants and utilities
+│   └── status-maintenance.ts    # Automatic status transition logic
 ├── routers/
 │   ├── admin.ts                 # Admin-only endpoints
 │   ├── analytics.ts             # Main analytics API endpoints
@@ -48,7 +50,7 @@ The application uses **two separate database schemas** in `src/db/schema/`:
   - `verification` - Email verification tokens
 
 - **`leads.ts`**: Business logic tables
-  - `leads` - Core lead tracking data
+  - `leads` - Core lead tracking data with unified status system
   - `advertising_costs` - Monthly advertising spend data
 
 ## 📋 Coding Standards
@@ -151,39 +153,54 @@ bun run db:studio
 The application uses **DD/MM/YYYY** format consistently:
 
 ```typescript
-import { standardizeDate, getMonthFromDate, getYearFromDate } from '../lib/date-utils';
+import { standardizeDate, getMonthFromDate, getYearFromDate, addDaysToDDMMYYYY, todayDDMMYYYY } from '../lib/date-utils';
 
 // Always standardize dates before storing
 const dateValue = standardizeDate(body.date) || "";
 const monthValue = getMonthFromDate(dateValue);
 const yearValue = getYearFromDate(dateValue);
 
-// Lead data preparation
+// Lead data preparation with status-based date handling
 const leadData = {
   name: body.name,
   date: dateValue,
   month: monthValue,
+  status: body.status || "New",
+  contactedDate: body.status === "Contacted" ? dateValue : "",
+  nextFollowUpDate: body.status === "Follow Up" ? addDaysToDDMMYYYY(dateValue, 3) : "",
+  lastActivityDate: todayDDMMYYYY(),
   closedDate: standardizeDate(body.closedDate) || "",
   closedMonth: getMonthFromDate(closedDate),
   closedYear: getYearFromDate(closedDate),
 };
 ```
 
-### Business Logic Patterns
+### Lead Status Management
 ```typescript
-// Auto-derive fields based on business rules
-const salesValue = body.sales || 0;
+import { LEAD_STATUSES, normalizeStatus, isWonStatus } from '../lib/status';
+import { runStatusMaintenance } from '../lib/status-maintenance';
 
-// Auto-set closed date when sales > 0
-let closedDateValue = standardizeDate(body.closedDate) || "";
-if (salesValue > 0 && !closedDateValue && dateValue) {
-  closedDateValue = dateValue; // Use lead date as closed date
-} else if (salesValue === 0) {
-  closedDateValue = ""; // Clear if no sales
+// Auto-derive status based on business rules
+const salesValue = body.sales || 0;
+let statusValue = normalizeStatus(body.status);
+
+// Auto-set status to "Closed Won" when sales > 0
+if (salesValue > 0 && !isWonStatus(statusValue)) {
+  statusValue = "Closed Won";
+} else if (salesValue === 0 && statusValue === "Closed Won") {
+  statusValue = "Closed Lost";
 }
 
-// Auto-set isClosed based on sales
-const isClosedValue = body.isClosed !== undefined ? body.isClosed : salesValue > 0;
+// Auto-set closed date for won leads
+let closedDateValue = standardizeDate(body.closedDate) || "";
+if (statusValue === "Closed Won" && !closedDateValue && dateValue) {
+  closedDateValue = dateValue;
+} else if (statusValue !== "Closed Won") {
+  closedDateValue = ""; // Clear if not won
+}
+
+// Run automatic status maintenance on API calls
+await runStatusMaintenance(db);
 ```
 
 ## 🔐 Authentication
@@ -226,11 +243,12 @@ app.on(["POST", "GET", "OPTIONS"], "/api/auth/**", async (c) => {
 ## 📊 API Endpoints
 
 ### Core Analytics Endpoints
-- `GET /api/analytics/leads` - Get leads with filtering
-- `GET /api/analytics/leads/summary` - Total counts and sales
-- `GET /api/analytics/leads/platform-breakdown` - Platform performance
-- `GET /api/analytics/leads/funnel` - Sales funnel analysis
-- `GET /api/analytics/roas` - ROAS calculations
+- `GET /api/analytics/leads` - Get leads with filtering by status, platform, dateType
+- `GET /api/analytics/leads/summary` - Total counts and sales with status-based metrics
+- `GET /api/analytics/leads/platform-breakdown` - Platform performance with dateType support
+- `GET /api/analytics/leads/funnel` - Sales funnel analysis with 6-stage canonical status flow
+- `GET /api/analytics/leads/filter-options` - Available filter options including canonical statuses
+- `GET /api/analytics/roas` - ROAS calculations using "Closed Won" for conversions
 - `GET /api/analytics/leads/growth/monthly` - Monthly growth data
 - `GET /api/analytics/leads/growth/yearly` - Yearly growth data
 
@@ -244,6 +262,7 @@ app.on(["POST", "GET", "OPTIONS"], "/api/auth/**", async (c) => {
 const month = c.req.query("month");     // "January", "February", etc.
 const year = c.req.query("year");       // "2024", "2025", etc.
 const platform = c.req.query("platform"); // "Facebook", "Google", etc.
+const status = c.req.query("status");   // "New", "Contacted", "Follow Up", etc.
 const dateType = c.req.query("dateType"); // "lead" or "closed"
 ```
 
@@ -307,7 +326,7 @@ BETTER_AUTH_URL=https://your-domain.com
 CORS_ORIGIN=https://your-frontend-domain.com
 
 # Lead Management
-FOLLOW_UP_DAYS=3
+FOLLOW_UP_DAYS=3  # Days before automatic status promotion from "Contacted" to "Follow Up"
 
 # Optional OAuth
 GOOGLE_CLIENT_ID=your-google-client-id

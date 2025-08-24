@@ -16,6 +16,7 @@ import { DataTableColumnHeader } from "./data-table/column-header";
 import { DataTable } from "./data-table/data-table";
 import { DataTablePagination } from "./data-table/pagination";
 import { DataTableToolbar } from "./data-table/toolbar";
+import { EditLeadDialog } from "./edit-lead-dialog";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
@@ -44,11 +45,21 @@ export interface Lead {
 	createdAt: string;
 }
 
-export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: boolean }) {
+export function LeadsDataTable({
+	data,
+	isLoading,
+	onLeadUpdate,
+}: {
+	data: Lead[];
+	isLoading?: boolean;
+	onLeadUpdate?: () => void;
+}) {
 	const [sorting, setSorting] = useState<SortingState>([{ id: "date", desc: true }]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+	const [editDialogOpen, setEditDialogOpen] = useState(false);
+	const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
 	const columns: ColumnDef<Lead>[] = [
 		{
@@ -175,6 +186,7 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 		{
 			id: "actions",
 			cell: ({ row }) => {
+				const lead = row.original;
 				return (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
@@ -184,7 +196,12 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									setSelectedLead(lead);
+									setEditDialogOpen(true);
+								}}
+							>
 								<Edit className="mr-2 h-4 w-4" />
 								Edit lead
 							</DropdownMenuItem>
@@ -268,6 +285,27 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 			: []),
 	];
 
+	const handleEditSave = async (leadId: number, updates: Partial<Lead>) => {
+		try {
+			const response = await fetch(`/api/analytics/leads/${leadId}`, {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(updates),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to update lead");
+			}
+
+			onLeadUpdate?.();
+		} catch (error) {
+			console.error("Failed to update lead:", error);
+			throw error;
+		}
+	};
+
 	return (
 		<div className="w-full space-y-4">
 			<DataTableToolbar
@@ -277,6 +315,13 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 			/>
 			<DataTable table={table} isLoading={isLoading} />
 			<DataTablePagination table={table} />
+
+			<EditLeadDialog
+				lead={selectedLead}
+				open={editDialogOpen}
+				onOpenChange={setEditDialogOpen}
+				onSave={handleEditSave}
+			/>
 		</div>
 	);
 }
