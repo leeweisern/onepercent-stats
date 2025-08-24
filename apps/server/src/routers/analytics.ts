@@ -2,6 +2,8 @@ import { and, count, desc, eq, sql, sum } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db";
 import { advertisingCosts, leads } from "../db/schema/leads";
+import { platforms } from "../db/schema/platforms";
+import { trainers } from "../db/schema/trainers";
 import { getYearFromDate, standardizeDate } from "../lib/date-utils";
 import {
 	addBusinessDaysMY,
@@ -357,20 +359,49 @@ app.get("/leads/options", async (c) => {
 
 app.get("/leads/filter-options", async (c) => {
 	try {
-		const [platformOptions, monthOptions, trainerOptions, dateOptions] = await Promise.all([
-			db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
+		// Try to get from master tables first, fallback to legacy
+		const [platformsData, trainersData, monthOptions, dateOptions] = await Promise.all([
+			// Try platforms master table first
+			db
+				.select({ id: platforms.id, name: platforms.name })
+				.from(platforms)
+				.where(eq(platforms.active, 1))
+				.orderBy(sql`${platforms.name} COLLATE NOCASE`)
+				.then((results) => (results.length > 0 ? results : null))
+				.catch(() => null),
+			// Try trainers master table first
+			db
+				.select({ id: trainers.id, handle: trainers.handle, name: trainers.name })
+				.from(trainers)
+				.where(eq(trainers.active, 1))
+				.orderBy(sql`${trainers.handle} COLLATE NOCASE`)
+				.then((results) => (results.length > 0 ? results : null))
+				.catch(() => null),
 			db
 				.select({ value: leads.month })
 				.from(leads)
 				.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
 				.groupBy(leads.month),
-			db
+			db.select({ value: leads.date }).from(leads).groupBy(leads.date),
+		]);
+
+		// Fallback to legacy if master tables empty or don't exist
+		const platformOptions =
+			platformsData?.map((p) => p.name) ||
+			(await db
+				.select({ value: leads.platform })
+				.from(leads)
+				.groupBy(leads.platform)
+				.then((results) => results.map((p) => p.value).filter(Boolean)));
+
+		const trainerOptions =
+			trainersData?.map((t) => t.handle) ||
+			(await db
 				.select({ value: leads.trainerHandle })
 				.from(leads)
 				.where(sql`${leads.trainerHandle} IS NOT NULL AND ${leads.trainerHandle} != ''`)
-				.groupBy(leads.trainerHandle),
-			db.select({ value: leads.date }).from(leads).groupBy(leads.date),
-		]);
+				.groupBy(leads.trainerHandle)
+				.then((results) => results.map((t) => t.value).filter(Boolean)));
 
 		// Extract unique years from dates
 		const years = Array.from(
@@ -389,19 +420,41 @@ app.get("/leads/filter-options", async (c) => {
 				.filter(Boolean)
 				.sort(),
 			years: years,
-			platforms: platformOptions
-				.map((p) => p.value)
-				.filter(Boolean)
-				.sort(),
+			platforms: platformOptions.sort(),
 			statuses: [...LEAD_STATUSES], // Return canonical statuses
-			trainers: trainerOptions
-				.map((t) => t.value)
-				.filter(Boolean)
-				.sort(),
+			trainers: trainerOptions.sort(),
 		});
 	} catch (error) {
 		console.error("Error fetching filter options:", error);
 		return c.json({ error: "Failed to fetch filter options" }, 500);
+	}
+});
+
+// New endpoint for master data with IDs
+app.get("/master-data", async (c) => {
+	try {
+		const [platformsData, trainersData] = await Promise.all([
+			db
+				.select({ id: platforms.id, name: platforms.name })
+				.from(platforms)
+				.where(eq(platforms.active, 1))
+				.orderBy(sql`${platforms.name} COLLATE NOCASE`)
+				.catch(() => []),
+			db
+				.select({ id: trainers.id, handle: trainers.handle, name: trainers.name })
+				.from(trainers)
+				.where(eq(trainers.active, 1))
+				.orderBy(sql`${trainers.handle} COLLATE NOCASE`)
+				.catch(() => []),
+		]);
+
+		return c.json({
+			platforms: platformsData,
+			trainers: trainersData,
+		});
+	} catch (error) {
+		console.error("Error fetching master data:", error);
+		return c.json({ error: "Failed to fetch master data" }, 500);
 	}
 });
 
@@ -461,16 +514,68 @@ app.post("/leads", async (c) => {
 			}
 		}
 
+		// Handle platform - prefer ID if provided
+		let platformId = body.platformId || null;
+		let platformText = body.platform || "";
+
+		if (platformId) {
+			// Verify platform exists
+			const platform = await db.select().from(platforms).where(eq(platforms.id, platformId)).get();
+			if (platform) {
+				platformText = platform.name; // Sync text field
+			} else {
+				platformId = null; // Invalid ID
+			}
+		} else if (platformText) {
+			// Try to find platform by name (case-insensitive)
+			const platform = await db
+				.select()
+				.from(platforms)
+				.where(sql`LOWER(${platforms.name}) = LOWER(${platformText})`)
+				.get();
+			if (platform) {
+				platformId = platform.id;
+				platformText = platform.name; // Use canonical name
+			}
+		}
+
+		// Handle trainer - prefer ID if provided
+		let trainerId = body.trainerId || null;
+		let trainerHandle = body.trainerHandle || "";
+
+		if (trainerId) {
+			// Verify trainer exists
+			const trainer = await db.select().from(trainers).where(eq(trainers.id, trainerId)).get();
+			if (trainer) {
+				trainerHandle = trainer.handle; // Sync text field
+			} else {
+				trainerId = null; // Invalid ID
+			}
+		} else if (trainerHandle) {
+			// Try to find trainer by handle (case-insensitive)
+			const trainer = await db
+				.select()
+				.from(trainers)
+				.where(sql`LOWER(${trainers.handle}) = LOWER(${trainerHandle})`)
+				.get();
+			if (trainer) {
+				trainerId = trainer.id;
+				trainerHandle = trainer.handle; // Use canonical handle
+			}
+		}
+
 		const leadData = {
 			name: body.name,
 			phoneNumber: body.phoneNumber || "",
-			platform: body.platform || "",
+			platform: platformText,
+			platformId: platformId,
 			status: normalizedStatus,
 			sales: salesValue,
 			date: dateValue,
 			month: monthValue,
 			remark: body.remark || "",
-			trainerHandle: body.trainerHandle || "",
+			trainerHandle: trainerHandle,
+			trainerId: trainerId,
 			closedDate: closedDateValue,
 			closedMonth: closedMonthValue,
 			closedYear: closedYearValue,
@@ -508,9 +613,79 @@ app.put("/leads/:id", async (c) => {
 		// Only update fields that are provided
 		if (body.name !== undefined) updateData.name = body.name;
 		if (body.phoneNumber !== undefined) updateData.phoneNumber = body.phoneNumber;
-		if (body.platform !== undefined) updateData.platform = body.platform;
 		if (body.remark !== undefined) updateData.remark = body.remark;
-		if (body.trainerHandle !== undefined) updateData.trainerHandle = body.trainerHandle;
+
+		// Handle platform update - prefer ID if provided
+		if (body.platformId !== undefined) {
+			if (body.platformId) {
+				const platform = await db
+					.select()
+					.from(platforms)
+					.where(eq(platforms.id, body.platformId))
+					.get();
+				if (platform) {
+					updateData.platformId = body.platformId;
+					updateData.platform = platform.name;
+				}
+			} else {
+				updateData.platformId = null;
+				updateData.platform = "";
+			}
+		} else if (body.platform !== undefined) {
+			if (body.platform) {
+				const platform = await db
+					.select()
+					.from(platforms)
+					.where(sql`LOWER(${platforms.name}) = LOWER(${body.platform})`)
+					.get();
+				if (platform) {
+					updateData.platformId = platform.id;
+					updateData.platform = platform.name;
+				} else {
+					updateData.platform = body.platform;
+					updateData.platformId = null;
+				}
+			} else {
+				updateData.platform = "";
+				updateData.platformId = null;
+			}
+		}
+
+		// Handle trainer update - prefer ID if provided
+		if (body.trainerId !== undefined) {
+			if (body.trainerId) {
+				const trainer = await db
+					.select()
+					.from(trainers)
+					.where(eq(trainers.id, body.trainerId))
+					.get();
+				if (trainer) {
+					updateData.trainerId = body.trainerId;
+					updateData.trainerHandle = trainer.handle;
+				}
+			} else {
+				updateData.trainerId = null;
+				updateData.trainerHandle = "";
+			}
+		} else if (body.trainerHandle !== undefined) {
+			if (body.trainerHandle) {
+				const trainer = await db
+					.select()
+					.from(trainers)
+					.where(sql`LOWER(${trainers.handle}) = LOWER(${body.trainerHandle})`)
+					.get();
+				if (trainer) {
+					updateData.trainerId = trainer.id;
+					updateData.trainerHandle = trainer.handle;
+				} else {
+					updateData.trainerHandle = body.trainerHandle;
+					updateData.trainerId = null;
+				}
+			} else {
+				updateData.trainerHandle = "";
+				updateData.trainerId = null;
+			}
+		}
 
 		// Handle date updates with GMT+8 conversion
 		if (body.date !== undefined) {

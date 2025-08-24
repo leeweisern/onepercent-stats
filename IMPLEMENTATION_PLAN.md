@@ -77,19 +77,18 @@ The rollout is zero-downtime and incremental. We first add new tables and synchr
 - Layout and design
   - Extend `/admin` page with tabs: Users (existing), Platforms, Trainers.
 - Components
-  - Tables with columns:
-    - Platforms: Name, Active, Leads, Created, Actions.
-    - Trainers: Handle, Name, Active, Leads, Created, Actions.
-  - Modals for Create/Edit, Merge, and Delete/Reassign.
+  - Simple table showing all values with basic columns:
+    - Platforms: Name, Lead Count, Actions (Edit, Merge, Delete/Reassign).
+    - Trainers: Handle, Name, Lead Count, Actions (Edit, Merge, Delete/Reassign).
+  - Simple modals for Create/Edit, Merge, and Delete/Reassign operations.
 - User flows
-  - Admin selects tab, manages items; merge via multi-select; delete prompts reassignment.
-  - Lead dialogs show canonical options; admin can add new values; non-admin cannot.
+  - View all platforms/trainers in table.
+  - Create new entries via simple form.
+  - Edit existing entries inline or via modal.
+  - Merge multiple entries into one.
+  - Delete with optional reassignment when references exist.
 - Visual elements & styling
-  - Reuse shadcn/ui components to match existing look.
-- Responsive
-  - Tables and modals behave sensibly on small screens.
-- Images/mockups
-  - None shared; adhere to current design system.
+  - Reuse existing shadcn/ui components for consistency.
 
 ## Technical Specifications
 

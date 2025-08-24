@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { platforms } from "./platforms";
+import { trainers } from "./trainers";
 
 export const leads = sqliteTable("leads", {
 	id: integer("id").primaryKey(),
@@ -8,10 +10,12 @@ export const leads = sqliteTable("leads", {
 	name: text("name"),
 	phoneNumber: text("phone_number"),
 	platform: text("platform"),
+	platformId: integer("platform_id").references(() => platforms.id),
 	status: text("status").default("New"),
 	sales: integer("sales"),
 	remark: text("remark"),
 	trainerHandle: text("trainer_handle"),
+	trainerId: integer("trainer_id").references(() => trainers.id),
 	closedDate: text("closed_date"),
 	closedMonth: text("closed_month"),
 	closedYear: text("closed_year"),

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +11,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { authClient } from "@/lib/auth-client";
 import { convertFromDateInputFormat, getMonthFromDate, getTodayYYYYMMDD } from "@/lib/date-utils";
 
 interface CreateLeadDialogProps {
@@ -20,28 +20,39 @@ interface CreateLeadDialogProps {
 	onSave: (leadData: any) => Promise<void>;
 }
 
+interface Platform {
+	id: number;
+	name: string;
+}
+
+interface Trainer {
+	id: number;
+	handle: string;
+	name: string | null;
+}
+
 interface Options {
 	status: string[];
-	platform: string[];
-	trainerHandle: string[];
+	platforms: Platform[];
+	trainers: Trainer[];
 }
 
 export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialogProps) {
 	const nameId = useId();
 	const phoneId = useId();
-	const platformId = useId();
+	const platformFieldId = useId();
 	const customPlatformId = useId();
 	const statusId = useId();
 	const salesId = useId();
 	const dateId = useId();
 	const closedDateId = useId();
-	const trainerId = useId();
+	const trainerFieldId = useId();
 	const customTrainerId = useId();
 	const remarkId = useId();
 
 	const [name, setName] = useState("");
 	const [phoneNumber, setPhoneNumber] = useState("");
-	const [platform, setPlatform] = useState("");
+	const [platformId, setPlatformId] = useState<number | null>(null);
 	const [customPlatform, setCustomPlatform] = useState("");
 	const [isCustomPlatform, setIsCustomPlatform] = useState(false);
 	const [status, setStatus] = useState("New");
@@ -50,35 +61,58 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 	const [month, setMonth] = useState("");
 
 	const [remark, setRemark] = useState("");
-	const [trainerHandle, setTrainerHandle] = useState("");
+	const [trainerId, setTrainerId] = useState<number | null>(null);
 	const [customTrainer, setCustomTrainer] = useState("");
 	const [isCustomTrainer, setIsCustomTrainer] = useState(false);
 	const [closedDate, setClosedDate] = useState("");
 	const [options, setOptions] = useState<Options>({
 		status: [],
-		platform: [],
-		trainerHandle: [],
+		platforms: [],
+		trainers: [],
 	});
 	const [loading, setLoading] = useState(false);
+	const { data: session } = authClient.useSession();
+	const isAdmin = session?.user?.role === "admin";
 
 	const fetchOptions = useCallback(async () => {
 		try {
-			const response = await fetch("/api/analytics/leads/filter-options");
-			const data = await response.json();
+			// Fetch master data with IDs
+			const [masterResponse, filterResponse] = await Promise.all([
+				fetch("/api/analytics/master-data"),
+				fetch("/api/analytics/leads/filter-options"),
+			]);
+
+			const masterData = await masterResponse.json();
+			const filterData = await filterResponse.json();
+
 			setOptions({
-				status: data.statuses || [],
-				platform: data.platforms || [],
-				trainerHandle: data.trainerHandles || [],
+				status: filterData.statuses || [],
+				platforms: masterData.platforms || [],
+				trainers: masterData.trainers || [],
 			});
 		} catch (error) {
 			console.error("Failed to fetch options:", error);
+			// Fallback to text-based options if master data fails
+			try {
+				const response = await fetch("/api/analytics/leads/filter-options");
+				const data = await response.json();
+				setOptions({
+					status: data.statuses || [],
+					platforms: data.platforms?.map((p: string, idx: number) => ({ id: idx, name: p })) || [],
+					trainers:
+						data.trainers?.map((t: string, idx: number) => ({ id: idx, handle: t, name: null })) ||
+						[],
+				});
+			} catch (fallbackError) {
+				console.error("Failed to fetch fallback options:", fallbackError);
+			}
 		}
 	}, []);
 
 	const resetForm = useCallback(() => {
 		setName("");
 		setPhoneNumber("");
-		setPlatform("");
+		setPlatformId(null);
 		setCustomPlatform("");
 		setIsCustomPlatform(false);
 		setStatus("New");
@@ -90,7 +124,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 		setClosedDate("");
 
 		setRemark("");
-		setTrainerHandle("");
+		setTrainerId(null);
 		setCustomTrainer("");
 		setIsCustomTrainer(false);
 	}, []);
@@ -135,7 +169,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 			return;
 		}
 
-		if (!platform && !customPlatform.trim()) {
+		if (!platformId && !customPlatform.trim()) {
 			alert("Platform is required");
 			return;
 		}
@@ -151,26 +185,36 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 		}
 
 		setLoading(true);
+
 		try {
+			const finalPlatform = isCustomPlatform
+				? customPlatform
+				: options.platforms.find((p) => p.id === platformId)?.name || "";
+			const finalTrainer = isCustomTrainer
+				? customTrainer
+				: options.trainers.find((t) => t.id === trainerId)?.handle || "";
+
 			const leadData = {
 				name: name.trim(),
 				phoneNumber: phoneNumber.trim(),
-				platform: isCustomPlatform ? customPlatform.trim() : platform,
-				status: status || "New",
+				platformId: isCustomPlatform ? null : platformId,
+				platform: finalPlatform,
+				status,
 				sales: sales ? Number.parseInt(sales, 10) : 0,
 				date: convertFromDateInputFormat(date),
-				month: month,
-				closedDate: convertFromDateInputFormat(closedDate),
-
+				month,
+				closedDate: closedDate ? convertFromDateInputFormat(closedDate) : "",
 				remark: remark.trim(),
-				trainerHandle: isCustomTrainer ? customTrainer.trim() : trainerHandle,
+				trainerId: isCustomTrainer ? null : trainerId,
+				trainerHandle: finalTrainer,
 			};
 
 			await onSave(leadData);
 			onOpenChange(false);
+			resetForm();
 		} catch (error) {
-			console.error("Failed to create lead:", error);
-			alert("Failed to create lead. Please try again.");
+			console.error("Failed to save lead:", error);
+			alert("Failed to save lead. Please try again.");
 		} finally {
 			setLoading(false);
 		}
@@ -178,17 +222,13 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[600px]">
+			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
-					<DialogTitle>Add New Lead</DialogTitle>
-					<p className="text-sm text-muted-foreground">Create a new lead in the system</p>
+					<DialogTitle>Create New Lead</DialogTitle>
 				</DialogHeader>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Lead Information</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-4">
+				<div className="space-y-4">
+					<div className="space-y-4">
 						{/* Name */}
 						<div className="space-y-2">
 							<Label htmlFor={nameId}>Name</Label>
@@ -196,7 +236,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 								id={nameId}
 								value={name}
 								onChange={(e) => setName(e.target.value)}
-								placeholder="Enter full name"
+								placeholder="Enter lead name"
 								required
 							/>
 						</div>
@@ -216,7 +256,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 						{/* Platform */}
 						<div className="space-y-2">
-							<Label htmlFor={platformId}>Platform</Label>
+							<Label htmlFor={platformFieldId}>Platform</Label>
 							{isCustomPlatform ? (
 								<div className="flex items-center gap-2">
 									<Input
@@ -232,7 +272,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 										size="sm"
 										onClick={() => {
 											setIsCustomPlatform(false);
-											setPlatform(customPlatform);
+											setCustomPlatform("");
 										}}
 										className="px-2 text-xs"
 									>
@@ -241,30 +281,35 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 								</div>
 							) : (
 								<div className="flex items-center gap-2">
-									<Select value={platform} onValueChange={setPlatform}>
+									<Select
+										value={platformId?.toString() || ""}
+										onValueChange={(val) => setPlatformId(Number(val))}
+									>
 										<SelectTrigger className="flex-1">
 											<SelectValue placeholder="Select platform" />
 										</SelectTrigger>
 										<SelectContent>
-											{options.platform.map((p) => (
-												<SelectItem key={p} value={p}>
-													{p}
+											{options.platforms.map((p) => (
+												<SelectItem key={p.id} value={p.id.toString()}>
+													{p.name}
 												</SelectItem>
 											))}
 										</SelectContent>
 									</Select>
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										onClick={() => {
-											setIsCustomPlatform(true);
-											setCustomPlatform(platform);
-										}}
-										className="px-2 text-xs"
-									>
-										Add new
-									</Button>
+									{isAdmin && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											onClick={() => {
+												setIsCustomPlatform(true);
+												setPlatformId(null);
+											}}
+											className="px-2 text-xs"
+										>
+											Add new
+										</Button>
+									)}
 								</div>
 							)}
 						</div>
@@ -346,7 +391,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 								{/* Trainer */}
 								<div className="space-y-2">
-									<Label htmlFor={trainerId}>
+									<Label htmlFor={trainerFieldId}>
 										Trainer Handle <span className="text-sm text-muted-foreground">(optional)</span>
 									</Label>
 									{isCustomTrainer ? (
@@ -364,7 +409,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 												size="sm"
 												onClick={() => {
 													setIsCustomTrainer(false);
-													setTrainerHandle(customTrainer);
+													setCustomTrainer("");
 												}}
 												className="px-2 text-xs"
 											>
@@ -373,45 +418,51 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 										</div>
 									) : (
 										<div className="flex items-center gap-2">
-											<Select value={trainerHandle} onValueChange={setTrainerHandle}>
+											<Select
+												value={trainerId?.toString() || ""}
+												onValueChange={(val) => setTrainerId(Number(val))}
+											>
 												<SelectTrigger className="flex-1">
 													<SelectValue placeholder="Select trainer" />
 												</SelectTrigger>
 												<SelectContent>
-													{options.trainerHandle.map((t) => (
-														<SelectItem key={t} value={t}>
-															{t}
+													{options.trainers.map((t) => (
+														<SelectItem key={t.id} value={t.id.toString()}>
+															{t.handle} {t.name && `(${t.name})`}
 														</SelectItem>
 													))}
 												</SelectContent>
 											</Select>
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												onClick={() => {
-													setIsCustomTrainer(true);
-													setCustomTrainer(trainerHandle);
-												}}
-												className="px-2 text-xs"
-											>
-												Add new
-											</Button>
+											{isAdmin && (
+												<Button
+													type="button"
+													variant="ghost"
+													size="sm"
+													onClick={() => {
+														setIsCustomTrainer(true);
+														setTrainerId(null);
+													}}
+													className="px-2 text-xs"
+												>
+													Add new
+												</Button>
+											)}
 										</div>
 									)}
 								</div>
 							</div>
 						</details>
+					</div>
 
-						<Button
-							onClick={handleSave}
-							disabled={loading || !name.trim() || (!platform && !customPlatform.trim()) || !date}
-							className="w-full bg-red-600 hover:bg-red-700"
-						>
-							{loading ? "Creating..." : "Create Lead"}
+					<div className="flex justify-end gap-2">
+						<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+							Cancel
 						</Button>
-					</CardContent>
-				</Card>
+						<Button onClick={handleSave} disabled={loading}>
+							{loading ? "Saving..." : "Save Lead"}
+						</Button>
+					</div>
+				</div>
 			</DialogContent>
 		</Dialog>
 	);

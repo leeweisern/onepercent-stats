@@ -48,6 +48,23 @@ export default function LeadsPage() {
 	const conversionRate =
 		summary.totalLeads > 0 ? Math.round((summary.totalClosed / summary.totalLeads) * 100) : 0;
 
+	// Refresh data function
+	const refreshData = async () => {
+		try {
+			const leadsResponse = await fetch("/api/analytics/leads");
+			const summaryResponse = await fetch("/api/analytics/leads/summary");
+
+			if (leadsResponse.ok && summaryResponse.ok) {
+				const leadsData = await leadsResponse.json();
+				const summaryData = await summaryResponse.json();
+				setLeads(leadsData);
+				setSummary(summaryData);
+			}
+		} catch (error) {
+			console.error("Error refreshing data:", error);
+		}
+	};
+
 	// Handle creating a new lead
 	const handleCreateLead = async (leadData: any) => {
 		try {
@@ -63,16 +80,8 @@ export default function LeadsPage() {
 				throw new Error("Failed to create lead");
 			}
 
-			// Reload leads and summary after creation
-			const leadsResponse = await fetch("/api/analytics/leads");
-			const summaryResponse = await fetch("/api/analytics/leads/summary");
-
-			if (leadsResponse.ok && summaryResponse.ok) {
-				const leadsData = await leadsResponse.json();
-				const summaryData = await summaryResponse.json();
-				setLeads(leadsData);
-				setSummary(summaryData);
-			}
+			// Refresh data after creation
+			await refreshData();
 
 			toast.success("Lead created successfully!");
 		} catch (error) {
@@ -150,7 +159,7 @@ export default function LeadsPage() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<LeadsDataTable data={leads} isLoading={isLoading} />
+					<LeadsDataTable data={leads} isLoading={isLoading} onLeadUpdate={refreshData} />
 				</CardContent>
 			</Card>
 

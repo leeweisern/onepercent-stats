@@ -228,7 +228,7 @@ export function LeadsDataTable({
 								<Edit className="mr-2 h-4 w-4" />
 								Edit lead
 							</DropdownMenuItem>
-							<DropdownMenuItem className="text-destructive">
+							<DropdownMenuItem className="text-destructive" onClick={() => handleDelete(lead.id)}>
 								<Trash2 className="mr-2 h-4 w-4" />
 								Delete lead
 							</DropdownMenuItem>
@@ -326,6 +326,27 @@ export function LeadsDataTable({
 		} catch (error) {
 			console.error("Failed to update lead:", error);
 			throw error;
+		}
+	};
+
+	const handleDelete = async (leadId: number) => {
+		if (!confirm("Are you sure you want to delete this lead? This action cannot be undone.")) {
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/analytics/leads/${leadId}`, {
+				method: "DELETE",
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to delete lead");
+			}
+
+			onLeadUpdate?.();
+		} catch (error) {
+			console.error("Failed to delete lead:", error);
+			alert("Failed to delete lead. Please try again.");
 		}
 	};
 
