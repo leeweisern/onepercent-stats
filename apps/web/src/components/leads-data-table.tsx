@@ -311,7 +311,7 @@ export function LeadsDataTable({
 	const handleEditSave = async (leadId: number, updates: Partial<Lead>) => {
 		try {
 			const response = await fetch(`/api/analytics/leads/${leadId}`, {
-				method: "PATCH",
+				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
 				},

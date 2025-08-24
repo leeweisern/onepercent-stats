@@ -11,7 +11,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { authClient } from "@/lib/auth-client";
 import { convertFromDateInputFormat, getMonthFromDate, getTodayYYYYMMDD } from "@/lib/date-utils";
 
 interface CreateLeadDialogProps {
@@ -41,20 +40,16 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 	const nameId = useId();
 	const phoneId = useId();
 	const platformFieldId = useId();
-	const customPlatformId = useId();
 	const statusId = useId();
 	const salesId = useId();
 	const dateId = useId();
 	const closedDateId = useId();
 	const trainerFieldId = useId();
-	const customTrainerId = useId();
 	const remarkId = useId();
 
 	const [name, setName] = useState("");
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [platformId, setPlatformId] = useState<number | null>(null);
-	const [customPlatform, setCustomPlatform] = useState("");
-	const [isCustomPlatform, setIsCustomPlatform] = useState(false);
 	const [status, setStatus] = useState("New");
 	const [sales, setSales] = useState("");
 	const [date, setDate] = useState("");
@@ -62,8 +57,6 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 	const [remark, setRemark] = useState("");
 	const [trainerId, setTrainerId] = useState<number | null>(null);
-	const [customTrainer, setCustomTrainer] = useState("");
-	const [isCustomTrainer, setIsCustomTrainer] = useState(false);
 	const [closedDate, setClosedDate] = useState("");
 	const [options, setOptions] = useState<Options>({
 		status: [],
@@ -71,8 +64,6 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 		trainers: [],
 	});
 	const [loading, setLoading] = useState(false);
-	const { data: session } = authClient.useSession();
-	const isAdmin = session?.user?.role === "admin";
 
 	const fetchOptions = useCallback(async () => {
 		try {
@@ -113,8 +104,6 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 		setName("");
 		setPhoneNumber("");
 		setPlatformId(null);
-		setCustomPlatform("");
-		setIsCustomPlatform(false);
 		setStatus("New");
 		setSales("");
 		// Set date to today's date in YYYY-MM-DD format (user's local time)
@@ -125,8 +114,6 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 		setRemark("");
 		setTrainerId(null);
-		setCustomTrainer("");
-		setIsCustomTrainer(false);
 	}, []);
 
 	useEffect(() => {
@@ -169,7 +156,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 			return;
 		}
 
-		if (!platformId && !customPlatform.trim()) {
+		if (!platformId) {
 			alert("Platform is required");
 			return;
 		}
@@ -187,17 +174,15 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 		setLoading(true);
 
 		try {
-			const finalPlatform = isCustomPlatform
-				? customPlatform
-				: options.platforms.find((p) => p.id === platformId)?.name || "";
-			const finalTrainer = isCustomTrainer
-				? customTrainer
-				: options.trainers.find((t) => t.id === trainerId)?.handle || "";
+			const finalPlatform = options.platforms.find((p) => p.id === platformId)?.name || "";
+			const finalTrainer = trainerId
+				? options.trainers.find((t) => t.id === trainerId)?.handle || ""
+				: "";
 
 			const leadData = {
 				name: name.trim(),
 				phoneNumber: phoneNumber.trim(),
-				platformId: isCustomPlatform ? null : platformId,
+				platformId,
 				platform: finalPlatform,
 				status,
 				sales: sales ? Number.parseInt(sales, 10) : 0,
@@ -205,7 +190,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 				month,
 				closedDate: closedDate ? convertFromDateInputFormat(closedDate) : "",
 				remark: remark.trim(),
-				trainerId: isCustomTrainer ? null : trainerId,
+				trainerId,
 				trainerHandle: finalTrainer,
 			};
 
@@ -257,61 +242,21 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 						{/* Platform */}
 						<div className="space-y-2">
 							<Label htmlFor={platformFieldId}>Platform</Label>
-							{isCustomPlatform ? (
-								<div className="flex items-center gap-2">
-									<Input
-										id={customPlatformId}
-										value={customPlatform}
-										onChange={(e) => setCustomPlatform(e.target.value)}
-										placeholder="Enter new platform name"
-										className="flex-1"
-									/>
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										onClick={() => {
-											setIsCustomPlatform(false);
-											setCustomPlatform("");
-										}}
-										className="px-2 text-xs"
-									>
-										Select existing
-									</Button>
-								</div>
-							) : (
-								<div className="flex items-center gap-2">
-									<Select
-										value={platformId?.toString() || ""}
-										onValueChange={(val) => setPlatformId(Number(val))}
-									>
-										<SelectTrigger className="flex-1">
-											<SelectValue placeholder="Select platform" />
-										</SelectTrigger>
-										<SelectContent>
-											{options.platforms.map((p) => (
-												<SelectItem key={p.id} value={p.id.toString()}>
-													{p.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									{isAdmin && (
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={() => {
-												setIsCustomPlatform(true);
-												setPlatformId(null);
-											}}
-											className="px-2 text-xs"
-										>
-											Add new
-										</Button>
-									)}
-								</div>
-							)}
+							<Select
+								value={platformId?.toString() || ""}
+								onValueChange={(val) => setPlatformId(Number(val))}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select platform" />
+								</SelectTrigger>
+								<SelectContent>
+									{options.platforms.map((p) => (
+										<SelectItem key={p.id} value={p.id.toString()}>
+											{p.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 
 						{/* Status */}
@@ -394,61 +339,22 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 									<Label htmlFor={trainerFieldId}>
 										Trainer Handle <span className="text-sm text-muted-foreground">(optional)</span>
 									</Label>
-									{isCustomTrainer ? (
-										<div className="flex items-center gap-2">
-											<Input
-												id={customTrainerId}
-												value={customTrainer}
-												onChange={(e) => setCustomTrainer(e.target.value)}
-												placeholder="Enter new trainer handle"
-												className="flex-1"
-											/>
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												onClick={() => {
-													setIsCustomTrainer(false);
-													setCustomTrainer("");
-												}}
-												className="px-2 text-xs"
-											>
-												Select existing
-											</Button>
-										</div>
-									) : (
-										<div className="flex items-center gap-2">
-											<Select
-												value={trainerId?.toString() || ""}
-												onValueChange={(val) => setTrainerId(Number(val))}
-											>
-												<SelectTrigger className="flex-1">
-													<SelectValue placeholder="Select trainer" />
-												</SelectTrigger>
-												<SelectContent>
-													{options.trainers.map((t) => (
-														<SelectItem key={t.id} value={t.id.toString()}>
-															{t.handle} {t.name && `(${t.name})`}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											{isAdmin && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="sm"
-													onClick={() => {
-														setIsCustomTrainer(true);
-														setTrainerId(null);
-													}}
-													className="px-2 text-xs"
-												>
-													Add new
-												</Button>
-											)}
-										</div>
-									)}
+									<Select
+										value={trainerId?.toString() || "none"}
+										onValueChange={(val) => setTrainerId(val === "none" ? null : Number(val))}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Select trainer" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">None</SelectItem>
+											{options.trainers.map((t) => (
+												<SelectItem key={t.id} value={t.id.toString()}>
+													{t.handle} {t.name && `(${t.name})`}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 								</div>
 							</div>
 						</details>

@@ -112,11 +112,13 @@ The main tables in the database:
 - `date` (TEXT) - Date in DD/MM/YYYY format
 - `name` (TEXT) - Lead's name
 - `phone_number` (TEXT) - Phone number
-- `platform` (TEXT) - Marketing platform (Facebook, Google, etc.)
+- `platform` (TEXT) - Marketing platform text (synced with platforms table)
+- `platform_id` (INTEGER) - Foreign key to platforms.id
 - `status` (TEXT, DEFAULT "New") - Lead status: New, Contacted, Follow Up, Consulted, Closed Won, Closed Lost
 - `sales` (INTEGER) - Sales amount in RM
 - `remark` (TEXT) - Additional notes
-- `trainer_handle` (TEXT) - Trainer identifier
+- `trainer_handle` (TEXT) - Trainer handle text (synced with trainers table)
+- `trainer_id` (INTEGER) - Foreign key to trainers.id
 - `closed_date` (TEXT) - Date when lead was closed (DD/MM/YYYY)
 - `closed_month` (TEXT) - Month when lead was closed
 - `closed_year` (TEXT) - Year when lead was closed
@@ -126,6 +128,21 @@ The main tables in the database:
 - `created_at` (TEXT) - Timestamp when record was created
 - `updated_at` (TEXT) - Timestamp when record was last modified
 
+**platforms table:**
+- `id` (INTEGER, PRIMARY KEY)
+- `name` (TEXT, UNIQUE COLLATE NOCASE) - Platform name (case-insensitive)
+- `active` (INTEGER, DEFAULT 1) - 1 = active, 0 = deactivated
+- `created_at` (TEXT) - Creation timestamp
+- `updated_at` (TEXT) - Last update timestamp
+
+**trainers table:**
+- `id` (INTEGER, PRIMARY KEY)
+- `handle` (TEXT, UNIQUE COLLATE NOCASE) - Trainer handle/name (case-insensitive)
+- `name` (TEXT) - Display name (optional, for backward compatibility)
+- `active` (INTEGER, DEFAULT 1) - 1 = active, 0 = deactivated
+- `created_at` (TEXT) - Creation timestamp
+- `updated_at` (TEXT) - Last update timestamp
+
 **advertising_costs table:**
 - `id` (INTEGER, PRIMARY KEY)
 - `month` (INTEGER) - Month number (1-12)
@@ -134,6 +151,11 @@ The main tables in the database:
 - `currency` (TEXT) - Currency (default "RM")
 - `created_at` (TEXT) - Creation timestamp
 - `updated_at` (TEXT) - Last update timestamp
+
+**Important Notes:**
+- Platform and trainer text fields are automatically synchronized with their master tables via database triggers
+- Deactivated platforms/trainers (active=0) remain linked to existing leads but won't appear in selection dropdowns
+- All platform and trainer names are case-insensitive (enforced by COLLATE NOCASE)
 
 #### Database Migrations
 

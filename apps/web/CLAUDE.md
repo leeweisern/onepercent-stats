@@ -34,6 +34,7 @@ src/
 │   └── utils.ts                  # General utilities (cn, etc.)
 ├── routes/
 │   ├── _index.tsx                # Homepage
+│   ├── admin.tsx                 # Admin management (users, platforms, trainers)
 │   ├── analytics.tsx             # Analytics dashboard
 │   ├── leads.tsx                 # Leads management
 │   ├── login.tsx                 # Authentication
@@ -295,6 +296,96 @@ const [filters, setFilters] = useState({
 // Modal/dialog state
 const [isOpen, setIsOpen] = useState(false)
 const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+```
+
+## 🛡️ Admin Panel Patterns
+
+### Platform & Trainer Management
+The admin panel (`/admin` route) provides normalized master data management:
+
+```tsx
+// Tabbed interface for different admin sections
+<Tabs defaultValue="users">
+  <TabsList>
+    <TabsTrigger value="users">Users</TabsTrigger>
+    <TabsTrigger value="platforms">Platforms</TabsTrigger>
+    <TabsTrigger value="trainers">Trainers</TabsTrigger>
+  </TabsList>
+  <TabsContent value="platforms">
+    {/* Platform management UI */}
+  </TabsContent>
+</Tabs>
+
+// Platform/Trainer state management
+const [platforms, setPlatforms] = useState<Platform[]>([])
+const [trainers, setTrainers] = useState<Trainer[]>([])
+
+// CRUD operations
+const handleCreate = async (name: string) => {
+  const response = await fetch('/api/admin/platforms', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  })
+  if (response.ok) {
+    const newPlatform = await response.json()
+    setPlatforms([...platforms, newPlatform])
+    toast.success('Platform created successfully')
+  }
+}
+
+// Deactivation vs Deletion
+const handleDeactivate = async (id: number) => {
+  // Soft delete - keeps data integrity
+  await fetch(`/api/admin/platforms/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ active: 0 })
+  })
+}
+
+// Merge functionality for duplicates
+const handleMerge = async (sourceIds: number[], targetId: number) => {
+  await fetch('/api/admin/platforms/merge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sourceIds, targetId })
+  })
+}
+```
+
+### Lead Creation with Master Data
+```tsx
+// Fetch master data for dropdowns
+const [masterData, setMasterData] = useState({ platforms: [], trainers: [] })
+
+useEffect(() => {
+  fetch('/api/analytics/master-data')
+    .then(res => res.json())
+    .then(data => setMasterData(data))
+}, [])
+
+// Platform selection with ID tracking
+<Select 
+  value={formData.platformId?.toString()} 
+  onValueChange={(value) => {
+    const platform = masterData.platforms.find(p => p.id === parseInt(value))
+    setFormData({
+      ...formData,
+      platformId: platform.id,
+      platform: platform.name // Text field synced automatically
+    })
+  }}
+>
+  {masterData.platforms
+    .filter(p => p.active === 1) // Only show active platforms
+    .map(platform => (
+      <SelectItem key={platform.id} value={platform.id.toString()}>
+        {platform.name}
+      </SelectItem>
+    ))
+  }
+</Select>
 ```
 
 ## 🎯 Common Patterns

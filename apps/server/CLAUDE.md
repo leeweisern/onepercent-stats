@@ -53,6 +53,12 @@ The application uses **two separate database schemas** in `src/db/schema/`:
   - `leads` - Core lead tracking data with unified status system
   - `advertising_costs` - Monthly advertising spend data
 
+- **`platforms.ts`**: Platform master data
+  - `platforms` - Normalized platform definitions with active/inactive status
+
+- **`trainers.ts`**: Trainer master data
+  - `trainers` - Normalized trainer definitions with active/inactive status
+
 ## 📋 Coding Standards
 
 ### API Design Patterns
@@ -251,10 +257,24 @@ app.on(["POST", "GET", "OPTIONS"], "/api/auth/**", async (c) => {
 - `GET /api/analytics/roas` - ROAS calculations using "Closed Won" for conversions
 - `GET /api/analytics/leads/growth/monthly` - Monthly growth data
 - `GET /api/analytics/leads/growth/yearly` - Yearly growth data
+- `GET /api/analytics/master-data` - Get platforms and trainers with IDs for lead creation
 
 ### CRUD Endpoints
-- `POST/PUT/DELETE /api/analytics/leads/:id` - Lead management
+- `POST/PUT/DELETE /api/analytics/leads/:id` - Lead management (now supports platform_id and trainer_id)
 - `POST/PUT/DELETE /api/analytics/advertising-costs/:id` - Cost management
+
+### Admin Endpoints (Admin Only)
+- `GET /api/admin/platforms` - List all platforms with lead counts
+- `POST /api/admin/platforms` - Create new platform
+- `PUT /api/admin/platforms/:id` - Update platform (rename or activate/deactivate)
+- `DELETE /api/admin/platforms/:id` - Delete platform (soft or hard delete with reassignment)
+- `POST /api/admin/platforms/merge` - Merge multiple platforms into one
+
+- `GET /api/admin/trainers` - List all trainers with lead counts
+- `POST /api/admin/trainers` - Create new trainer
+- `PUT /api/admin/trainers/:id` - Update trainer (rename or activate/deactivate)
+- `DELETE /api/admin/trainers/:id` - Delete trainer (soft or hard delete with reassignment)
+- `POST /api/admin/trainers/merge` - Merge multiple trainers into one
 
 ### Query Parameter Patterns
 ```typescript
