@@ -1,4 +1,4 @@
-import { DollarSign, Target, TrendingUp, Users } from "lucide-react";
+import { BarChart3, DollarSign, Target, TrendingUp, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -80,145 +80,150 @@ export default function ROASMetrics({
 
 	if (loading) {
 		return (
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<TrendingUp className="h-5 w-5" />
-						ROAS & Performance Metrics
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-						{Array.from({ length: 8 }, () => (
-							<div key={crypto.randomUUID()} className="space-y-2">
-								<Skeleton className="h-4 w-20" />
-								<Skeleton className="h-8 w-full" />
-							</div>
-						))}
-					</div>
-				</CardContent>
-			</Card>
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+				{Array.from({ length: 8 }, () => (
+					<Card key={crypto.randomUUID()}>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<Skeleton className="h-4 w-20" />
+							<Skeleton className="h-4 w-4" />
+						</CardHeader>
+						<CardContent>
+							<Skeleton className="h-8 w-24 mb-1" />
+							<Skeleton className="h-3 w-32" />
+						</CardContent>
+					</Card>
+				))}
+			</div>
 		);
 	}
 
 	if (!data) {
 		return (
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<TrendingUp className="h-5 w-5" />
-						ROAS & Performance Metrics
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<p className="text-muted-foreground">No data available</p>
-				</CardContent>
-			</Card>
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">No data available</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<p className="text-xs text-muted-foreground">Check your filters</p>
+					</CardContent>
+				</Card>
+			</div>
 		);
 	}
 
+	const periodText = data.period
+		? ` - ${data.period.month || "All months"} (${data.period.year || "All years"})`
+		: " - All months (All years)";
+
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className="flex items-center gap-2">
-					<TrendingUp className="h-5 w-5" />
-					ROAS & Performance Metrics
-					{data.period ? ` - ${data.period.month} (${data.period.year})` : ""}
-				</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-					{/* ROAS */}
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<TrendingUp className="h-4 w-4 text-green-600" />
-							<span className="font-medium text-muted-foreground text-sm">ROAS</span>
-						</div>
-						<div className="font-bold text-2xl text-green-600">{data.roas}x</div>
-						<p className="text-muted-foreground text-xs">Return on Ad Spend</p>
-					</div>
+		<>
+			{/* Title Section */}
+			<div className="mb-4">
+				<h2 className="text-2xl font-bold flex items-center gap-2">
+					<BarChart3 className="h-6 w-6" />
+					ROAS & Performance Metrics{periodText}
+				</h2>
+			</div>
 
-					{/* Total Sales */}
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<DollarSign className="h-4 w-4 text-blue-600" />
-							<span className="font-medium text-muted-foreground text-sm">Total Sales</span>
-						</div>
-						<div className="font-bold text-2xl text-blue-600">
-							{formatCurrency(data.totalSales)}
-						</div>
-						<p className="text-muted-foreground text-xs">Revenue generated</p>
-					</div>
+			{/* Metrics Cards Grid */}
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+				{/* ROAS */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">ROAS</CardTitle>
+						<TrendingUp className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{data.roas}x</div>
+						<p className="text-xs text-muted-foreground">Return on Ad Spend</p>
+					</CardContent>
+				</Card>
 
-					{/* Ad Cost */}
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<Target className="h-4 w-4 text-orange-600" />
-							<span className="font-medium text-muted-foreground text-sm">Ad Spend</span>
-						</div>
-						<div className="font-bold text-2xl text-orange-600">
-							{formatCurrency(data.totalAdCost)}
-						</div>
-						<p className="text-muted-foreground text-xs">Total advertising cost</p>
-					</div>
+				{/* Total Sales */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+						<DollarSign className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{formatCurrency(data.totalSales)}</div>
+						<p className="text-xs text-muted-foreground">Revenue generated</p>
+					</CardContent>
+				</Card>
 
-					{/* Conversion Rate */}
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<Users className="h-4 w-4 text-purple-600" />
-							<span className="font-medium text-muted-foreground text-sm">Conversion</span>
-						</div>
-						<div className="font-bold text-2xl text-purple-600">
-							{formatPercentage(data.conversionRate)}
-						</div>
-						<p className="text-muted-foreground text-xs">Lead to sale rate</p>
-					</div>
+				{/* Ad Spend */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Ad Spend</CardTitle>
+						<Target className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{formatCurrency(data.totalAdCost)}</div>
+						<p className="text-xs text-muted-foreground">Total advertising cost</p>
+					</CardContent>
+				</Card>
 
-					{/* Cost Per Lead */}
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<DollarSign className="h-4 w-4 text-gray-600" />
-							<span className="font-medium text-muted-foreground text-sm">Cost/Lead</span>
-						</div>
-						<div className="font-bold text-gray-600 text-xl">
-							{formatCurrency(data.costPerLead)}
-						</div>
-						<p className="text-muted-foreground text-xs">Per lead acquisition</p>
-					</div>
+				{/* Conversion Rate */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Conversion</CardTitle>
+						<Users className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{formatPercentage(data.conversionRate)}</div>
+						<p className="text-xs text-muted-foreground">Lead to sale rate</p>
+					</CardContent>
+				</Card>
 
-					{/* Cost Per Acquisition */}
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<Target className="h-4 w-4 text-red-600" />
-							<span className="font-medium text-muted-foreground text-sm">Cost/Sale</span>
-						</div>
-						<div className="font-bold text-red-600 text-xl">
-							{formatCurrency(data.costPerAcquisition)}
-						</div>
-						<p className="text-muted-foreground text-xs">Per sale acquisition</p>
-					</div>
+				{/* Cost Per Lead */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Cost/Lead</CardTitle>
+						<DollarSign className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{formatCurrency(data.costPerLead)}</div>
+						<p className="text-xs text-muted-foreground">Per lead acquisition</p>
+					</CardContent>
+				</Card>
 
-					{/* Total Leads */}
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<Users className="h-4 w-4 text-indigo-600" />
-							<span className="font-medium text-muted-foreground text-sm">Total Leads</span>
-						</div>
-						<div className="font-bold text-indigo-600 text-xl">{data.totalLeads}</div>
-						<p className="text-muted-foreground text-xs">Leads generated</p>
-					</div>
+				{/* Cost Per Sale */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Cost/Sale</CardTitle>
+						<Target className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{formatCurrency(data.costPerAcquisition)}</div>
+						<p className="text-xs text-muted-foreground">Per sale acquisition</p>
+					</CardContent>
+				</Card>
 
-					{/* Closed Leads */}
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<Users className="h-4 w-4 text-green-600" />
-							<span className="font-medium text-muted-foreground text-sm">Closed Leads</span>
-						</div>
-						<div className="font-bold text-green-600 text-xl">{data.closedLeads}</div>
-						<p className="text-muted-foreground text-xs">Successful conversions</p>
-					</div>
-				</div>
-			</CardContent>
-		</Card>
+				{/* Total Leads */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Total Leads</CardTitle>
+						<Users className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{data.totalLeads}</div>
+						<p className="text-xs text-muted-foreground">Leads generated</p>
+					</CardContent>
+				</Card>
+
+				{/* Closed Leads */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Closed Leads</CardTitle>
+						<Users className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{data.closedLeads}</div>
+						<p className="text-xs text-muted-foreground">Successful conversions</p>
+					</CardContent>
+				</Card>
+			</div>
+		</>
 	);
 }

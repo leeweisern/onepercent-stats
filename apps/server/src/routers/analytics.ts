@@ -1279,21 +1279,15 @@ app.get("/leads/growth/monthly", async (c) => {
 			}
 		}
 
-		// Add sales closed data
+		// Add sales closed data to existing months (where leads were created)
 		for (const item of salesClosedData) {
 			if (item.month && item.year) {
 				const key = `${item.year}-${item.month}`;
-				if (!combinedData[key]) {
-					combinedData[key] = {
-						month: item.month,
-						year: item.year,
-						totalLeads: 0,
-						closedLeads: 0,
-						totalSales: 0,
-					};
+				// Only add closed leads and sales data to months where leads were created
+				if (combinedData[key]) {
+					combinedData[key].closedLeads = item.closedLeads || 0;
+					combinedData[key].totalSales = item.totalSales || 0;
 				}
-				combinedData[key].closedLeads = item.closedLeads || 0;
-				combinedData[key].totalSales = item.totalSales || 0;
 			}
 		}
 
