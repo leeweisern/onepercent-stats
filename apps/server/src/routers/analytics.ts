@@ -2,7 +2,15 @@ import { and, count, desc, eq, sql, sum } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db";
 import { advertisingCosts, leads } from "../db/schema/leads";
-import { getMonthFromDate, getYearFromDate, standardizeDate } from "../lib/date-utils";
+import { getYearFromDate, standardizeDate } from "../lib/date-utils";
+import {
+	addBusinessDaysMY,
+	addDaysMY,
+	getMonthFromISO,
+	getYearFromISO,
+	nowMYISO,
+	parseDDMMYYYYToMYISO,
+} from "../lib/datetime-utils";
 import { LEAD_STATUSES, normalizeStatus } from "../lib/status";
 import { runStatusMaintenance } from "../lib/status-maintenance";
 
@@ -20,8 +28,10 @@ app.get("/leads", async (c) => {
 		conditions.push(eq(leads.month, month));
 	}
 	if (year) {
+		// Handle both DD/MM/YYYY and ISO format
 		conditions.push(
-			sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+			sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND 
+				(substr(${leads.date}, -4) = ${year} OR substr(${leads.date}, 1, 4) = ${year})`,
 		);
 	}
 	if (platform) {
@@ -38,8 +48,9 @@ app.get("/leads", async (c) => {
 
 app.get("/leads/summary", async (c) => {
 	try {
-		// Run status maintenance
-		await runStatusMaintenance(db);
+		// Run status maintenance with config from environment
+		const followUpDays = Number((c.env as any)?.FOLLOW_UP_DAYS || 3);
+		await runStatusMaintenance(db, { followUpDays });
 
 		const dateType = c.req.query("dateType") || "lead";
 		const month = c.req.query("month");
@@ -53,10 +64,13 @@ app.get("/leads/summary", async (c) => {
 			if (year) conditions.push(eq(leads.closedYear, year));
 		} else {
 			if (month) conditions.push(eq(leads.month, month));
-			if (year)
+			if (year) {
+				// Handle both DD/MM/YYYY and ISO format
 				conditions.push(
-					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND 
+						(substr(${leads.date}, -4) = ${year} OR substr(${leads.date}, 1, 4) = ${year})`,
 				);
+			}
 		}
 		if (platform) conditions.push(eq(leads.platform, platform));
 
@@ -109,8 +123,9 @@ app.get("/leads/by-platform", async (c) => {
 
 app.get("/leads/platform-breakdown", async (c) => {
 	try {
-		// Run status maintenance
-		await runStatusMaintenance(db);
+		// Run status maintenance with config from environment
+		const followUpDays = Number((c.env as any)?.FOLLOW_UP_DAYS || 3);
+		await runStatusMaintenance(db, { followUpDays });
 
 		const dateType = c.req.query("dateType") || "lead";
 		const month = c.req.query("month");
@@ -124,10 +139,13 @@ app.get("/leads/platform-breakdown", async (c) => {
 			if (year) conditions.push(eq(leads.closedYear, year));
 		} else {
 			if (month) conditions.push(eq(leads.month, month));
-			if (year)
+			if (year) {
+				// Handle both DD/MM/YYYY and ISO format
 				conditions.push(
-					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND 
+						(substr(${leads.date}, -4) = ${year} OR substr(${leads.date}, 1, 4) = ${year})`,
 				);
+			}
 		}
 		if (platform) conditions.push(eq(leads.platform, platform));
 
@@ -232,8 +250,9 @@ app.get("/leads/months", async (c) => {
 
 app.get("/leads/funnel", async (c) => {
 	try {
-		// Run status maintenance
-		await runStatusMaintenance(db);
+		// Run status maintenance with config from environment
+		const followUpDays = Number((c.env as any)?.FOLLOW_UP_DAYS || 3);
+		await runStatusMaintenance(db, { followUpDays });
 
 		const dateType = c.req.query("dateType") || "lead";
 		const month = c.req.query("month");
@@ -247,10 +266,13 @@ app.get("/leads/funnel", async (c) => {
 			if (year) conditions.push(eq(leads.closedYear, year));
 		} else {
 			if (month) conditions.push(eq(leads.month, month));
-			if (year)
+			if (year) {
+				// Handle both DD/MM/YYYY and ISO format
 				conditions.push(
-					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND 
+						(substr(${leads.date}, -4) = ${year} OR substr(${leads.date}, 1, 4) = ${year})`,
 				);
+			}
 		}
 		if (platform) conditions.push(eq(leads.platform, platform));
 
@@ -392,9 +414,10 @@ app.post("/leads", async (c) => {
 			return c.json({ error: "Name is required" }, 400);
 		}
 
-		// Prepare lead data with defaults and standardize dates
-		const dateValue = standardizeDate(body.date) || "";
-		const monthValue = body.month || getMonthFromDate(dateValue);
+		// Prepare lead data with GMT+8 datetime handling
+		const standardDate = standardizeDate(body.date);
+		const dateValue = standardDate ? parseDDMMYYYYToMYISO(standardDate, 9) : nowMYISO();
+		const monthValue = body.month || getMonthFromISO(dateValue);
 		const salesValue = Number(body.sales) || 0;
 
 		// Determine initial status - default to "New" or auto-set "Closed Won" if sales > 0
@@ -406,38 +429,36 @@ app.post("/leads", async (c) => {
 		// Normalize the status
 		const normalizedStatus = normalizeStatus(initialStatus);
 
-		// Set date fields based on status
-		const now = new Date();
-		const nowISO = now.toISOString();
+		// Set date fields based on status with GMT+8 timezone
+		const nowISO = nowMYISO();
 		let closedDateValue = "";
 		let closedMonthValue = "";
 		let closedYearValue = "";
 		const lastActivityDate = nowISO;
 		let nextFollowUpDate: string | null = null;
+		const followUpDays = Number((c.env as any)?.FOLLOW_UP_DAYS || 3);
 
 		if (normalizedStatus === "Closed Won") {
-			closedDateValue =
-				standardizeDate(body.closedDate) || dateValue || now.toLocaleDateString("en-GB");
-			closedMonthValue = getMonthFromDate(closedDateValue);
-			closedYearValue = getYearFromDate(closedDateValue);
+			const standardClosed = standardizeDate(body.closedDate);
+			closedDateValue = standardClosed ? parseDDMMYYYYToMYISO(standardClosed, 18) || "" : dateValue;
+			closedMonthValue = getMonthFromISO(closedDateValue);
+			closedYearValue = getYearFromISO(closedDateValue);
 		} else {
-			// Set follow-up dates for active statuses
-			const followUpDate = new Date();
+			// Set follow-up dates for active statuses using GMT+8 business days
 			switch (normalizedStatus) {
 				case "New":
-					followUpDate.setDate(followUpDate.getDate() + 1);
+					nextFollowUpDate = addBusinessDaysMY(nowISO, 1);
 					break;
 				case "Contacted":
-					followUpDate.setDate(followUpDate.getDate() + 3);
+					nextFollowUpDate = addDaysMY(nowISO, followUpDays);
 					break;
 				case "Follow Up":
-					followUpDate.setDate(followUpDate.getDate() + 2);
+					nextFollowUpDate = addBusinessDaysMY(nowISO, 2);
 					break;
 				case "Consulted":
-					followUpDate.setDate(followUpDate.getDate() + 1);
+					nextFollowUpDate = addBusinessDaysMY(nowISO, 1);
 					break;
 			}
-			nextFollowUpDate = followUpDate.toISOString();
 		}
 
 		const leadData = {
@@ -479,8 +500,9 @@ app.put("/leads/:id", async (c) => {
 		}
 
 		const current = currentLead[0];
+		const followUpDays = Number((c.env as any)?.FOLLOW_UP_DAYS || 3);
 		const updateData: any = {
-			updatedAt: new Date().toISOString(),
+			updatedAt: nowMYISO(),
 		};
 
 		// Only update fields that are provided
@@ -490,12 +512,13 @@ app.put("/leads/:id", async (c) => {
 		if (body.remark !== undefined) updateData.remark = body.remark;
 		if (body.trainerHandle !== undefined) updateData.trainerHandle = body.trainerHandle;
 
-		// Handle date updates with standardization
+		// Handle date updates with GMT+8 conversion
 		if (body.date !== undefined) {
-			updateData.date = standardizeDate(body.date);
+			const standardDate = standardizeDate(body.date);
+			updateData.date = standardDate ? parseDDMMYYYYToMYISO(standardDate, 9) : "";
 			// Auto-update month when date is provided (unless month is explicitly provided)
-			if (body.month === undefined && body.date) {
-				updateData.month = getMonthFromDate(updateData.date || "");
+			if (body.month === undefined && updateData.date) {
+				updateData.month = getMonthFromISO(updateData.date);
 			}
 		}
 		if (body.month !== undefined) updateData.month = body.month;
@@ -534,39 +557,40 @@ app.put("/leads/:id", async (c) => {
 		}
 
 		// Handle date fields and activity tracking based on status changes
-		const now = new Date();
-		const nowISO = now.toISOString();
+		const nowISO = nowMYISO();
 
 		if (statusChanged) {
 			updateData.lastActivityDate = nowISO;
 
 			if (finalStatus === "Closed Won" || finalStatus === "Closed Lost") {
-				// Handle closed statuses
-				const closedDate = body.closedDate
-					? standardizeDate(body.closedDate)
-					: current.closedDate || current.date || now.toLocaleDateString("en-GB");
-				updateData.closedDate = closedDate || "";
-				updateData.closedMonth = getMonthFromDate(closedDate || "");
-				updateData.closedYear = getYearFromDate(closedDate || "");
+				// Handle closed statuses with GMT+8
+				let closedDate = "";
+				if (body.closedDate) {
+					const standardClosed = standardizeDate(body.closedDate);
+					closedDate = standardClosed ? parseDDMMYYYYToMYISO(standardClosed, 18) || "" : "";
+				} else {
+					closedDate = current.closedDate || current.date || nowISO;
+				}
+				updateData.closedDate = closedDate;
+				updateData.closedMonth = getMonthFromISO(closedDate);
+				updateData.closedYear = getYearFromISO(closedDate);
 				updateData.nextFollowUpDate = null;
 			} else {
-				// Handle active statuses - set follow-up dates
-				const followUpDate = new Date();
+				// Handle active statuses - set follow-up dates with GMT+8
 				switch (finalStatus) {
 					case "New":
-						followUpDate.setDate(followUpDate.getDate() + 1);
+						updateData.nextFollowUpDate = addBusinessDaysMY(nowISO, 1);
 						break;
 					case "Contacted":
-						followUpDate.setDate(followUpDate.getDate() + 3);
+						updateData.nextFollowUpDate = addDaysMY(nowISO, followUpDays);
 						break;
 					case "Follow Up":
-						followUpDate.setDate(followUpDate.getDate() + 2);
+						updateData.nextFollowUpDate = addBusinessDaysMY(nowISO, 2);
 						break;
 					case "Consulted":
-						followUpDate.setDate(followUpDate.getDate() + 1);
+						updateData.nextFollowUpDate = addBusinessDaysMY(nowISO, 1);
 						break;
 				}
-				updateData.nextFollowUpDate = followUpDate.toISOString();
 
 				// Clear closed date fields if moving back to active status
 				if (current.closedDate) {
@@ -577,11 +601,12 @@ app.put("/leads/:id", async (c) => {
 			}
 		} else if (body.closedDate !== undefined) {
 			// Handle explicit closed date updates without status change
-			const closedDate = standardizeDate(body.closedDate) || "";
+			const standardClosed = standardizeDate(body.closedDate);
+			const closedDate = standardClosed ? parseDDMMYYYYToMYISO(standardClosed, 18) || "" : "";
 			updateData.closedDate = closedDate;
 			if (closedDate) {
-				updateData.closedMonth = getMonthFromDate(closedDate);
-				updateData.closedYear = getYearFromDate(closedDate);
+				updateData.closedMonth = getMonthFromISO(closedDate);
+				updateData.closedYear = getYearFromISO(closedDate);
 			} else {
 				updateData.closedMonth = "";
 				updateData.closedYear = "";
@@ -816,8 +841,9 @@ const getMonthNumber = (monthName: string): number => {
 // ROAS calculation endpoint
 app.get("/roas", async (c) => {
 	try {
-		// Run status maintenance
-		await runStatusMaintenance(db);
+		// Run status maintenance with config from environment
+		const followUpDays = Number((c.env as any)?.FOLLOW_UP_DAYS || 3);
+		await runStatusMaintenance(db, { followUpDays });
 
 		const month = c.req.query("month");
 		const year = c.req.query("year");

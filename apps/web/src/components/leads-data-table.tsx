@@ -10,8 +10,9 @@ import {
 	useReactTable,
 	type VisibilityState,
 } from "@tanstack/react-table";
-import { Edit, MoreHorizontal, Phone, Trash2 } from "lucide-react";
+import { Calendar, Clock, Edit, MoreHorizontal, Phone, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { formatDateCompat, formatFollowUp, timeAgo } from "@/lib/datetime";
 import { DataTableColumnHeader } from "./data-table/column-header";
 import { DataTable } from "./data-table/data-table";
 import { DataTablePagination } from "./data-table/pagination";
@@ -134,10 +135,18 @@ export function LeadsDataTable({
 		},
 		{
 			accessorKey: "date",
-			header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Lead Date" />,
 			cell: ({ row }) => {
 				const date = row.getValue("date") as string;
-				return date ? <div className="text-sm text-muted-foreground">{date}</div> : null;
+				if (!date) return null;
+
+				const formatted = formatDateCompat(date);
+				return (
+					<div className="flex items-center gap-1 text-sm text-muted-foreground">
+						<Calendar className="h-3 w-3" />
+						{formatted}
+					</div>
+				);
 			},
 		},
 		{
@@ -145,21 +154,28 @@ export function LeadsDataTable({
 			header: ({ column }) => <DataTableColumnHeader column={column} title="Next Follow-up" />,
 			cell: ({ row }) => {
 				const date = row.getValue("nextFollowUpDate") as string;
-				if (!date) return null;
+				const status = row.getValue("status") as string;
 
-				// Check if date is overdue
-				const followUpDate = new Date(date);
-				const today = new Date();
-				today.setHours(0, 0, 0, 0);
-				followUpDate.setHours(0, 0, 0, 0);
-				const isOverdue = followUpDate < today;
+				// Don't show follow-up for closed leads
+				if (status === "Closed Won" || status === "Closed Lost") {
+					return <span className="text-xs text-muted-foreground">-</span>;
+				}
+
+				if (!date) {
+					return <span className="text-xs text-orange-600 font-medium">Not scheduled</span>;
+				}
+
+				const followUp = formatFollowUp(date);
 
 				return (
-					<div
-						className={`text-sm ${isOverdue ? "text-red-600 font-medium" : "text-muted-foreground"}`}
-					>
-						{date}
-						{isOverdue && <span className="ml-1 text-xs">(Overdue)</span>}
+					<div className="flex items-center gap-1">
+						<Clock className="h-3 w-3" />
+						<span
+							className={`text-sm ${followUp.isOverdue ? "text-red-600 font-medium" : "text-muted-foreground"}`}
+							title={formatDateCompat(date)}
+						>
+							{followUp.text}
+						</span>
 					</div>
 				);
 			},
@@ -169,7 +185,14 @@ export function LeadsDataTable({
 			header: ({ column }) => <DataTableColumnHeader column={column} title="Last Activity" />,
 			cell: ({ row }) => {
 				const date = row.getValue("lastActivityDate") as string;
-				return date ? <div className="text-sm text-muted-foreground">{date}</div> : null;
+				if (!date) return null;
+
+				const ago = timeAgo(date);
+				return (
+					<div className="text-sm text-muted-foreground" title={formatDateCompat(date)}>
+						{ago}
+					</div>
+				);
 			},
 		},
 		{

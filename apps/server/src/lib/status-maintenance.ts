@@ -1,6 +1,13 @@
-import { and, eq, gt, isNull, lt, ne } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, ne, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { leads } from "../db/schema/leads";
+import {
+	addBusinessDaysMY,
+	addDaysMY,
+	getMonthFromISO,
+	getYearFromISO,
+	nowMYISO,
+} from "./datetime-utils";
 import { isWonStatus, normalizeStatus } from "./status";
 
 /**
@@ -14,7 +21,10 @@ import { isWonStatus, normalizeStatus } from "./status";
  *
  * Performance target: < 100ms execution time
  */
-export async function runStatusMaintenance(db: DrizzleD1Database): Promise<{
+export async function runStatusMaintenance(
+	db: DrizzleD1Database,
+	config?: { followUpDays?: number },
+): Promise<{
 	promotedToFollowUp: number;
 	syncedSalesStatus: number;
 	updatedActivityDates: number;
@@ -23,11 +33,13 @@ export async function runStatusMaintenance(db: DrizzleD1Database): Promise<{
 	const startTime = Date.now();
 
 	try {
+		const followUpDays = config?.followUpDays || 3;
+
 		// Run maintenance tasks in parallel for better performance
 		const [promotedCount, syncedCount, activityCount] = await Promise.all([
-			promoteStaleContactedLeads(db),
+			promoteStaleContactedLeads(db, followUpDays),
 			syncSalesWithStatus(db),
-			updateActivityDates(db),
+			updateActivityDates(db, followUpDays),
 		]);
 
 		const executionTime = Date.now() - startTime;
@@ -47,11 +59,11 @@ export async function runStatusMaintenance(db: DrizzleD1Database): Promise<{
 /**
  * Auto-promotes stale "Contacted" leads to "Follow Up" after configured days
  */
-async function promoteStaleContactedLeads(db: DrizzleD1Database): Promise<number> {
-	const followUpDays = Number(process.env.FOLLOW_UP_DAYS || 3);
-	const cutoffDate = new Date();
-	cutoffDate.setDate(cutoffDate.getDate() - followUpDays);
-	const cutoffDateStr = cutoffDate.toISOString();
+async function promoteStaleContactedLeads(
+	db: DrizzleD1Database,
+	followUpDays: number,
+): Promise<number> {
+	const cutoffDateStr = addDaysMY(nowMYISO(), -followUpDays);
 
 	try {
 		// Find contacted leads older than configured days without recent activity
@@ -64,9 +76,8 @@ async function promoteStaleContactedLeads(db: DrizzleD1Database): Promise<number
 			return 0;
 		}
 
-		// Update status and set next follow-up date
-		const nextFollowUp = new Date();
-		nextFollowUp.setDate(nextFollowUp.getDate() + 2); // 2 days from now
+		// Update status and set next follow-up date (2 business days from now)
+		const nextFollowUp = addBusinessDaysMY(nowMYISO(), 2);
 
 		const leadIds = staleLeads.map((lead) => lead.id);
 
@@ -82,9 +93,9 @@ async function promoteStaleContactedLeads(db: DrizzleD1Database): Promise<number
 					.update(leads)
 					.set({
 						status: "Follow Up",
-						lastActivityDate: new Date().toISOString(),
-						nextFollowUpDate: nextFollowUp.toISOString(),
-						updatedAt: new Date().toISOString(),
+						lastActivityDate: nowMYISO(),
+						nextFollowUpDate: nextFollowUp,
+						updatedAt: nowMYISO(),
 					})
 					.where(eq(leads.id, leadId));
 
@@ -115,7 +126,7 @@ async function syncSalesWithStatus(db: DrizzleD1Database): Promise<number> {
 		}
 
 		let updatedCount = 0;
-		const now = new Date().toISOString();
+		const now = nowMYISO();
 
 		for (const lead of leadsToUpdate) {
 			await db
@@ -124,8 +135,8 @@ async function syncSalesWithStatus(db: DrizzleD1Database): Promise<number> {
 					status: "Closed Won",
 					lastActivityDate: now,
 					closedDate: now,
-					closedMonth: new Date().toLocaleString("default", { month: "long" }),
-					closedYear: new Date().getFullYear().toString(),
+					closedMonth: getMonthFromISO(now),
+					closedYear: getYearFromISO(now),
 					updatedAt: now,
 				})
 				.where(eq(leads.id, lead.id));
@@ -142,69 +153,81 @@ async function syncSalesWithStatus(db: DrizzleD1Database): Promise<number> {
 
 /**
  * Updates lastActivityDate and nextFollowUpDate based on current status
+ * CRITICAL FIX: This function now properly sets follow-up dates for ALL active leads
  */
-async function updateActivityDates(db: DrizzleD1Database): Promise<number> {
+async function updateActivityDates(db: DrizzleD1Database, followUpDays: number): Promise<number> {
 	try {
-		// Find leads without lastActivityDate set
-		const leadsNeedingActivity = await db
+		// Find leads that need activity date or follow-up date updates
+		// This includes leads without lastActivityDate OR without proper follow-up dates
+		const leadsNeedingUpdate = await db
 			.select({
 				id: leads.id,
 				status: leads.status,
 				createdAt: leads.createdAt,
 				lastActivityDate: leads.lastActivityDate,
+				nextFollowUpDate: leads.nextFollowUpDate,
+				date: leads.date,
 			})
 			.from(leads)
-			.where(isNull(leads.lastActivityDate));
+			.where(or(isNull(leads.lastActivityDate), isNull(leads.nextFollowUpDate)));
 
-		if (leadsNeedingActivity.length === 0) {
+		if (leadsNeedingUpdate.length === 0) {
 			return 0;
 		}
 
 		let updatedCount = 0;
+		const now = nowMYISO();
 
-		for (const lead of leadsNeedingActivity) {
+		for (const lead of leadsNeedingUpdate) {
 			const normalizedStatus = normalizeStatus(lead.status);
-			const now = new Date().toISOString();
 
-			// Set lastActivityDate to createdAt if not set
-			const lastActivity = lead.lastActivityDate || lead.createdAt || now;
+			// Set lastActivityDate to lead date, createdAt, or now if not set
+			const lastActivity = lead.lastActivityDate || lead.date || lead.createdAt || now;
 
 			// Calculate next follow-up based on status
-			let nextFollowUp: string | null = null;
+			// CRITICAL: Only update if not already set OR if status requires it
+			let nextFollowUp: string | null = lead.nextFollowUpDate;
 
-			if (!isWonStatus(normalizedStatus) && normalizedStatus !== "Closed Lost") {
-				const followUpDate = new Date();
+			if (!nextFollowUp && !isWonStatus(normalizedStatus) && normalizedStatus !== "Closed Lost") {
+				// Use lastActivity as base for calculating follow-up
+				const baseDate = lastActivity;
 
 				switch (normalizedStatus) {
 					case "New":
-						followUpDate.setDate(followUpDate.getDate() + 1); // Follow up next day
+						nextFollowUp = addBusinessDaysMY(baseDate, 1); // Follow up next business day
 						break;
-					case "Contacted": {
-						const followUpDays = Number(process.env.FOLLOW_UP_DAYS || 3);
-						followUpDate.setDate(followUpDate.getDate() + followUpDays); // Follow up in configured days
+					case "Contacted":
+						nextFollowUp = addDaysMY(baseDate, followUpDays); // Follow up in configured days
 						break;
-					}
 					case "Follow Up":
-						followUpDate.setDate(followUpDate.getDate() + 2); // Follow up in 2 days
+						nextFollowUp = addBusinessDaysMY(baseDate, 2); // Follow up in 2 business days
 						break;
 					case "Consulted":
-						followUpDate.setDate(followUpDate.getDate() + 1); // Follow up next day
+						nextFollowUp = addBusinessDaysMY(baseDate, 1); // Follow up next business day
 						break;
 				}
-
-				nextFollowUp = followUpDate.toISOString();
+			} else if (isWonStatus(normalizedStatus) || normalizedStatus === "Closed Lost") {
+				// Clear follow-up date for closed leads
+				nextFollowUp = null;
 			}
 
-			await db
-				.update(leads)
-				.set({
-					lastActivityDate: lastActivity,
-					nextFollowUpDate: nextFollowUp,
-					updatedAt: now,
-				})
-				.where(eq(leads.id, lead.id));
+			// Only update if there's a change needed
+			if (
+				!lead.lastActivityDate ||
+				!lead.nextFollowUpDate ||
+				lead.nextFollowUpDate !== nextFollowUp
+			) {
+				await db
+					.update(leads)
+					.set({
+						lastActivityDate: lastActivity,
+						nextFollowUpDate: nextFollowUp,
+						updatedAt: now,
+					})
+					.where(eq(leads.id, lead.id));
 
-			updatedCount++;
+				updatedCount++;
+			}
 		}
 
 		return updatedCount;
@@ -217,24 +240,24 @@ async function updateActivityDates(db: DrizzleD1Database): Promise<number> {
 /**
  * Utility function to get maintenance statistics
  */
-export async function getMaintenanceStats(db: DrizzleD1Database): Promise<{
+export async function getMaintenanceStats(
+	db: DrizzleD1Database,
+	config?: { followUpDays?: number },
+): Promise<{
 	staleContactedLeads: number;
 	leadsWithSalesNotWon: number;
 	leadsWithoutActivityDate: number;
 }> {
 	try {
-		const followUpDays = Number(process.env.FOLLOW_UP_DAYS || 3);
-		const cutoffDate = new Date();
-		cutoffDate.setDate(cutoffDate.getDate() - followUpDays);
+		const followUpDays = config?.followUpDays || 3;
+		const cutoffDate = addDaysMY(nowMYISO(), -followUpDays);
 
 		const [staleContacted, salesNotWon, noActivity] = await Promise.all([
 			// Stale contacted leads
 			db
 				.select({ count: leads.id })
 				.from(leads)
-				.where(
-					and(eq(leads.status, "Contacted"), lt(leads.lastActivityDate, cutoffDate.toISOString())),
-				),
+				.where(and(eq(leads.status, "Contacted"), lt(leads.lastActivityDate, cutoffDate))),
 
 			// Leads with sales but not won
 			db

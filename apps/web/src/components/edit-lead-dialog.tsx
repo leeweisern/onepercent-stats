@@ -169,12 +169,12 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 
 	// Auto-clear sales when "Closed Lost" selected
 	useEffect(() => {
-		if (status === "Closed Lost" && sales !== "0" && sales !== "") {
+		if (status === "Closed Lost") {
 			setSales("0");
 			// Clear closed date when closed lost
 			setClosedDate("");
 		}
-	}, [status, sales]);
+	}, [status]);
 
 	const handleSave = async () => {
 		if (!lead) return;
@@ -201,7 +201,11 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 				date: convertFromDateInputFormat(date),
 				month,
 				closedDate: convertFromDateInputFormat(closedDate),
-
+				lastActivityDate: (() => {
+					const now = new Date();
+					const myTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // GMT+8
+					return `${myTime.toISOString().slice(0, -1)}+08:00`;
+				})(),
 				remark,
 				trainerHandle: isCustomTrainer ? customTrainer : trainerHandle,
 			};
