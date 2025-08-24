@@ -83,7 +83,7 @@ INSERT INTO leads VALUES(10,'May','29/05/2025','Robin','601120902544','Facebook'
 INSERT INTO leads VALUES(11,'May','28/05/2025','Celeste yau','60122116872','Facebook',0,'Consult',NULL,'Appointment on 4 june 5pm','',NULL,NULL,NULL,'2025-07-31 14:22:40');
 INSERT INTO leads VALUES(12,'May','25/05/2025','Ari','','Facebook',0,'No Reply',NULL,'','',NULL,NULL,NULL,'2025-07-31 14:22:40');
 INSERT INTO leads VALUES(13,'May','26/05/2025','lim si yong ( SY )','60168616300','Facebook',1,'Consult',5688,'bring Friend , Sunday 11am 7june','Vincent','26/05/2025','May','2025','2025-07-31 14:22:40');
-INSERT INTO leads VALUES(14,'May','26/05/2025','Steve SC','60122152269','Facebook',1,'Consult',9250,'15 june 7am','Junyi trial','26/05/2025','May','2025','2025-07-31 14:22:40');
+INSERT INTO leads VALUES(14,'May','26/05/2025','Steve SC','60122152269','Facebook',1,'Consult',9250,'15 june 7am','Junyi','26/05/2025','May','2025','2025-07-31 14:22:40');
 INSERT INTO leads VALUES(15,'May','26/05/2025','Jeanette','60146194808','Facebook',0,'No Reply',NULL,'Membership','Vincent',NULL,NULL,NULL,'2025-07-31 14:22:40');
 INSERT INTO leads VALUES(16,'May','27/05/2025','sam','','Facebook',0,'No Reply',NULL,'','',NULL,NULL,NULL,'2025-07-31 14:22:40');
 INSERT INTO leads VALUES(17,'May','30/05/2025','neyomi','60123917318','Facebook',0,'No Reply',NULL,'','',NULL,NULL,NULL,'2025-07-31 14:22:40');
@@ -94,8 +94,8 @@ INSERT INTO leads VALUES(21,'May','30/05/2025','Allie','60176891382','Insta',0,'
 INSERT INTO leads VALUES(22,'June','05/06/2025','Mrs.Lim','','Facebook',0,'No Reply',NULL,'PT','',NULL,NULL,NULL,'2025-07-31 14:22:40');
 INSERT INTO leads VALUES(23,'June','06/06/2025','Lei Jingoogle','','Facebook',0,'No Reply',NULL,'','Vincent',NULL,NULL,NULL,'2025-07-31 14:22:40');
 INSERT INTO leads VALUES(24,'June','06/06/2025','FBongoogle','','Facebook',0,'No Reply',NULL,'','',NULL,NULL,NULL,'2025-07-31 14:22:40');
-INSERT INTO leads VALUES(25,'June','10/06/2025','googleeorgooglee','','Insta',0,'No Reply',NULL,'PT','Junyi trial',NULL,NULL,NULL,'2025-07-31 14:22:40');
-INSERT INTO leads VALUES(26,'June','09/06/2025','Terence','','Facebook',1,'Consult',5688,'PT','Junyi trial','09/06/2025','June','2025','2025-07-31 14:22:40');
+INSERT INTO leads VALUES(25,'June','10/06/2025','googleeorgooglee','','Insta',0,'No Reply',NULL,'PT','Junyi',NULL,NULL,NULL,'2025-07-31 14:22:40');
+INSERT INTO leads VALUES(26,'June','09/06/2025','Terence','','Facebook',1,'Consult',5688,'PT','Junyi','09/06/2025','June','2025','2025-07-31 14:22:40');
 INSERT INTO leads VALUES(27,'June','09/06/2025','Matthew Aw','','Insta',0,'No Reply',NULL,'PT','',NULL,NULL,NULL,'2025-07-31 14:22:40');
 INSERT INTO leads VALUES(28,'June','09/06/2025','Yap Hwee Mingoogle','','Facebook',1,'Consult',5688,'','','09/06/2025','June','2025','2025-07-31 14:22:40');
 INSERT INTO leads VALUES(29,'June','01/06/2025','Mr. lee','','jasper BR',0,'No Reply',NULL,'','',NULL,NULL,NULL,'2025-07-31 14:22:40');
