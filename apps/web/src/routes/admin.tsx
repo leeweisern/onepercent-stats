@@ -36,7 +36,7 @@ export default function AdminPage() {
 
 	const fetchUsers = useCallback(async () => {
 		try {
-			const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/admin/users`, {
+			const response = await fetch("/api/admin/users", {
 				credentials: "include",
 			});
 
@@ -65,7 +65,7 @@ export default function AdminPage() {
 
 		setIsDeleting(userId);
 		try {
-			const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/admin/users/${userId}`, {
+			const response = await fetch(`/api/admin/users/${userId}`, {
 				method: "DELETE",
 				credentials: "include",
 			});

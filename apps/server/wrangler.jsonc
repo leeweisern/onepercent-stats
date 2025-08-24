@@ -33,5 +33,9 @@
 			"preview_database_id": "ab4a3dca-8c8f-4208-9f90-3cb7a2a78db4",
 			"migrations_dir": "./src/db/migrations"
 		}
-	]
+	],
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	}
 }

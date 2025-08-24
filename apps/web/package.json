@@ -7,8 +7,7 @@
 		"dev": "react-router dev",
 		"start": "react-router-serve ./build/server/index.js",
 		"typecheck": "react-router typegen && tsc",
-		"wrangler:dev": "wrangler dev --port=3001",
-		"deploy": "bun run build && wrangler deploy"
+		"wrangler:dev": "wrangler dev --port=3001"
 	},
 	"dependencies": {
 		"@radix-ui/react-alert-dialog": "^1.1.15",

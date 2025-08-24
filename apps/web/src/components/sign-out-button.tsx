@@ -1,25 +1,36 @@
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
 import { authClient } from "@/lib/auth-client";
-import { Button } from "./ui/button";
+import { SidebarMenuButton } from "./ui/sidebar";
 
 export function SignOutButton() {
 	const navigate = useNavigate();
 
-	const handleSignOut = () => {
-		authClient.signOut({
-			fetchOptions: {
-				onSuccess: () => {
-					navigate("/login");
+	const handleSignOut = async () => {
+		try {
+			await authClient.signOut({
+				fetchOptions: {
+					onSuccess: () => {
+						navigate("/login", { replace: true });
+					},
+					onError: (ctx) => {
+						console.error("Sign out error:", ctx.error);
+						// Still navigate to login even if there's an error
+						navigate("/login", { replace: true });
+					},
 				},
-			},
-		});
+			});
+		} catch (error) {
+			console.error("Sign out failed:", error);
+			// Navigate to login page regardless of error
+			navigate("/login", { replace: true });
+		}
 	};
 
 	return (
-		<Button variant="ghost" onClick={handleSignOut} className="gap-2">
+		<SidebarMenuButton onClick={handleSignOut} tooltip="Sign out">
 			<LogOut className="h-4 w-4" />
-			Sign out
-		</Button>
+			<span>Sign out</span>
+		</SidebarMenuButton>
 	);
 }

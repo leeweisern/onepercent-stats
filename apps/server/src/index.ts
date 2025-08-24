@@ -22,26 +22,67 @@ app.use(
 	"/*",
 	cors({
 		origin: (origin, c) => {
-			const allowedOrigin = c.env.CORS_ORIGIN;
-			if (!origin || origin === allowedOrigin) {
-				return allowedOrigin;
+			// Parse allowed origins from environment
+			const allowedOrigins = (c.env.CORS_ORIGIN || "")
+				.split(",")
+				.map((s) => s.trim())
+				.filter(Boolean);
+
+			// Get the current request's origin (self-origin)
+			const selfOrigin = new URL(c.req.url).origin;
+
+			// If no Origin header, don't set CORS headers (not a CORS request)
+			if (!origin) {
+				return null;
 			}
+
+			// Always allow same-origin requests explicitly
+			if (origin === selfOrigin) {
+				return origin;
+			}
+
+			// Check if origin is in allowlist
+			if (allowedOrigins.includes(origin)) {
+				return origin;
+			}
+
+			// Reject all other origins
 			return null;
 		},
-		allowMethods: ["GET", "POST", "OPTIONS"],
-		allowHeaders: ["Content-Type", "Authorization"],
+		allowMethods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+		allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+		exposeHeaders: ["Content-Type", "Set-Cookie"],
 		credentials: true,
+		maxAge: 86400, // Cache preflight for 24 hours
 	}),
 );
 
-app.on(["POST", "GET", "OPTIONS"], "/api/auth/**", async (c) => {
+// Explicit OPTIONS handler for all API routes (handled by CORS middleware)
+app.options("/api/*", (c) => {
+	// CORS middleware already sets headers, just return 204
+	return c.text(null, 204);
+});
+
+app.on(["POST", "GET"], "/api/auth/**", async (c) => {
 	try {
 		const auth = createAuth(c.env);
+		console.log("Auth instance created successfully");
+
 		const response = await auth.handler(c.req.raw);
+		console.log("Auth handler completed");
+
 		return response;
 	} catch (error) {
 		console.error("Auth error:", error);
-		return c.json({ error: "Authentication error", details: error.message }, 500);
+		console.error("Error stack:", error.stack);
+		return c.json(
+			{
+				error: "Authentication error",
+				details: error.message,
+				stack: error.stack?.split("\n").slice(0, 5),
+			},
+			500,
+		);
 	}
 });
 

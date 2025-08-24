@@ -2,12 +2,14 @@ import { LayoutProvider } from "../../context/layout-provider";
 import { authClient } from "../../lib/auth-client";
 import { getCookie } from "../../lib/cookies";
 import { cn } from "../../lib/utils";
-
+import { SignOutButton } from "../sign-out-button";
 import {
 	SidebarContent,
 	SidebarFooter,
 	SidebarHeader,
 	SidebarInset,
+	SidebarMenu,
+	SidebarMenuItem,
 	SidebarProvider,
 	SidebarRail,
 } from "../ui/sidebar";
@@ -39,7 +41,13 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 							<NavGroup key={props.title} {...props} />
 						))}
 					</SidebarContent>
-					<SidebarFooter></SidebarFooter>
+					<SidebarFooter>
+						<SidebarMenu>
+							<SidebarMenuItem>
+								<SignOutButton />
+							</SidebarMenuItem>
+						</SidebarMenu>
+					</SidebarFooter>
 
 					<SidebarRail />
 				</AppSidebar>
