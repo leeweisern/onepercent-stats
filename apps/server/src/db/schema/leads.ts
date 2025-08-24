@@ -4,7 +4,7 @@ import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 export const leads = sqliteTable("leads", {
 	id: integer("id").primaryKey(),
 	month: text("month"),
-	date: text("date"),
+	date: text("date").notNull(),
 	name: text("name"),
 	phoneNumber: text("phone_number"),
 	platform: text("platform"),

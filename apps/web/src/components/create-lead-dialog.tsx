@@ -36,6 +36,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 	const dateId = useId();
 	const closedDateId = useId();
 	const trainerId = useId();
+	const customTrainerId = useId();
 	const remarkId = useId();
 
 	const [name, setName] = useState("");
@@ -50,6 +51,8 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 	const [remark, setRemark] = useState("");
 	const [trainerHandle, setTrainerHandle] = useState("");
+	const [customTrainer, setCustomTrainer] = useState("");
+	const [isCustomTrainer, setIsCustomTrainer] = useState(false);
 	const [closedDate, setClosedDate] = useState("");
 	const [options, setOptions] = useState<Options>({
 		status: [],
@@ -88,6 +91,8 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 		setRemark("");
 		setTrainerHandle("");
+		setCustomTrainer("");
+		setIsCustomTrainer(false);
 	}, []);
 
 	useEffect(() => {
@@ -158,7 +163,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 				closedDate: convertFromDateInputFormat(closedDate),
 
 				remark: remark.trim(),
-				trainerHandle: trainerHandle,
+				trainerHandle: isCustomTrainer ? customTrainer.trim() : trainerHandle,
 			};
 
 			await onSave(leadData);
@@ -322,6 +327,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 										type="date"
 										value={date}
 										onChange={(e) => setDate(e.target.value)}
+										required
 									/>
 								</div>
 
@@ -343,18 +349,56 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 									<Label htmlFor={trainerId}>
 										Trainer Handle <span className="text-sm text-muted-foreground">(optional)</span>
 									</Label>
-									<Select value={trainerHandle} onValueChange={setTrainerHandle}>
-										<SelectTrigger>
-											<SelectValue placeholder="Select trainer" />
-										</SelectTrigger>
-										<SelectContent>
-											{options.trainerHandle.map((t) => (
-												<SelectItem key={t} value={t}>
-													{t}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+									{isCustomTrainer ? (
+										<div className="flex items-center gap-2">
+											<Input
+												id={customTrainerId}
+												value={customTrainer}
+												onChange={(e) => setCustomTrainer(e.target.value)}
+												placeholder="Enter new trainer handle"
+												className="flex-1"
+											/>
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												onClick={() => {
+													setIsCustomTrainer(false);
+													setTrainerHandle(customTrainer);
+												}}
+												className="px-2 text-xs"
+											>
+												Select existing
+											</Button>
+										</div>
+									) : (
+										<div className="flex items-center gap-2">
+											<Select value={trainerHandle} onValueChange={setTrainerHandle}>
+												<SelectTrigger className="flex-1">
+													<SelectValue placeholder="Select trainer" />
+												</SelectTrigger>
+												<SelectContent>
+													{options.trainerHandle.map((t) => (
+														<SelectItem key={t} value={t}>
+															{t}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												onClick={() => {
+													setIsCustomTrainer(true);
+													setCustomTrainer(trainerHandle);
+												}}
+												className="px-2 text-xs"
+											>
+												Add new
+											</Button>
+										</div>
+									)}
 								</div>
 							</div>
 						</details>
