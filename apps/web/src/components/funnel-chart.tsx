@@ -47,12 +47,14 @@ interface FunnelChartProps {
 	selectedMonth?: string;
 	selectedYear?: string;
 	selectedPlatform?: string;
+	dateType?: "lead" | "closed";
 }
 
 export default function FunnelChart({
 	selectedMonth,
 	selectedYear,
 	selectedPlatform,
+	dateType = "lead",
 }: FunnelChartProps) {
 	const [funnelData, setFunnelData] = useState<FunnelData | null>(null);
 	const [summaryData, setSummaryData] = useState<any>(null);
@@ -67,16 +69,24 @@ export default function FunnelChart({
 			if (selectedMonth) params.append("month", selectedMonth);
 			if (selectedYear) params.append("year", selectedYear);
 			if (currentPlatform) params.append("platform", currentPlatform);
+			if (dateType) params.append("dateType", dateType);
 
 			const response = await fetch(`/api/analytics/leads/funnel?${params}`);
 			const data = await response.json();
-			setFunnelData(data);
+			// Handle new API response format with period
+			const funnelData = {
+				funnel: data.funnel,
+				month: data.period?.month || data.month || "All months",
+				year: data.period?.year || data.year || "All years",
+				platform: data.period?.platform || data.platform || "All platforms",
+			};
+			setFunnelData(funnelData);
 		} catch (error) {
 			console.error("Error fetching funnel data:", error);
 		} finally {
 			setLoading(false);
 		}
-	}, [selectedMonth, selectedYear, currentPlatform]);
+	}, [selectedMonth, selectedYear, currentPlatform, dateType]);
 
 	const fetchSummaryData = useCallback(async () => {
 		try {
@@ -85,16 +95,17 @@ export default function FunnelChart({
 			if (selectedMonth) params.append("month", selectedMonth);
 			if (selectedYear) params.append("year", selectedYear);
 			if (currentPlatform) params.append("platform", currentPlatform);
+			if (dateType) params.append("dateType", dateType);
 
-			// Fetch filtered leads data to calculate our own summary
-			const response = await fetch(`/api/analytics/leads?${params}`);
-			const leads = await response.json();
+			// Use the summary endpoint instead of fetching all leads
+			const response = await fetch(`/api/analytics/leads/summary?${params}`);
+			const summary = await response.json();
 
-			// Calculate filtered summary
-			const totalLeads = leads.length;
-			const totalConsults = leads.filter((lead: any) => lead.status === "Consult").length;
-			const totalClosed = leads.filter((lead: any) => lead.isClosed).length;
-			const totalSales = leads.reduce((sum: number, lead: any) => sum + (lead.sales || 0), 0);
+			// Calculate summary based on canonical statuses
+			const totalLeads = summary.totalLeads || 0;
+			const totalConsults = summary.totalConsults || 0; // "Consulted" status
+			const totalClosed = summary.totalClosed || 0; // "Closed Won" status
+			const totalSales = summary.totalSales || 0;
 
 			setSummaryData({
 				totalLeads,
@@ -105,7 +116,7 @@ export default function FunnelChart({
 		} catch (error) {
 			console.error("Error fetching summary data:", error);
 		}
-	}, [selectedMonth, selectedYear, currentPlatform]);
+	}, [selectedMonth, selectedYear, currentPlatform, dateType]);
 
 	const fetchPlatforms = useCallback(async () => {
 		try {
@@ -199,16 +210,13 @@ export default function FunnelChart({
 							// Use the accurate summary data
 							const totalLeads = summaryData.totalLeads;
 							const totalConsults = summaryData.totalConsults || 0;
-							const totalSales = summaryData.totalClosed; // This is the actual closed leads count
+							const totalClosed = summaryData.totalClosed; // This is the actual closed leads count
 
+							// Simplified 3-stage funnel for visual clarity
 							const simplifiedFunnel = [
 								{ status: "leads", displayName: "Leads", count: totalLeads },
-								{
-									status: "consults",
-									displayName: "Consult",
-									count: totalConsults,
-								},
-								{ status: "sales", displayName: "Sales", count: totalSales },
+								{ status: "consulted", displayName: "Consulted", count: totalConsults },
+								{ status: "closed_won", displayName: "Closed Won", count: totalClosed },
 							];
 
 							const maxCount = Math.max(...simplifiedFunnel.map((s) => s.count));
@@ -252,7 +260,7 @@ export default function FunnelChart({
 										: "0.0"}
 									%
 								</div>
-								<div className="text-muted-foreground text-sm">Total Conversion</div>
+								<div className="text-muted-foreground text-sm">Closed Won Rate</div>
 							</div>
 						)}
 					</div>
@@ -276,15 +284,15 @@ export default function FunnelChart({
 									totalSales: 0,
 								},
 								{
-									status: "consults",
-									displayName: "Consult",
+									status: "consulted",
+									displayName: "Consulted",
 									count: consultCount,
 									conversionRate: totalLeads > 0 ? (consultCount / totalLeads) * 100 : 0,
 									totalSales: 0,
 								},
 								{
-									status: "sales",
-									displayName: "Sales",
+									status: "closed_won",
+									displayName: "Closed Won",
 									count: salesCount,
 									conversionRate: totalLeads > 0 ? (salesCount / totalLeads) * 100 : 0,
 									totalSales: totalSalesAmount,

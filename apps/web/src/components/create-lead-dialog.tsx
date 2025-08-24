@@ -24,7 +24,6 @@ interface Options {
 	status: string[];
 	platform: string[];
 	trainerHandle: string[];
-	isClosed: boolean[];
 }
 
 export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialogProps) {
@@ -44,8 +43,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 	const [platform, setPlatform] = useState("");
 	const [customPlatform, setCustomPlatform] = useState("");
 	const [isCustomPlatform, setIsCustomPlatform] = useState(false);
-	const [status, setStatus] = useState("");
-	const [isClosed, setIsClosed] = useState(false);
+	const [status, setStatus] = useState("New");
 	const [sales, setSales] = useState("");
 	const [date, setDate] = useState("");
 	const [month, setMonth] = useState("");
@@ -57,15 +55,18 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 		status: [],
 		platform: [],
 		trainerHandle: [],
-		isClosed: [true, false],
 	});
 	const [loading, setLoading] = useState(false);
 
 	const fetchOptions = useCallback(async () => {
 		try {
-			const response = await fetch("/api/analytics/leads/options");
+			const response = await fetch("/api/analytics/leads/filter-options");
 			const data = await response.json();
-			setOptions(data);
+			setOptions({
+				status: data.statuses || [],
+				platform: data.platforms || [],
+				trainerHandle: data.trainerHandles || [],
+			});
 		} catch (error) {
 			console.error("Failed to fetch options:", error);
 		}
@@ -77,8 +78,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 		setPlatform("");
 		setCustomPlatform("");
 		setIsCustomPlatform(false);
-		setStatus("");
-		setIsClosed(false);
+		setStatus("New");
 		setSales("");
 		// Set date to today's date in YYYY-MM-DD format (user's local time)
 		const todayString = getTodayYYYYMMDD();
@@ -108,17 +108,21 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 		}
 	}, [date]);
 
-	// Auto-update closed and status when sales changes
+	// Auto-update status when sales changes
 	useEffect(() => {
 		const salesValue = sales ? Number.parseInt(sales, 10) : 0;
 
-		if (salesValue > 0) {
-			setIsClosed(true);
-			setStatus("Consult");
-		} else {
-			setIsClosed(false);
+		if (salesValue > 0 && status !== "Closed Won" && status !== "Closed Lost") {
+			setStatus("Closed Won");
 		}
-	}, [sales]);
+	}, [sales, status]);
+
+	// Auto-clear sales when "Closed Lost" selected
+	useEffect(() => {
+		if (status === "Closed Lost" && sales !== "0" && sales !== "") {
+			setSales("0");
+		}
+	}, [status, sales]);
 
 	const handleSave = async () => {
 		if (!name.trim()) {
@@ -136,14 +140,18 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 			return;
 		}
 
+		if (status === "Closed Won" && (!sales || Number.parseInt(sales, 10) <= 0)) {
+			alert("Sales amount is required for Closed Won status");
+			return;
+		}
+
 		setLoading(true);
 		try {
 			const leadData = {
 				name: name.trim(),
 				phoneNumber: phoneNumber.trim(),
 				platform: isCustomPlatform ? customPlatform.trim() : platform,
-				status: status,
-				isClosed: isClosed,
+				status: status || "New",
 				sales: sales ? Number.parseInt(sales, 10) : 0,
 				date: convertFromDateInputFormat(date),
 				month: month,
@@ -258,12 +266,10 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 
 						{/* Status */}
 						<div className="space-y-2">
-							<Label htmlFor={statusId}>
-								Status <span className="text-sm text-muted-foreground">(optional)</span>
-							</Label>
-							<Select value={status} onValueChange={setStatus} defaultValue="New">
+							<Label htmlFor={statusId}>Status</Label>
+							<Select value={status} onValueChange={setStatus}>
 								<SelectTrigger>
-									<SelectValue placeholder="New" />
+									<SelectValue placeholder="Select status" />
 								</SelectTrigger>
 								<SelectContent>
 									{options.status.map((s) => (
@@ -337,45 +343,6 @@ export function CreateLeadDialog({ open, onOpenChange, onSave }: CreateLeadDialo
 									<Label htmlFor={trainerId}>
 										Trainer Handle <span className="text-sm text-muted-foreground">(optional)</span>
 									</Label>
-									<Select value={trainerHandle} onValueChange={setTrainerHandle}>
-										<SelectTrigger>
-											<SelectValue placeholder="Select trainer" />
-										</SelectTrigger>
-										<SelectContent>
-											{options.trainerHandle.map((t) => (
-												<SelectItem key={t} value={t}>
-													{t}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-
-								{/* Date */}
-								<div className="space-y-2">
-									<Label htmlFor={dateId}>Date</Label>
-									<Input
-										id={dateId}
-										type="date"
-										value={date}
-										onChange={(e) => setDate(e.target.value)}
-									/>
-								</div>
-
-								{/* Closed Date */}
-								<div className="space-y-2">
-									<Label htmlFor={closedDateId}>Closed Date</Label>
-									<Input
-										id={closedDateId}
-										type="date"
-										value={closedDate}
-										onChange={(e) => setClosedDate(e.target.value)}
-									/>
-								</div>
-
-								{/* Trainer */}
-								<div className="space-y-2">
-									<Label htmlFor={trainerId}>Trainer Handle</Label>
 									<Select value={trainerHandle} onValueChange={setTrainerHandle}>
 										<SelectTrigger>
 											<SelectValue placeholder="Select trainer" />

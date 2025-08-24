@@ -7,19 +7,31 @@ import { globSync } from "glob";
 
 // Dynamically find the local D1 database file to avoid hardcoding the hash.
 // This makes the script more robust against changes in wrangler's internal file structure.
-const dbFile = globSync(
-	path.join(
-		process.cwd(),
-		"apps",
-		"server",
-		".wrangler",
-		"state",
-		"v3",
-		"d1",
-		"miniflare-D1DatabaseObject",
-		"*.sqlite",
-	),
-)[0];
+const dbFile =
+	globSync(
+		path.join(
+			process.cwd(),
+			".wrangler",
+			"state",
+			"v3",
+			"d1",
+			"miniflare-D1DatabaseObject",
+			"*.sqlite",
+		),
+	)[0] ||
+	globSync(
+		path.join(
+			process.cwd(),
+			"apps",
+			"server",
+			".wrangler",
+			"state",
+			"v3",
+			"d1",
+			"miniflare-D1DatabaseObject",
+			"*.sqlite",
+		),
+	)[0];
 
 if (!dbFile) {
 	throw new Error(

@@ -25,7 +25,6 @@ interface Lead {
 	name: string | null;
 	phoneNumber: string | null;
 	platform: string | null;
-	isClosed: boolean | null;
 	status: string | null;
 	sales: number | null;
 	remark: string | null;
@@ -34,6 +33,8 @@ interface Lead {
 	closedMonth: string | null;
 	closedYear: string | null;
 	createdAt: string | null;
+	nextFollowUpDate: string | null;
+	lastActivityDate: string | null;
 }
 
 interface EditLeadDialogProps {
@@ -47,7 +48,6 @@ interface Options {
 	status: string[];
 	platform: string[];
 	trainerHandle: string[];
-	isClosed: boolean[];
 }
 
 export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDialogProps) {
@@ -67,8 +67,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 	const [platform, setPlatform] = useState("");
 	const [customPlatform, setCustomPlatform] = useState("");
 	const [isCustomPlatform, setIsCustomPlatform] = useState(false);
-	const [status, setStatus] = useState("");
-	const [isClosed, setIsClosed] = useState(false);
+	const [status, setStatus] = useState("New");
 	const [sales, setSales] = useState("");
 	const [date, setDate] = useState("");
 	const [month, setMonth] = useState("");
@@ -80,15 +79,18 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 		status: [],
 		platform: [],
 		trainerHandle: [],
-		isClosed: [true, false],
 	});
 	const [loading, setLoading] = useState(false);
 
 	const fetchOptions = useCallback(async () => {
 		try {
-			const response = await fetch("/api/analytics/leads/options");
+			const response = await fetch("/api/analytics/leads/filter-options");
 			const data = await response.json();
-			setOptions(data);
+			setOptions({
+				status: data.statuses || [],
+				platform: data.platforms || [],
+				trainerHandle: data.trainerHandles || [],
+			});
 		} catch (error) {
 			console.error("Failed to fetch options:", error);
 		}
@@ -101,8 +103,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 			const leadPlatform = lead.platform || "";
 			setPlatform(leadPlatform);
 			setCustomPlatform(leadPlatform);
-			setStatus(lead.status || "");
-			setIsClosed(lead.isClosed || false);
+			setStatus(lead.status || "New");
 			setSales(lead.sales?.toString() || "");
 			const dateValue = convertToDateInputFormat(lead.date);
 			setDate(dateValue);
@@ -139,27 +140,37 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 		}
 	}, [date]);
 
-	// Auto-update closed, status, and closed date when sales changes
+	// Auto-update status when sales changes
 	useEffect(() => {
 		const salesValue = sales ? Number.parseInt(sales, 10) : 0;
 
-		if (salesValue > 0) {
-			setIsClosed(true);
-			setStatus("Consult");
+		if (salesValue > 0 && status !== "Closed Won" && status !== "Closed Lost") {
+			setStatus("Closed Won");
 			// Set closed date to current date if not already set
 			if (!closedDate) {
 				const today = new Date().toISOString().split("T")[0];
 				setClosedDate(today);
 			}
-		} else {
-			setIsClosed(false);
-			// Clear closed date when no sales
+		}
+	}, [sales, status, closedDate]);
+
+	// Auto-clear sales when "Closed Lost" selected
+	useEffect(() => {
+		if (status === "Closed Lost" && sales !== "0" && sales !== "") {
+			setSales("0");
+			// Clear closed date when closed lost
 			setClosedDate("");
 		}
-	}, [sales, closedDate]);
+	}, [status, sales]);
 
 	const handleSave = async () => {
 		if (!lead) return;
+
+		// Validation
+		if (status === "Closed Won" && (!sales || Number.parseInt(sales, 10) <= 0)) {
+			alert("Sales amount is required for Closed Won status");
+			return;
+		}
 
 		setLoading(true);
 		try {
@@ -167,8 +178,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 				name,
 				phoneNumber,
 				platform: isCustomPlatform ? customPlatform : platform,
-				status,
-				isClosed,
+				status: status || "New",
 				sales: sales ? Number.parseInt(sales, 10) : null,
 				date: convertFromDateInputFormat(date),
 				month,
@@ -224,18 +234,6 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 								onChange={(e) => setPhoneNumber(e.target.value)}
 								placeholder="Enter phone number"
 							/>
-						</div>
-
-						{/* Email (placeholder field) */}
-						<div className="space-y-2">
-							<Label htmlFor="email">Email</Label>
-							<Input id="email" type="email" placeholder="Enter email address" />
-						</div>
-
-						{/* Phone (placeholder field) */}
-						<div className="space-y-2">
-							<Label htmlFor="phone">Phone</Label>
-							<Input id="phone" type="tel" placeholder="Enter phone number" />
 						</div>
 
 						{/* Platform */}
@@ -295,9 +293,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 
 						{/* Status */}
 						<div className="space-y-2">
-							<Label htmlFor={statusId}>
-								Status <span className="text-sm text-muted-foreground">(optional)</span>
-							</Label>
+							<Label htmlFor={statusId}>Status</Label>
 							<Select value={status} onValueChange={setStatus}>
 								<SelectTrigger>
 									<SelectValue placeholder="Select status" />
@@ -376,45 +372,6 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSave }: EditLeadDia
 									<Label htmlFor={trainerId}>
 										Trainer Handle <span className="text-sm text-muted-foreground">(optional)</span>
 									</Label>
-									<Select value={trainerHandle} onValueChange={setTrainerHandle}>
-										<SelectTrigger>
-											<SelectValue placeholder="Select trainer" />
-										</SelectTrigger>
-										<SelectContent>
-											{options.trainerHandle.map((t) => (
-												<SelectItem key={t} value={t}>
-													{t}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-
-								{/* Date */}
-								<div className="space-y-2">
-									<Label htmlFor={dateId}>Date</Label>
-									<Input
-										id={dateId}
-										type="date"
-										value={date}
-										onChange={(e) => setDate(e.target.value)}
-									/>
-								</div>
-
-								{/* Closed Date */}
-								<div className="space-y-2">
-									<Label htmlFor={closedDateId}>Closed Date</Label>
-									<Input
-										id={closedDateId}
-										type="date"
-										value={closedDate}
-										onChange={(e) => setClosedDate(e.target.value)}
-									/>
-								</div>
-
-								{/* Trainer */}
-								<div className="space-y-2">
-									<Label htmlFor={trainerId}>Trainer Handle</Label>
 									<Select value={trainerHandle} onValueChange={setTrainerHandle}>
 										<SelectTrigger>
 											<SelectValue placeholder="Select trainer" />

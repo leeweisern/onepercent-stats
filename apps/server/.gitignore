@@ -50,3 +50,9 @@ lerna-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# compiled JS/TS files
+src/**/*.js
+src/**/*.d.ts
+scripts/**/*.js
+scripts/**/*.d.ts

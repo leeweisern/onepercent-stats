@@ -1,0 +1,9 @@
+PRAGMA defer_foreign_keys=TRUE;
+INSERT INTO "leads" VALUES(1,'June','15/06/2024','John Won','123456789','Facebook',1,'Closed Won',5000,'Great client','trainer1','2025-08-23 18:15:17','15/06/2024','June','2024');
+INSERT INTO "leads" VALUES(2,'June','16/06/2024','Jane Lost','123456790','Google',1,'Closed Lost',0,'Not interested','trainer2','2025-08-23 18:15:17','16/06/2024','June','2024');
+INSERT INTO "leads" VALUES(3,'June','17/06/2024','Bob Consult','123456791','Instagram',0,'Consulted',0,'Had consultation','trainer3','2025-08-23 18:15:17',NULL,NULL,NULL);
+INSERT INTO "leads" VALUES(4,'June','18/06/2024','Alice NoReply','123456792','WhatsApp',0,'Contacted',NULL,'Not responding','trainer4','2025-08-23 18:15:17',NULL,NULL,NULL);
+INSERT INTO "leads" VALUES(5,'June','19/06/2024','Charlie New','123456793','TikTok',0,'New',NULL,'Just signed up','trainer5','2025-08-23 18:15:17',NULL,NULL,NULL);
+INSERT INTO "leads" VALUES(6,'June','20/06/2024','Diana Empty','123456794','Facebook',0,'New',NULL,'Empty status','trainer6','2025-08-23 18:15:17',NULL,NULL,NULL);
+INSERT INTO "leads" VALUES(7,'June','21/06/2024','Edward Modern','123456795','Google',0,'Follow Up',NULL,'Already modern status','trainer7','2025-08-23 18:15:17',NULL,NULL,NULL);
+INSERT INTO "leads" VALUES(8,'June','22/06/2024','Frank ClosedWon2','123456796','Instagram',1,'Closed Won',3000,'Second won case','trainer8','2025-08-23 18:15:17','22/06/2024','June','2024');

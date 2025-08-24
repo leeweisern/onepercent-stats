@@ -19,6 +19,8 @@ export function standardizeDate(dateStr: string | null | undefined): string | nu
 
 	const [day, month, year] = parts;
 
+	if (!day || !month || !year) return null;
+
 	// Validate numeric values
 	const dayNum = parseInt(day, 10);
 	const monthNum = parseInt(month, 10);
@@ -61,7 +63,12 @@ export function formatDateToDDMMYYYY(date: Date): string {
 export function parseDDMMYYYY(dateStr: string): Date | null {
 	if (!isValidDateFormat(dateStr)) return null;
 
-	const [day, month, year] = dateStr.split("/").map((num) => parseInt(num, 10));
+	const parts = dateStr.split("/").map((num) => parseInt(num, 10));
+	if (parts.length !== 3) return null;
+
+	const [day, month, year] = parts;
+	if (!day || !month || !year) return null;
+
 	return new Date(year, month - 1, day);
 }
 
@@ -137,3 +144,70 @@ export const getYearFromDate = (dateString: string): string => {
 
 	return "";
 };
+
+/**
+ * Adds a specified number of days to a date string in DD/MM/YYYY format
+ * @param date - Date string in DD/MM/YYYY format
+ * @param days - Number of days to add (can be negative to subtract)
+ * @returns New date string in DD/MM/YYYY format
+ */
+export function addDaysToDDMMYYYY(date: string, days: number): string {
+	const parsed = parseDDMMYYYY(date);
+	if (!parsed) {
+		throw new Error(`Invalid date format: ${date}. Expected DD/MM/YYYY`);
+	}
+
+	const newDate = new Date(parsed);
+	newDate.setDate(newDate.getDate() + days);
+
+	return formatDateToDDMMYYYY(newDate);
+}
+
+/**
+ * Compares two date strings in DD/MM/YYYY format
+ * @param a - First date string
+ * @param b - Second date string
+ * @returns -1 if a < b, 0 if a === b, 1 if a > b
+ */
+export function compareDDMMYYYY(a: string, b: string): -1 | 0 | 1 {
+	const dateA = parseDDMMYYYY(a);
+	const dateB = parseDDMMYYYY(b);
+
+	if (!dateA || !dateB) {
+		throw new Error(`Invalid date format. Expected DD/MM/YYYY. Got: "${a}", "${b}"`);
+	}
+
+	const timeA = dateA.getTime();
+	const timeB = dateB.getTime();
+
+	if (timeA < timeB) return -1;
+	if (timeA > timeB) return 1;
+	return 0;
+}
+
+/**
+ * Returns today's date in DD/MM/YYYY format
+ */
+export function todayDDMMYYYY(): string {
+	return formatDateToDDMMYYYY(new Date());
+}
+
+/**
+ * Calculates the number of days between two dates in DD/MM/YYYY format
+ * @param from - Start date string in DD/MM/YYYY format
+ * @param to - End date string in DD/MM/YYYY format
+ * @returns Number of days between dates (positive if to > from)
+ */
+export function daysBetweenDDMMYYYY(from: string, to: string): number {
+	const fromDate = parseDDMMYYYY(from);
+	const toDate = parseDDMMYYYY(to);
+
+	if (!fromDate || !toDate) {
+		throw new Error(`Invalid date format. Expected DD/MM/YYYY. Got: "${from}", "${to}"`);
+	}
+
+	const diffTime = toDate.getTime() - fromDate.getTime();
+	const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+	return diffDays;
+}

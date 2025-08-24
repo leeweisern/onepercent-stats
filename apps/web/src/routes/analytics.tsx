@@ -15,13 +15,13 @@ export default function Analytics() {
 
 	const fetchAvailableMonths = useCallback(async () => {
 		try {
-			const response = await fetch("/api/analytics/leads/months");
-			const months = await response.json();
-			setAvailableMonths(months);
+			const response = await fetch(`/api/analytics/leads/months?dateType=${dateType}`);
+			const data = await response.json();
+			setAvailableMonths(data.months || []);
 		} catch (error) {
 			console.error("Error fetching months:", error);
 		}
-	}, []);
+	}, [dateType]);
 
 	const fetchAvailableYears = useCallback(async () => {
 		try {
@@ -37,6 +37,11 @@ export default function Analytics() {
 		fetchAvailableMonths();
 		fetchAvailableYears();
 	}, [fetchAvailableMonths, fetchAvailableYears]);
+
+	// Refetch months when dateType changes
+	useEffect(() => {
+		fetchAvailableMonths();
+	}, [fetchAvailableMonths]);
 
 	return (
 		<ProtectedRoute>
@@ -93,7 +98,11 @@ export default function Analytics() {
 				</div>
 
 				<div className="space-y-6">
-					<ROASMetrics selectedMonth={selectedMonth} selectedYear={selectedYear} />
+					<ROASMetrics
+						selectedMonth={selectedMonth}
+						selectedYear={selectedYear}
+						dateType={dateType}
+					/>
 
 					{/* Monthly Charts */}
 					<div className="grid gap-6 md:grid-cols-2">
@@ -101,8 +110,16 @@ export default function Analytics() {
 						<MonthlySalesChart selectedYear={selectedYear} dateType={dateType} />
 					</div>
 
-					<PlatformBreakdown selectedMonth={selectedMonth} selectedYear={selectedYear} />
-					<FunnelChart selectedMonth={selectedMonth} selectedYear={selectedYear} />
+					<PlatformBreakdown
+						selectedMonth={selectedMonth}
+						selectedYear={selectedYear}
+						dateType={dateType}
+					/>
+					<FunnelChart
+						selectedMonth={selectedMonth}
+						selectedYear={selectedYear}
+						dateType={dateType}
+					/>
 				</div>
 			</div>
 		</ProtectedRoute>

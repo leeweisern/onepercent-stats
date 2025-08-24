@@ -6,8 +6,6 @@ import { globSync } from "glob";
 const dbFile = globSync(
 	path.join(
 		process.cwd(),
-		"apps",
-		"server",
 		".wrangler",
 		"state",
 		"v3",
@@ -27,7 +25,6 @@ export default defineConfig({
 	schema: "./src/db/schema/*",
 	out: "./src/db/migrations",
 	dialect: "sqlite",
-	driver: "libsql",
 	dbCredentials: {
 		url: dbFile,
 	},

@@ -114,12 +114,13 @@ export function DataTable<TData, TValue>({
 							))
 						) : table.getRowModel().rows?.length ? (
 							table.getRowModel().rows.map((row) => {
-								const isClosed = (row.original as any)?.isClosed;
+								const status = (row.original as any)?.status;
+								const isClosedWon = status === "Closed Won";
 								return (
 									<TableRow
 										key={row.id}
 										data-state={row.getIsSelected() && "selected"}
-										className={isClosed ? "bg-red-50/50 hover:bg-red-50/80" : ""}
+										className={isClosedWon ? "bg-green-50/50 hover:bg-green-50/80" : ""}
 									>
 										{row.getVisibleCells().map((cell) => (
 											<TableCell key={cell.id}>

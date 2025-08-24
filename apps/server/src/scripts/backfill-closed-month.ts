@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { leads } from "../db/schema/leads";
-import { getMonthFromDate, getYearFromDate } from "../routers/analytics";
+import { getMonthFromDate, getYearFromDate } from "../lib/date-utils";
 
 // This script should be run locally against the dev DB
 // It backfills closedMonth and closedYear for existing leads that have closedDate but empty closedMonth/closedYear

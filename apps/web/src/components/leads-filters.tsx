@@ -30,23 +30,20 @@ export interface FilterState {
 	month: string;
 	year: string;
 	platform: string;
-	status: string;
+	status: string[];
 	trainer: string;
-	isClosed: string;
 	closedDate: string;
 }
 
 export function LeadsFilters({ onFiltersChange, totalResults }: LeadsFiltersProps) {
 	const searchInputId = useId();
-	const closedDateInputId = useId();
 	const [filters, setFilters] = useState<FilterState>({
 		search: "",
 		month: "",
 		year: "",
 		platform: "",
-		status: "",
+		status: [],
 		trainer: "",
-		isClosed: "",
 		closedDate: "",
 	});
 
@@ -81,7 +78,7 @@ export function LeadsFilters({ onFiltersChange, totalResults }: LeadsFiltersProp
 		onFiltersChange(filters);
 	}, [filters, onFiltersChange]);
 
-	const updateFilter = (key: keyof FilterState, value: string) => {
+	const updateFilter = (key: keyof FilterState, value: string | string[]) => {
 		setFilters((prev) => ({ ...prev, [key]: value }));
 	};
 
@@ -91,14 +88,15 @@ export function LeadsFilters({ onFiltersChange, totalResults }: LeadsFiltersProp
 			month: "",
 			year: "",
 			platform: "",
-			status: "",
+			status: [],
 			trainer: "",
-			isClosed: "",
 			closedDate: "",
 		});
 	};
 
-	const hasActiveFilters = Object.values(filters).some((value) => value !== "");
+	const hasActiveFilters = Object.entries(filters).some(([_key, value]) =>
+		Array.isArray(value) ? value.length > 0 : value !== "",
+	);
 
 	return (
 		<Card className="mb-6">
@@ -198,11 +196,24 @@ export function LeadsFilters({ onFiltersChange, totalResults }: LeadsFiltersProp
 					<div className="space-y-2">
 						<Label htmlFor="status">Status</Label>
 						<Select
-							value={filters.status || "all"}
-							onValueChange={(value) => updateFilter("status", value === "all" ? "" : value)}
+							value={filters.status.length === 0 ? "all" : filters.status.join(",")}
+							onValueChange={(value) => {
+								if (value === "all") {
+									updateFilter("status", []);
+								} else {
+									// For now, single select behavior - can be enhanced to multi-select later
+									updateFilter("status", [value]);
+								}
+							}}
 						>
 							<SelectTrigger>
-								<span>{filters.status || "All statuses"}</span>
+								<span>
+									{filters.status.length === 0
+										? "All statuses"
+										: filters.status.length === 1
+											? filters.status[0]
+											: `${filters.status.length} statuses selected`}
+								</span>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="all">All statuses</SelectItem>
@@ -234,41 +245,6 @@ export function LeadsFilters({ onFiltersChange, totalResults }: LeadsFiltersProp
 								))}
 							</SelectContent>
 						</Select>
-					</div>
-
-					{/* Closed Status Filter */}
-					<div className="space-y-2">
-						<Label htmlFor="closed">Closed Status</Label>
-						<Select
-							value={filters.isClosed || "all"}
-							onValueChange={(value) => updateFilter("isClosed", value === "all" ? "" : value)}
-						>
-							<SelectTrigger>
-								<span>
-									{filters.isClosed === "true"
-										? "Closed only"
-										: filters.isClosed === "false"
-											? "Open only"
-											: "All leads"}
-								</span>
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">All leads</SelectItem>
-								<SelectItem value="true">Closed only</SelectItem>
-								<SelectItem value="false">Open only</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-
-					{/* Closed Date Filter */}
-					<div className="space-y-2">
-						<Label htmlFor={closedDateInputId}>Closed Date</Label>
-						<Input
-							id={closedDateInputId}
-							type="date"
-							value={filters.closedDate}
-							onChange={(e) => updateFilter("closedDate", e.target.value)}
-						/>
 					</div>
 
 					{/* Results Count */}

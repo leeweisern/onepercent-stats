@@ -1,5 +1,29 @@
 #!/usr/bin/env node
 
+/**
+ * Production Deployment Script for One Percent Stats
+ *
+ * This script handles the complete deployment process for the monorepo application:
+ * 1. Builds the web application with production environment variables
+ * 2. Checks for and applies pending database migrations to remote D1
+ * 3. Deploys the Cloudflare Worker with static assets
+ * 4. Verifies deployment by testing API endpoints
+ *
+ * Migration Process Notes:
+ * - The script automatically detects and applies new migrations from src/db/migrations/
+ * - Migrations are applied to the remote D1 database using wrangler CLI
+ * - Database schema changes require regenerating migrations with: bun run db:generate
+ * - Critical data migrations should be backed up before deployment
+ *
+ * Usage:
+ *   node deploy.js
+ *
+ * Environment Requirements:
+ *   - CLOUDFLARE_D1_TOKEN or CLOUDFLARE_API_TOKEN must be set
+ *   - Wrangler must be configured with proper account access
+ *   - Production environment files should exist in apps/web/.env.production
+ */
+
 const { execSync } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs");
@@ -16,6 +40,18 @@ try {
 		...process.env,
 		CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_D1_TOKEN || process.env.CLOUDFLARE_API_TOKEN,
 	};
+
+	// Check for optional local-to-remote sync flag
+	const shouldSyncData = process.argv.includes("--sync-local-data");
+	if (shouldSyncData) {
+		console.log("🔄 Local-to-remote data sync requested...");
+		console.log("⚠️  WARNING: This will overwrite remote data with local data!");
+		console.log("   To proceed, export local data and import to remote manually:");
+		console.log("   1. cd apps/server");
+		console.log("   2. wrangler d1 export onepercent-stats-new --local --output=local-export.sql");
+		console.log("   3. wrangler d1 execute onepercent-stats-new --remote --file=local-export.sql");
+		console.log("   Continuing with deployment without sync...\n");
+	}
 
 	// Step 1: Build web application
 	console.log("📦 Building web application...");

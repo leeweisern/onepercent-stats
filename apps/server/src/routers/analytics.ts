@@ -3,6 +3,8 @@ import { Hono } from "hono";
 import { db } from "../db";
 import { advertisingCosts, leads } from "../db/schema/leads";
 import { getMonthFromDate, getYearFromDate, standardizeDate } from "../lib/date-utils";
+import { LEAD_STATUSES, normalizeStatus } from "../lib/status";
+import { runStatusMaintenance } from "../lib/status-maintenance";
 
 const app = new Hono();
 
@@ -35,18 +37,62 @@ app.get("/leads", async (c) => {
 });
 
 app.get("/leads/summary", async (c) => {
-	const totalLeads = await db.select({ value: count() }).from(leads);
-	const totalClosed = await db
-		.select({ value: count() })
-		.from(leads)
-		.where(eq(leads.isClosed, true));
-	const totalSales = await db.select({ value: sum(leads.sales) }).from(leads);
+	try {
+		// Run status maintenance
+		await runStatusMaintenance(db);
 
-	return c.json({
-		totalLeads: totalLeads[0]?.value || 0,
-		totalClosed: totalClosed[0]?.value || 0,
-		totalSales: totalSales[0]?.value || 0,
-	});
+		const dateType = c.req.query("dateType") || "lead";
+		const month = c.req.query("month");
+		const year = c.req.query("year");
+		const platform = c.req.query("platform");
+
+		// Build conditions based on dateType
+		const conditions = [];
+		if (dateType === "closed") {
+			if (month) conditions.push(eq(leads.closedMonth, month));
+			if (year) conditions.push(eq(leads.closedYear, year));
+		} else {
+			if (month) conditions.push(eq(leads.month, month));
+			if (year)
+				conditions.push(
+					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+				);
+		}
+		if (platform) conditions.push(eq(leads.platform, platform));
+
+		let query = db.select().from(leads);
+		if (conditions.length > 0) {
+			query = query.where(and(...conditions));
+		}
+
+		const allLeads = await query;
+
+		// Calculate metrics using normalized statuses
+		const totalLeads = allLeads.length;
+		const totalConsults = allLeads.filter(
+			(lead) => normalizeStatus(lead.status) === "Consulted",
+		).length;
+		const totalClosed = allLeads.filter(
+			(lead) => normalizeStatus(lead.status) === "Closed Won",
+		).length;
+		const totalSales = allLeads.reduce((sum, lead) => sum + (Number(lead.sales) || 0), 0);
+
+		return c.json({
+			totalLeads,
+			totalConsults,
+			totalClosed,
+			totalSales,
+			period: {
+				dateType,
+				month: month || "All months",
+				year: year || "All years",
+				platform: platform || "All platforms",
+			},
+		});
+	} catch (error) {
+		console.error("Error in leads summary:", error);
+		return c.json({ error: "Failed to fetch leads summary" }, 500);
+	}
 });
 
 app.get("/leads/by-platform", async (c) => {
@@ -62,158 +108,210 @@ app.get("/leads/by-platform", async (c) => {
 });
 
 app.get("/leads/platform-breakdown", async (c) => {
-	const month = c.req.query("month");
-	const year = c.req.query("year");
+	try {
+		// Run status maintenance
+		await runStatusMaintenance(db);
 
-	let query = db
-		.select({
-			platform: leads.platform,
-			totalLeads: count().as("total_leads"),
-			closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`).as("closed_leads"),
-			notClosedLeads: count(
-				sql`CASE WHEN ${leads.isClosed} = 0 OR ${leads.isClosed} IS NULL THEN 1 END`,
-			).as("not_closed_leads"),
-			totalSales:
-				sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`.as(
-					"total_sales",
-				),
-		})
-		.from(leads);
+		const dateType = c.req.query("dateType") || "lead";
+		const month = c.req.query("month");
+		const year = c.req.query("year");
+		const platform = c.req.query("platform");
 
-	const conditions = [];
-	if (month) {
-		conditions.push(eq(leads.closedMonth, month));
+		// Build conditions based on dateType
+		const conditions = [];
+		if (dateType === "closed") {
+			if (month) conditions.push(eq(leads.closedMonth, month));
+			if (year) conditions.push(eq(leads.closedYear, year));
+		} else {
+			if (month) conditions.push(eq(leads.month, month));
+			if (year)
+				conditions.push(
+					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+				);
+		}
+		if (platform) conditions.push(eq(leads.platform, platform));
+
+		let query = db.select().from(leads);
+		if (conditions.length > 0) {
+			query = query.where(and(...conditions));
+		}
+
+		const allLeads = await query;
+
+		// Group by platform and calculate metrics using normalized statuses
+		const platformData: Record<string, any> = {};
+
+		for (const lead of allLeads) {
+			const platformName = lead.platform || "Unknown";
+			const normalizedStatus = normalizeStatus(lead.status);
+
+			if (!platformData[platformName]) {
+				platformData[platformName] = {
+					platform: platformName,
+					totalLeads: 0,
+					closedWonLeads: 0,
+					closedLostLeads: 0,
+					totalSales: 0,
+				};
+			}
+
+			platformData[platformName].totalLeads++;
+			platformData[platformName].totalSales += Number(lead.sales) || 0;
+
+			if (normalizedStatus === "Closed Won") {
+				platformData[platformName].closedWonLeads++;
+			} else if (normalizedStatus === "Closed Lost") {
+				platformData[platformName].closedLostLeads++;
+			}
+		}
+
+		const breakdown = Object.values(platformData);
+
+		// Calculate totals
+		const totals = breakdown.reduce(
+			(acc, row: any) => ({
+				totalLeads: acc.totalLeads + row.totalLeads,
+				closedWonLeads: acc.closedWonLeads + row.closedWonLeads,
+				closedLostLeads: acc.closedLostLeads + row.closedLostLeads,
+				totalSales: acc.totalSales + row.totalSales,
+			}),
+			{ totalLeads: 0, closedWonLeads: 0, closedLostLeads: 0, totalSales: 0 },
+		);
+
+		return c.json({
+			breakdown,
+			totals,
+			period: {
+				dateType,
+				month: month || "All months",
+				year: year || "All years",
+				platform: platform || "All platforms",
+			},
+		});
+	} catch (error) {
+		console.error("Error in platform breakdown:", error);
+		return c.json({ error: "Failed to fetch platform breakdown" }, 500);
 	}
-	if (year) {
-		conditions.push(eq(leads.closedYear, year));
-	}
-
-	if (conditions.length > 0) {
-		query = query.where(and(...conditions));
-	}
-
-	const breakdown = await query.groupBy(leads.platform);
-
-	// Calculate totals
-	const totals = breakdown.reduce(
-		(acc, row) => ({
-			totalLeads: acc.totalLeads + (row.totalLeads || 0),
-			closedLeads: acc.closedLeads + (row.closedLeads || 0),
-			notClosedLeads: acc.notClosedLeads + (row.notClosedLeads || 0),
-			totalSales: acc.totalSales + (row.totalSales || 0),
-		}),
-		{ totalLeads: 0, closedLeads: 0, notClosedLeads: 0, totalSales: 0 },
-	);
-
-	return c.json({
-		breakdown: breakdown.map((row) => ({
-			...row,
-			closedLeads: row.closedLeads || 0,
-			notClosedLeads: row.notClosedLeads || 0,
-			totalSales: row.totalSales || 0,
-		})),
-		totals,
-		month: month || "All months",
-		year: year || "All years",
-	});
 });
 
 app.get("/leads/months", async (c) => {
-	const months = await db
-		.select({ month: leads.month })
-		.from(leads)
-		.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
-		.groupBy(leads.month)
-		.orderBy(desc(leads.month));
+	try {
+		const dateType = c.req.query("dateType") || "lead";
 
-	return c.json(months.map((m) => m.month).filter(Boolean));
+		let months;
+		if (dateType === "closed") {
+			months = await db
+				.select({ month: leads.closedMonth })
+				.from(leads)
+				.where(
+					and(
+						sql`${leads.closedMonth} IS NOT NULL AND ${leads.closedMonth} != ''`,
+						eq(leads.status, "Closed Won"),
+					),
+				)
+				.groupBy(leads.closedMonth)
+				.orderBy(desc(leads.closedMonth));
+		} else {
+			months = await db
+				.select({ month: leads.month })
+				.from(leads)
+				.where(sql`${leads.month} IS NOT NULL AND ${leads.month} != ''`)
+				.groupBy(leads.month)
+				.orderBy(desc(leads.month));
+		}
+
+		return c.json({
+			months: months.map((m) => m.month).filter(Boolean),
+			dateType,
+		});
+	} catch (error) {
+		console.error("Error fetching months:", error);
+		return c.json({ error: "Failed to fetch months" }, 500);
+	}
 });
 
 app.get("/leads/funnel", async (c) => {
-	const month = c.req.query("month");
-	const year = c.req.query("year");
-	const platform = c.req.query("platform");
+	try {
+		// Run status maintenance
+		await runStatusMaintenance(db);
 
-	let query = db
-		.select({
-			status: leads.status,
-			platform: leads.platform,
-			count: count().as("count"),
-			totalSales:
-				sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`.as(
-					"total_sales",
-				),
-		})
-		.from(leads);
+		const dateType = c.req.query("dateType") || "lead";
+		const month = c.req.query("month");
+		const year = c.req.query("year");
+		const platform = c.req.query("platform");
 
-	const conditions = [];
-	if (month) {
-		conditions.push(eq(leads.closedMonth, month));
-	}
-	if (year) {
-		conditions.push(eq(leads.closedYear, year));
-	}
-	if (platform) {
-		conditions.push(eq(leads.platform, platform));
-	}
+		// Build conditions based on dateType
+		const conditions = [];
+		if (dateType === "closed") {
+			if (month) conditions.push(eq(leads.closedMonth, month));
+			if (year) conditions.push(eq(leads.closedYear, year));
+		} else {
+			if (month) conditions.push(eq(leads.month, month));
+			if (year)
+				conditions.push(
+					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND substr(${leads.date}, -4) = ${year}`,
+				);
+		}
+		if (platform) conditions.push(eq(leads.platform, platform));
 
-	if (conditions.length > 0) {
-		query = query.where(and(...conditions));
-	}
+		let query = db.select().from(leads);
+		if (conditions.length > 0) {
+			query = query.where(and(...conditions));
+		}
 
-	const statusData = await query.groupBy(leads.status, leads.platform);
+		const allLeads = await query;
 
-	// Group by status and aggregate across platforms
-	const funnelData = statusData.reduce(
-		(acc, row) => {
-			const status = row.status || "Unknown";
-			if (!acc[status]) {
-				acc[status] = {
-					status,
+		// Group by normalized status and platform
+		const funnelData: Record<string, any> = {};
+
+		for (const lead of allLeads) {
+			const normalizedStatus = normalizeStatus(lead.status);
+			const platformName = lead.platform || "Unknown";
+
+			if (!funnelData[normalizedStatus]) {
+				funnelData[normalizedStatus] = {
+					status: normalizedStatus,
 					count: 0,
 					totalSales: 0,
 					platforms: {},
 				};
 			}
-			acc[status].count += row.count;
-			acc[status].totalSales += row.totalSales || 0;
 
-			const platformName = row.platform || "Unknown";
-			if (!acc[status].platforms[platformName]) {
-				acc[status].platforms[platformName] = {
+			if (!funnelData[normalizedStatus].platforms[platformName]) {
+				funnelData[normalizedStatus].platforms[platformName] = {
 					count: 0,
 					totalSales: 0,
 				};
 			}
-			acc[status].platforms[platformName].count += row.count;
-			acc[status].platforms[platformName].totalSales += row.totalSales || 0;
 
-			return acc;
-		},
-		{} as Record<string, any>,
-	);
+			funnelData[normalizedStatus].count++;
+			funnelData[normalizedStatus].totalSales += Number(lead.sales) || 0;
+			funnelData[normalizedStatus].platforms[platformName].count++;
+			funnelData[normalizedStatus].platforms[platformName].totalSales += Number(lead.sales) || 0;
+		}
 
-	// Convert to array and sort by typical funnel order
-	const statusOrder = ["No reply", "Consulted", "Closed"];
-	const sortedFunnel = Object.values(funnelData).sort((a: any, b: any) => {
-		const aIndex = statusOrder.indexOf(a.status);
-		const bIndex = statusOrder.indexOf(b.status);
-		if (aIndex === -1 && bIndex === -1) return a.status.localeCompare(b.status);
-		if (aIndex === -1) return 1;
-		if (bIndex === -1) return -1;
-		return aIndex - bIndex;
-	});
+		// Sort funnel data by canonical status order
+		const sortedFunnel = LEAD_STATUSES.filter((status) => funnelData[status]).map(
+			(status) => funnelData[status],
+		);
 
-	return c.json({
-		funnel: sortedFunnel,
-		month: month || "All months",
-		year: year || "All years",
-		platform: platform || "All platforms",
-	});
+		return c.json({
+			funnel: sortedFunnel,
+			period: {
+				dateType,
+				month: month || "All months",
+				year: year || "All years",
+				platform: platform || "All platforms",
+			},
+		});
+	} catch (error) {
+		console.error("Error in funnel analysis:", error);
+		return c.json({ error: "Failed to fetch funnel data" }, 500);
+	}
 });
 
 app.get("/leads/options", async (c) => {
-	const [statusOptions, platformOptions, monthOptions, trainerOptions] = await Promise.all([
+	const [_statusOptions, platformOptions, monthOptions, trainerOptions] = await Promise.all([
 		db.select({ value: leads.status }).from(leads).groupBy(leads.status),
 		db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
 		db
@@ -224,19 +322,20 @@ app.get("/leads/options", async (c) => {
 		db.select({ value: leads.trainerHandle }).from(leads).groupBy(leads.trainerHandle),
 	]);
 
+	// Return canonical statuses from constants instead of DB-derived values
+	const { LEAD_STATUSES } = await import("../lib/status");
+
 	return c.json({
-		status: statusOptions.map((s) => s.value).filter(Boolean),
+		status: [...LEAD_STATUSES],
 		platform: platformOptions.map((p) => p.value).filter(Boolean),
 		month: monthOptions.map((m) => m.value).filter(Boolean),
 		trainerHandle: trainerOptions.map((t) => t.value).filter(Boolean),
-		isClosed: [true, false],
 	});
 });
 
 app.get("/leads/filter-options", async (c) => {
-	const [statusOptions, platformOptions, monthOptions, trainerOptions, dateOptions] =
-		await Promise.all([
-			db.select({ value: leads.status }).from(leads).groupBy(leads.status),
+	try {
+		const [platformOptions, monthOptions, trainerOptions, dateOptions] = await Promise.all([
 			db.select({ value: leads.platform }).from(leads).groupBy(leads.platform),
 			db
 				.select({ value: leads.month })
@@ -251,87 +350,114 @@ app.get("/leads/filter-options", async (c) => {
 			db.select({ value: leads.date }).from(leads).groupBy(leads.date),
 		]);
 
-	// Extract unique years from dates
-	const years = Array.from(
-		new Set(
-			dateOptions
-				.map((d) => d.value)
-				.filter(Boolean)
-				.map((date) => getYearFromDate(date || ""))
-				.filter(Boolean), // Filter out empty strings
-		),
-	).sort((a, b) => b.localeCompare(a)); // Sort descending
+		// Extract unique years from dates
+		const years = Array.from(
+			new Set(
+				dateOptions
+					.map((d) => d.value)
+					.filter(Boolean)
+					.map((date) => getYearFromDate(date || ""))
+					.filter(Boolean), // Filter out empty strings
+			),
+		).sort((a, b) => b.localeCompare(a)); // Sort descending
 
-	return c.json({
-		months: monthOptions
-			.map((m) => m.value)
-			.filter(Boolean)
-			.sort(),
-		years: years,
-		platforms: platformOptions
-			.map((p) => p.value)
-			.filter(Boolean)
-			.sort(),
-		statuses: statusOptions
-			.map((s) => s.value)
-			.filter(Boolean)
-			.sort(),
-		trainers: trainerOptions
-			.map((t) => t.value)
-			.filter(Boolean)
-			.sort(),
-	});
+		return c.json({
+			months: monthOptions
+				.map((m) => m.value)
+				.filter(Boolean)
+				.sort(),
+			years: years,
+			platforms: platformOptions
+				.map((p) => p.value)
+				.filter(Boolean)
+				.sort(),
+			statuses: [...LEAD_STATUSES], // Return canonical statuses
+			trainers: trainerOptions
+				.map((t) => t.value)
+				.filter(Boolean)
+				.sort(),
+		});
+	} catch (error) {
+		console.error("Error fetching filter options:", error);
+		return c.json({ error: "Failed to fetch filter options" }, 500);
+	}
 });
 
 app.post("/leads", async (c) => {
-	const body = await c.req.json();
-
-	// Validate required fields
-	if (!body.name) {
-		return c.json({ error: "Name is required" }, 400);
-	}
-
-	// Prepare lead data with defaults and standardize dates
-	const dateValue = standardizeDate(body.date) || "";
-	const monthValue = body.month || getMonthFromDate(dateValue);
-	const salesValue = body.sales || 0;
-
-	// Auto-set closed date based on sales
-	let closedDateValue = standardizeDate(body.closedDate) || "";
-	if (salesValue > 0 && !closedDateValue && dateValue) {
-		closedDateValue = dateValue; // Set closed date to same as date if sales > 0
-	} else if (salesValue === 0) {
-		closedDateValue = ""; // Clear closed date if no sales
-	}
-
-	// Auto-set isClosed based on sales (unless explicitly provided)
-	const isClosedValue = body.isClosed !== undefined ? body.isClosed : salesValue > 0;
-
-	// Derive closedMonth and closedYear from closedDateValue
-	let closedMonthValue = "";
-	let closedYearValue = "";
-	if (closedDateValue) {
-		closedMonthValue = getMonthFromDate(closedDateValue);
-		closedYearValue = getYearFromDate(closedDateValue);
-	}
-
-	const leadData = {
-		name: body.name,
-		phoneNumber: body.phoneNumber || "",
-		platform: body.platform || "",
-		status: body.status || "",
-		isClosed: isClosedValue,
-		sales: salesValue,
-		date: dateValue,
-		month: monthValue,
-		remark: body.remark || "",
-		trainerHandle: body.trainerHandle || "",
-		closedDate: closedDateValue,
-		closedMonth: closedMonthValue,
-		closedYear: closedYearValue,
-	};
-
 	try {
+		const body = await c.req.json();
+
+		// Validate required fields
+		if (!body.name) {
+			return c.json({ error: "Name is required" }, 400);
+		}
+
+		// Prepare lead data with defaults and standardize dates
+		const dateValue = standardizeDate(body.date) || "";
+		const monthValue = body.month || getMonthFromDate(dateValue);
+		const salesValue = Number(body.sales) || 0;
+
+		// Determine initial status - default to "New" or auto-set "Closed Won" if sales > 0
+		let initialStatus = body.status || "New";
+		if (salesValue > 0) {
+			initialStatus = "Closed Won";
+		}
+
+		// Normalize the status
+		const normalizedStatus = normalizeStatus(initialStatus);
+
+		// Set date fields based on status
+		const now = new Date();
+		const nowISO = now.toISOString();
+		let closedDateValue = "";
+		let closedMonthValue = "";
+		let closedYearValue = "";
+		const lastActivityDate = nowISO;
+		let nextFollowUpDate: string | null = null;
+
+		if (normalizedStatus === "Closed Won") {
+			closedDateValue =
+				standardizeDate(body.closedDate) || dateValue || now.toLocaleDateString("en-GB");
+			closedMonthValue = getMonthFromDate(closedDateValue);
+			closedYearValue = getYearFromDate(closedDateValue);
+		} else {
+			// Set follow-up dates for active statuses
+			const followUpDate = new Date();
+			switch (normalizedStatus) {
+				case "New":
+					followUpDate.setDate(followUpDate.getDate() + 1);
+					break;
+				case "Contacted":
+					followUpDate.setDate(followUpDate.getDate() + 3);
+					break;
+				case "Follow Up":
+					followUpDate.setDate(followUpDate.getDate() + 2);
+					break;
+				case "Consulted":
+					followUpDate.setDate(followUpDate.getDate() + 1);
+					break;
+			}
+			nextFollowUpDate = followUpDate.toISOString();
+		}
+
+		const leadData = {
+			name: body.name,
+			phoneNumber: body.phoneNumber || "",
+			platform: body.platform || "",
+			status: normalizedStatus,
+			sales: salesValue,
+			date: dateValue,
+			month: monthValue,
+			remark: body.remark || "",
+			trainerHandle: body.trainerHandle || "",
+			closedDate: closedDateValue,
+			closedMonth: closedMonthValue,
+			closedYear: closedYearValue,
+			lastActivityDate,
+			nextFollowUpDate,
+			updatedAt: nowISO,
+		};
+
 		const newLead = await db.insert(leads).values(leadData).returning();
 		return c.json(newLead[0], 201);
 	} catch (error) {
@@ -341,87 +467,134 @@ app.post("/leads", async (c) => {
 });
 
 app.put("/leads/:id", async (c) => {
-	const id = Number.parseInt(c.req.param("id"), 10);
-	const body = await c.req.json();
+	try {
+		const id = Number.parseInt(c.req.param("id"), 10);
+		const body = await c.req.json();
 
-	// Get current lead data once to avoid multiple queries
-	const currentLead = await db.select().from(leads).where(eq(leads.id, id));
+		// Get current lead data once to avoid multiple queries
+		const currentLead = await db.select().from(leads).where(eq(leads.id, id));
 
-	if (currentLead.length === 0) {
-		return c.json({ error: "Lead not found" }, 404);
-	}
-
-	const current = currentLead[0];
-	const updateData: any = {};
-
-	// Only update fields that are provided
-	if (body.name !== undefined) updateData.name = body.name;
-	if (body.phoneNumber !== undefined) updateData.phoneNumber = body.phoneNumber;
-	if (body.platform !== undefined) updateData.platform = body.platform;
-	if (body.status !== undefined) updateData.status = body.status;
-	if (body.remark !== undefined) updateData.remark = body.remark;
-	if (body.trainerHandle !== undefined) updateData.trainerHandle = body.trainerHandle;
-
-	// Handle date updates with standardization
-	if (body.date !== undefined) {
-		updateData.date = standardizeDate(body.date);
-		// Auto-update month when date is provided (unless month is explicitly provided)
-		if (body.month === undefined && body.date) {
-			updateData.month = getMonthFromDate(updateData.date || "");
+		if (currentLead.length === 0) {
+			return c.json({ error: "Lead not found" }, 404);
 		}
-	}
-	if (body.month !== undefined) updateData.month = body.month;
 
-	// Handle closed date logic - this is the main logic for closed date fields
-	let finalClosedDate = current.closedDate;
-	let _finalSales = current.sales;
-	let finalIsClosed = current.isClosed;
+		const current = currentLead[0];
+		const updateData: any = {
+			updatedAt: new Date().toISOString(),
+		};
 
-	// Update sales if provided
-	if (body.sales !== undefined) {
-		_finalSales = body.sales;
-		updateData.sales = body.sales;
-	}
+		// Only update fields that are provided
+		if (body.name !== undefined) updateData.name = body.name;
+		if (body.phoneNumber !== undefined) updateData.phoneNumber = body.phoneNumber;
+		if (body.platform !== undefined) updateData.platform = body.platform;
+		if (body.remark !== undefined) updateData.remark = body.remark;
+		if (body.trainerHandle !== undefined) updateData.trainerHandle = body.trainerHandle;
 
-	// Update closedDate if explicitly provided with standardization
-	if (body.closedDate !== undefined) {
-		finalClosedDate = standardizeDate(body.closedDate) || "";
-		updateData.closedDate = finalClosedDate;
-	} else if (body.sales !== undefined) {
-		// Auto-update closed date based on sales when sales is changed but closedDate is not explicitly provided
-		if (body.sales > 0 && !current.closedDate) {
-			// If sales > 0 and no existing closed date, use the lead's date
-			finalClosedDate = current.date || "";
-			updateData.closedDate = finalClosedDate;
-		} else if (body.sales === 0) {
-			// If sales = 0, clear closed date
-			finalClosedDate = "";
-			updateData.closedDate = "";
+		// Handle date updates with standardization
+		if (body.date !== undefined) {
+			updateData.date = standardizeDate(body.date);
+			// Auto-update month when date is provided (unless month is explicitly provided)
+			if (body.month === undefined && body.date) {
+				updateData.month = getMonthFromDate(updateData.date || "");
+			}
 		}
+		if (body.month !== undefined) updateData.month = body.month;
+
+		// Handle status transitions with comprehensive logic
+		let finalStatus = normalizeStatus(current.status);
+		let finalSales = Number(current.sales) || 0;
+		let statusChanged = false;
+
+		// Update sales if provided
+		if (body.sales !== undefined) {
+			finalSales = Number(body.sales) || 0;
+			updateData.sales = finalSales;
+		}
+
+		// Handle status updates
+		if (body.status !== undefined) {
+			const newStatus = normalizeStatus(body.status);
+			if (newStatus !== finalStatus) {
+				finalStatus = newStatus;
+				statusChanged = true;
+				updateData.status = finalStatus;
+			}
+		}
+
+		// Auto-sync status with sales
+		if (finalSales > 0 && finalStatus !== "Closed Won") {
+			finalStatus = "Closed Won";
+			statusChanged = true;
+			updateData.status = finalStatus;
+		} else if (finalSales === 0 && finalStatus === "Closed Won") {
+			// If sales was removed but status is still Closed Won, revert to previous logical status
+			finalStatus = "Consulted";
+			statusChanged = true;
+			updateData.status = finalStatus;
+		}
+
+		// Handle date fields and activity tracking based on status changes
+		const now = new Date();
+		const nowISO = now.toISOString();
+
+		if (statusChanged) {
+			updateData.lastActivityDate = nowISO;
+
+			if (finalStatus === "Closed Won" || finalStatus === "Closed Lost") {
+				// Handle closed statuses
+				const closedDate = body.closedDate
+					? standardizeDate(body.closedDate)
+					: current.closedDate || current.date || now.toLocaleDateString("en-GB");
+				updateData.closedDate = closedDate || "";
+				updateData.closedMonth = getMonthFromDate(closedDate || "");
+				updateData.closedYear = getYearFromDate(closedDate || "");
+				updateData.nextFollowUpDate = null;
+			} else {
+				// Handle active statuses - set follow-up dates
+				const followUpDate = new Date();
+				switch (finalStatus) {
+					case "New":
+						followUpDate.setDate(followUpDate.getDate() + 1);
+						break;
+					case "Contacted":
+						followUpDate.setDate(followUpDate.getDate() + 3);
+						break;
+					case "Follow Up":
+						followUpDate.setDate(followUpDate.getDate() + 2);
+						break;
+					case "Consulted":
+						followUpDate.setDate(followUpDate.getDate() + 1);
+						break;
+				}
+				updateData.nextFollowUpDate = followUpDate.toISOString();
+
+				// Clear closed date fields if moving back to active status
+				if (current.closedDate) {
+					updateData.closedDate = "";
+					updateData.closedMonth = "";
+					updateData.closedYear = "";
+				}
+			}
+		} else if (body.closedDate !== undefined) {
+			// Handle explicit closed date updates without status change
+			const closedDate = standardizeDate(body.closedDate) || "";
+			updateData.closedDate = closedDate;
+			if (closedDate) {
+				updateData.closedMonth = getMonthFromDate(closedDate);
+				updateData.closedYear = getYearFromDate(closedDate);
+			} else {
+				updateData.closedMonth = "";
+				updateData.closedYear = "";
+			}
+		}
+
+		const updatedLead = await db.update(leads).set(updateData).where(eq(leads.id, id)).returning();
+
+		return c.json(updatedLead[0]);
+	} catch (error) {
+		console.error("Error updating lead:", error);
+		return c.json({ error: "Failed to update lead" }, 500);
 	}
-
-	// Update isClosed if explicitly provided, or auto-update based on sales
-	if (body.isClosed !== undefined) {
-		finalIsClosed = body.isClosed;
-		updateData.isClosed = body.isClosed;
-	} else if (body.sales !== undefined) {
-		// Auto-update isClosed based on sales
-		finalIsClosed = body.sales > 0;
-		updateData.isClosed = finalIsClosed;
-	}
-
-	// Always update closedMonth and closedYear based on final closedDate
-	if (finalClosedDate) {
-		updateData.closedMonth = getMonthFromDate(finalClosedDate);
-		updateData.closedYear = getYearFromDate(finalClosedDate);
-	} else {
-		updateData.closedMonth = "";
-		updateData.closedYear = "";
-	}
-
-	const updatedLead = await db.update(leads).set(updateData).where(eq(leads.id, id)).returning();
-
-	return c.json(updatedLead[0]);
 });
 
 app.delete("/leads/:id", async (c) => {
@@ -643,13 +816,16 @@ const getMonthNumber = (monthName: string): number => {
 // ROAS calculation endpoint
 app.get("/roas", async (c) => {
 	try {
+		// Run status maintenance
+		await runStatusMaintenance(db);
+
 		const month = c.req.query("month");
 		const year = c.req.query("year");
 		const platform = c.req.query("platform");
 
 		console.log("ROAS request params:", { month, year, platform });
 
-		// Build conditions for leads query
+		// Build conditions for leads query (always use closed date for ROAS)
 		const leadConditions = [];
 		if (month) {
 			leadConditions.push(eq(leads.closedMonth, month));
@@ -661,26 +837,22 @@ app.get("/roas", async (c) => {
 			leadConditions.push(eq(leads.platform, platform));
 		}
 
-		// Get total sales from leads
-		let salesQuery = db
-			.select({
-				totalSales:
-					sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`.as(
-						"total_sales",
-					),
-				totalLeads: count().as("total_leads"),
-				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`).as("closed_leads"),
-			})
-			.from(leads);
-
+		// Get all leads matching criteria
+		let salesQuery = db.select().from(leads);
 		if (leadConditions.length > 0) {
 			salesQuery = salesQuery.where(and(...leadConditions));
 		}
 
-		const salesResult = await salesQuery;
-		const totalSales = salesResult[0]?.totalSales || 0;
-		const totalLeads = salesResult[0]?.totalLeads || 0;
-		const closedLeads = salesResult[0]?.closedLeads || 0;
+		const allLeads = await salesQuery;
+
+		// Calculate metrics using normalized statuses
+		const totalLeads = allLeads.length;
+		const closedLeads = allLeads.filter(
+			(lead) => normalizeStatus(lead.status) === "Closed Won",
+		).length;
+		const totalSales = allLeads
+			.filter((lead) => normalizeStatus(lead.status) === "Closed Won")
+			.reduce((sum, lead) => sum + (Number(lead.sales) || 0), 0);
 
 		console.log("Sales query result:", { totalSales, totalLeads, closedLeads });
 
@@ -796,7 +968,7 @@ app.get("/leads/growth/monthly", async (c) => {
 			// When dateType is 'closed', aggregate by closed date and show all leads that were closed in that month
 			const conditions = [
 				sql`${leads.closedMonth} IS NOT NULL AND ${leads.closedMonth} != ''`,
-				eq(leads.isClosed, true), // Only include leads that were actually closed
+				eq(leads.status, "Closed Won"), // Only include leads that were actually closed won
 			];
 
 			if (year) {
@@ -878,7 +1050,7 @@ app.get("/leads/growth/monthly", async (c) => {
 			.select({
 				month: leads.closedMonth,
 				year: leads.closedYear,
-				closedLeads: count(sql`CASE WHEN ${leads.isClosed} = 1 THEN 1 END`),
+				closedLeads: count(sql`CASE WHEN ${leads.status} = 'Closed Won' THEN 1 END`),
 				totalSales: sql<number>`CAST(COALESCE(SUM(CAST(${leads.sales} AS INTEGER)), 0) AS INTEGER)`,
 			})
 			.from(leads)
@@ -969,7 +1141,7 @@ app.get("/leads/growth/yearly", async (c) => {
 		const allLeadsClosed = await db
 			.select({
 				closedYear: leads.closedYear,
-				isClosed: leads.isClosed,
+				status: leads.status,
 				sales: leads.sales,
 			})
 			.from(leads)
@@ -997,7 +1169,7 @@ app.get("/leads/growth/yearly", async (c) => {
 				yearlyClosedData[year] = { closedLeads: 0, totalSales: 0 };
 			}
 
-			if (lead.isClosed) {
+			if (lead.status === "Closed Won") {
 				yearlyClosedData[year].closedLeads++;
 			}
 			yearlyClosedData[year].totalSales += Number(lead.sales) || 0;

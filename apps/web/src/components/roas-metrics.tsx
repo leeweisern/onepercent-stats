@@ -22,9 +22,14 @@ interface ROASData {
 interface ROASMetricsProps {
 	selectedMonth: string;
 	selectedYear: string;
+	dateType?: "lead" | "closed";
 }
 
-export default function ROASMetrics({ selectedMonth, selectedYear }: ROASMetricsProps) {
+export default function ROASMetrics({
+	selectedMonth,
+	selectedYear,
+	dateType = "lead",
+}: ROASMetricsProps) {
 	const [data, setData] = useState<ROASData | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -34,6 +39,7 @@ export default function ROASMetrics({ selectedMonth, selectedYear }: ROASMetrics
 			const params = new URLSearchParams();
 			if (selectedMonth) params.append("month", selectedMonth);
 			if (selectedYear) params.append("year", selectedYear);
+			if (dateType) params.append("dateType", dateType);
 
 			const response = await fetch(`/api/analytics/roas?${params}`);
 
@@ -58,7 +64,7 @@ export default function ROASMetrics({ selectedMonth, selectedYear }: ROASMetrics
 		} finally {
 			setLoading(false);
 		}
-	}, [selectedMonth, selectedYear]);
+	}, [selectedMonth, selectedYear, dateType]);
 
 	useEffect(() => {
 		fetchROASData();

@@ -306,6 +306,9 @@ BETTER_AUTH_SECRET=your-secret-key
 BETTER_AUTH_URL=https://your-domain.com
 CORS_ORIGIN=https://your-frontend-domain.com
 
+# Lead Management
+FOLLOW_UP_DAYS=3
+
 # Optional OAuth
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret

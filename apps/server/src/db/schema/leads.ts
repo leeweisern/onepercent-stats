@@ -8,15 +8,18 @@ export const leads = sqliteTable("leads", {
 	name: text("name"),
 	phoneNumber: text("phone_number"),
 	platform: text("platform"),
-	isClosed: integer("is_closed", { mode: "boolean" }),
-	status: text("status"),
+	status: text("status").default("New"),
 	sales: integer("sales"),
 	remark: text("remark"),
 	trainerHandle: text("trainer_handle"),
 	closedDate: text("closed_date"),
 	closedMonth: text("closed_month"),
 	closedYear: text("closed_year"),
+	contactedDate: text("contacted_date"),
+	nextFollowUpDate: text("next_follow_up_date"),
+	lastActivityDate: text("last_activity_date"),
 	createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const advertisingCosts = sqliteTable("advertising_costs", {

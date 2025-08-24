@@ -10,7 +10,7 @@ import {
 	useReactTable,
 	type VisibilityState,
 } from "@tanstack/react-table";
-import { CheckCircle, Edit, MoreHorizontal, Phone, Trash2, XCircle } from "lucide-react";
+import { Edit, MoreHorizontal, Phone, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { DataTableColumnHeader } from "./data-table/column-header";
 import { DataTable } from "./data-table/data-table";
@@ -32,7 +32,6 @@ export interface Lead {
 	name: string | null;
 	phoneNumber: string | null;
 	platform: string | null;
-	isClosed: boolean | null;
 	status: string | null;
 	sales: number | null;
 	remark: string | null;
@@ -40,6 +39,8 @@ export interface Lead {
 	closedDate: string | null;
 	closedMonth: string | null;
 	closedYear: string | null;
+	nextFollowUpDate: string | null;
+	lastActivityDate: string | null;
 	createdAt: string;
 }
 
@@ -83,16 +84,30 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 			header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
 			cell: ({ row }) => {
 				const status = row.getValue("status") as string;
-				const isClosed = row.original.isClosed;
+				if (!status) return null;
 
-				return status ? (
-					<Badge
-						variant={isClosed ? "default" : "secondary"}
-						className={isClosed ? "bg-green-100 text-green-800" : ""}
-					>
-						{status}
-					</Badge>
-				) : null;
+				// Status color mapping
+				const getStatusBadgeProps = (status: string) => {
+					switch (status) {
+						case "New":
+							return { variant: "secondary" as const, className: "bg-gray-100 text-gray-800" };
+						case "Contacted":
+							return { variant: "secondary" as const, className: "bg-blue-100 text-blue-800" };
+						case "Follow Up":
+							return { variant: "secondary" as const, className: "bg-orange-100 text-orange-800" };
+						case "Consulted":
+							return { variant: "secondary" as const, className: "bg-purple-100 text-purple-800" };
+						case "Closed Won":
+							return { variant: "default" as const, className: "bg-green-100 text-green-800" };
+						case "Closed Lost":
+							return { variant: "destructive" as const, className: "bg-red-100 text-red-800" };
+						default:
+							return { variant: "outline" as const };
+					}
+				};
+
+				const badgeProps = getStatusBadgeProps(status);
+				return <Badge {...badgeProps}>{status}</Badge>;
 			},
 			filterFn: (row, id, value) => {
 				return value.includes(row.getValue(id));
@@ -115,29 +130,35 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 			},
 		},
 		{
-			accessorKey: "isClosed",
-			header: ({ column }) => <DataTableColumnHeader column={column} title="Closed" />,
+			accessorKey: "nextFollowUpDate",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Next Follow-up" />,
 			cell: ({ row }) => {
-				const isClosed = row.getValue("isClosed") as boolean;
+				const date = row.getValue("nextFollowUpDate") as string;
+				if (!date) return null;
+
+				// Check if date is overdue
+				const followUpDate = new Date(date);
+				const today = new Date();
+				today.setHours(0, 0, 0, 0);
+				followUpDate.setHours(0, 0, 0, 0);
+				const isOverdue = followUpDate < today;
+
 				return (
-					<div className="flex w-[70px] items-center">
-						{isClosed ? (
-							<Badge variant="default" className="bg-green-100 text-green-800">
-								<CheckCircle className="mr-1 h-3 w-3" />
-								Closed
-							</Badge>
-						) : (
-							<Badge variant="secondary">
-								<XCircle className="mr-1 h-3 w-3" />
-								Open
-							</Badge>
-						)}
+					<div
+						className={`text-sm ${isOverdue ? "text-red-600 font-medium" : "text-muted-foreground"}`}
+					>
+						{date}
+						{isOverdue && <span className="ml-1 text-xs">(Overdue)</span>}
 					</div>
 				);
 			},
-			filterFn: (row, id, value) => {
-				const isClosed = row.getValue(id);
-				return value.includes(String(isClosed));
+		},
+		{
+			accessorKey: "lastActivityDate",
+			header: ({ column }) => <DataTableColumnHeader column={column} title="Last Activity" />,
+			cell: ({ row }) => {
+				const date = row.getValue("lastActivityDate") as string;
+				return date ? <div className="text-sm text-muted-foreground">{date}</div> : null;
 			},
 		},
 		{
@@ -217,14 +238,6 @@ export function LeadsDataTable({ data, isLoading }: { data: Lead[]; isLoading?: 
 	).sort();
 
 	const filterOptions = [
-		{
-			columnId: "isClosed",
-			title: "Status",
-			options: [
-				{ label: "Closed", value: "true", icon: CheckCircle },
-				{ label: "Open", value: "false", icon: XCircle },
-			],
-		},
 		{
 			columnId: "platform",
 			title: "Platform",

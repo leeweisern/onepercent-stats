@@ -26,7 +26,6 @@ interface Lead {
 	name: string | null;
 	phoneNumber: string | null;
 	platform: string | null;
-	isClosed: boolean | null;
 	status: string | null;
 	sales: number | null;
 	remark: string | null;
@@ -34,6 +33,8 @@ interface Lead {
 	closedDate: string | null;
 	closedMonth: string | null;
 	closedYear: string | null;
+	nextFollowUpDate: string | null;
+	lastActivityDate: string | null;
 	createdAt: string | null;
 }
 

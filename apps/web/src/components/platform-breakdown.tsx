@@ -45,8 +45,8 @@ const _formatMonthDisplay = (monthString: string) => {
 interface PlatformBreakdownData {
 	platform: string | null;
 	totalLeads: number;
-	closedLeads: number;
-	notClosedLeads: number;
+	closedWonLeads: number;
+	closedLostLeads: number;
 	totalSales: number;
 }
 
@@ -54,20 +54,29 @@ interface PlatformBreakdownResponse {
 	breakdown: PlatformBreakdownData[];
 	totals: {
 		totalLeads: number;
-		closedLeads: number;
-		notClosedLeads: number;
+		closedWonLeads: number;
+		closedLostLeads: number;
 		totalSales: number;
 	};
-	month: string;
-	year: string;
+	period: {
+		dateType: string;
+		month: string;
+		year: string;
+		platform: string;
+	};
 }
 
 interface PlatformBreakdownProps {
 	selectedMonth?: string;
 	selectedYear?: string;
+	dateType?: "lead" | "closed";
 }
 
-export default function PlatformBreakdown({ selectedMonth, selectedYear }: PlatformBreakdownProps) {
+export default function PlatformBreakdown({
+	selectedMonth,
+	selectedYear,
+	dateType = "lead",
+}: PlatformBreakdownProps) {
 	const [data, setData] = useState<PlatformBreakdownResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [sorting, setSorting] = useState<SortingState>([]);
@@ -78,6 +87,7 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 			const params = new URLSearchParams();
 			if (selectedMonth) params.append("month", selectedMonth);
 			if (selectedYear) params.append("year", selectedYear);
+			if (dateType) params.append("dateType", dateType);
 
 			const response = await fetch(`/api/analytics/leads/platform-breakdown?${params}`);
 			const breakdownData = await response.json();
@@ -87,7 +97,7 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 		} finally {
 			setLoading(false);
 		}
-	}, [selectedMonth, selectedYear]);
+	}, [selectedMonth, selectedYear, dateType]);
 
 	useEffect(() => {
 		fetchBreakdown();
@@ -128,19 +138,21 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 			},
 		},
 		{
-			accessorKey: "closedLeads",
+			accessorKey: "closedWonLeads",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Close" className="justify-center" />
-			),
-			cell: ({ row }) => <div className="text-center font-medium">{row.original.closedLeads}</div>,
-		},
-		{
-			accessorKey: "notClosedLeads",
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="No Close" className="justify-center" />
+				<DataTableColumnHeader column={column} title="Closed Won" className="justify-center" />
 			),
 			cell: ({ row }) => (
-				<div className="text-center font-medium">{row.original.notClosedLeads}</div>
+				<div className="text-center font-medium text-green-600">{row.original.closedWonLeads}</div>
+			),
+		},
+		{
+			accessorKey: "closedLostLeads",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Closed Lost" className="justify-center" />
+			),
+			cell: ({ row }) => (
+				<div className="text-center font-medium text-red-600">{row.original.closedLostLeads}</div>
 			),
 		},
 		{
@@ -172,8 +184,8 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<BarChart3 className="h-5 w-5" />
-					Platform Breakdown - {data?.month || "All months"}
-					{data?.year && data.year !== "All years" ? ` ${data.year}` : ""}
+					Platform Breakdown - {data?.period?.month || "All months"}
+					{data?.period?.year && data.period.year !== "All years" ? ` ${data.period.year}` : ""}
 					{data && (
 						<Badge variant="secondary" className="ml-auto">
 							Total Sales: {formatCurrency(data.totals.totalSales)}
@@ -198,8 +210,12 @@ export default function PlatformBreakdown({ selectedMonth, selectedYear }: Platf
 								<span>Total</span>
 								<span className="text-muted-foreground ml-2">({data.totals.totalLeads})</span>
 							</div>
-							<div className="text-center font-bold">{data.totals.closedLeads}</div>
-							<div className="text-center font-bold">{data.totals.notClosedLeads}</div>
+							<div className="text-center font-bold text-green-600">
+								{data.totals.closedWonLeads}
+							</div>
+							<div className="text-center font-bold text-red-600">
+								{data.totals.closedLostLeads}
+							</div>
 							<div className="text-right font-bold text-green-600">
 								{formatCurrency(data.totals.totalSales)}
 							</div>

@@ -5,9 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "bun";
 import { count } from "drizzle-orm";
-import * as authSchema from "../db/schema/auth";
-import * as leadsSchema from "../db/schema/leads";
-import { db } from "../db/script-db";
+import * as authSchema from "../src/db/schema/auth";
+import * as leadsSchema from "../src/db/schema/leads";
+import { db } from "../src/db/script-db";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
