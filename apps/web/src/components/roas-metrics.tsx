@@ -1,7 +1,8 @@
-import { BarChart3, DollarSign, Target, TrendingUp, Users } from "lucide-react";
+import { BarChart3, DollarSign, HelpCircle, Target, TrendingUp, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ROASData {
 	roas: number;
@@ -12,7 +13,13 @@ interface ROASData {
 	costPerLead: number;
 	costPerAcquisition: number;
 	conversionRate: number;
+	attribution?: {
+		costPerLead: string;
+		roas: string;
+		costPerAcquisition: string;
+	};
 	period: {
+		dateType?: string;
 		month: string;
 		year: string;
 		platform: string;
@@ -78,6 +85,31 @@ export default function ROASMetrics({
 		return `${value}%`;
 	};
 
+	// Helper to get attribution label
+	const getAttributionLabel = (metric: "costPerLead" | "roas" | "costPerAcquisition") => {
+		if (!data?.attribution) return "";
+		const attribution = data.attribution[metric];
+		return attribution === "lead-date" ? "(lead date)" : "(sale date)";
+	};
+
+	// Helper to get tooltip content
+	const getTooltipContent = (metric: string) => {
+		switch (metric) {
+			case "roas":
+				return "Return on Ad Spend - Total sales divided by advertising cost (always uses sale-date attribution)";
+			case "costPerLead":
+				return dateType === "lead"
+					? "Cost per lead - Ad spend divided by leads created in period (lead-date attribution)"
+					: "Cost per lead - Ad spend divided by leads closed in period (sale-date attribution)";
+			case "costPerAcquisition":
+				return "Cost per closed case - Ad spend divided by successful conversions (sale-date attribution)";
+			case "conversionRate":
+				return "Percentage of leads that converted to sales in the selected period";
+			default:
+				return "";
+		}
+	};
+
 	if (loading) {
 		return (
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -117,7 +149,7 @@ export default function ROASMetrics({
 		: " - All months (All years)";
 
 	return (
-		<>
+		<TooltipProvider>
 			{/* Title Section */}
 			<div className="mb-4">
 				<h2 className="text-2xl font-bold flex items-center gap-2">
@@ -131,7 +163,17 @@ export default function ROASMetrics({
 				{/* ROAS */}
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">ROAS</CardTitle>
+						<CardTitle className="text-sm font-medium flex items-center gap-1">
+							ROAS {getAttributionLabel("roas")}
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+								</TooltipTrigger>
+								<TooltipContent>
+									<p className="max-w-xs">{getTooltipContent("roas")}</p>
+								</TooltipContent>
+							</Tooltip>
+						</CardTitle>
 						<TrendingUp className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
@@ -167,7 +209,17 @@ export default function ROASMetrics({
 				{/* Conversion Rate */}
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Conversion</CardTitle>
+						<CardTitle className="text-sm font-medium flex items-center gap-1">
+							Conversion
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+								</TooltipTrigger>
+								<TooltipContent>
+									<p className="max-w-xs">{getTooltipContent("conversionRate")}</p>
+								</TooltipContent>
+							</Tooltip>
+						</CardTitle>
 						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
@@ -179,43 +231,69 @@ export default function ROASMetrics({
 				{/* Cost Per Lead */}
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Cost/Lead</CardTitle>
+						<CardTitle className="text-sm font-medium flex items-center gap-1">
+							{dateType === "lead" ? "Cost/Lead" : "Cost/Lead (period)"}
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+								</TooltipTrigger>
+								<TooltipContent>
+									<p className="max-w-xs">{getTooltipContent("costPerLead")}</p>
+								</TooltipContent>
+							</Tooltip>
+						</CardTitle>
 						<DollarSign className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{formatCurrency(data.costPerLead)}</div>
-						<p className="text-xs text-muted-foreground">Per lead acquisition</p>
+						<p className="text-xs text-muted-foreground">
+							{dateType === "lead" ? "Per lead created" : "Per lead in period"}
+						</p>
 					</CardContent>
 				</Card>
 
 				{/* Cost Per Sale */}
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Cost/Sale</CardTitle>
+						<CardTitle className="text-sm font-medium flex items-center gap-1">
+							Cost/Closed Case
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+								</TooltipTrigger>
+								<TooltipContent>
+									<p className="max-w-xs">{getTooltipContent("costPerAcquisition")}</p>
+								</TooltipContent>
+							</Tooltip>
+						</CardTitle>
 						<Target className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{formatCurrency(data.costPerAcquisition)}</div>
-						<p className="text-xs text-muted-foreground">Per sale acquisition</p>
+						<p className="text-xs text-muted-foreground">Per successful conversion</p>
 					</CardContent>
 				</Card>
 
 				{/* Total Leads */}
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Total Leads</CardTitle>
+						<CardTitle className="text-sm font-medium">
+							{dateType === "lead" ? "Leads Created" : "Leads (in period)"}
+						</CardTitle>
 						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{data.totalLeads}</div>
-						<p className="text-xs text-muted-foreground">Leads generated</p>
+						<p className="text-xs text-muted-foreground">
+							{dateType === "lead" ? "New leads generated" : "Leads in sale period"}
+						</p>
 					</CardContent>
 				</Card>
 
 				{/* Closed Leads */}
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Closed Leads</CardTitle>
+						<CardTitle className="text-sm font-medium">Closed Won</CardTitle>
 						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
@@ -224,6 +302,6 @@ export default function ROASMetrics({
 					</CardContent>
 				</Card>
 			</div>
-		</>
+		</TooltipProvider>
 	);
 }

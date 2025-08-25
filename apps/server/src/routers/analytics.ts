@@ -14,6 +14,7 @@ import {
 	parseDDMMYYYYToMYISO,
 } from "../lib/datetime-utils";
 import { LEAD_STATUSES, normalizeStatus } from "../lib/status";
+import { recordStatusChange } from "../lib/status-history";
 import { runStatusMaintenance } from "../lib/status-maintenance";
 
 const app = new Hono();
@@ -247,6 +248,198 @@ app.get("/leads/months", async (c) => {
 	} catch (error) {
 		console.error("Error fetching months:", error);
 		return c.json({ error: "Failed to fetch months" }, 500);
+	}
+});
+
+app.get("/leads/funnel/v2", async (c) => {
+	try {
+		// Run status maintenance with config from environment
+		const followUpDays = Number((c.env as any)?.FOLLOW_UP_DAYS || 3);
+		await runStatusMaintenance(db, { followUpDays });
+
+		const dateType = c.req.query("dateType") || "stage";
+		const month = c.req.query("month");
+		const year = c.req.query("year");
+		const platform = c.req.query("platform");
+		const _mode = c.req.query("mode") || "cumulative_to_date";
+
+		// Import lead status history table
+		const { leadStatusHistory } = await import("../db/schema/lead-status-history");
+
+		// Build the base query for leads with platform filter
+		let leadsQuery = db.select().from(leads);
+		const leadsConditions = [];
+
+		if (platform) {
+			leadsConditions.push(eq(leads.platform, platform));
+		}
+
+		// Apply date filters based on dateType
+		if (dateType === "lead") {
+			// Filter by lead creation date
+			if (month) leadsConditions.push(eq(leads.month, month));
+			if (year) {
+				leadsConditions.push(
+					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND 
+						(substr(${leads.date}, -4) = ${year} OR substr(${leads.date}, 1, 4) = ${year})`,
+				);
+			}
+		} else if (dateType === "closed") {
+			// Filter by closed date
+			if (month) leadsConditions.push(eq(leads.closedMonth, month));
+			if (year) leadsConditions.push(eq(leads.closedYear, year));
+		}
+
+		if (leadsConditions.length > 0) {
+			leadsQuery = leadsQuery.where(and(...leadsConditions));
+		}
+
+		const filteredLeads = await leadsQuery;
+		const leadIds = filteredLeads.map((l) => l.id);
+
+		if (leadIds.length === 0) {
+			return c.json({
+				funnel: LEAD_STATUSES.map((status) => ({
+					stage: status,
+					reachedCount: 0,
+					currentCount: 0,
+					totalSales: 0,
+					conversionFromPrevious: 0,
+				})),
+				period: {
+					dateType,
+					month: month || "All months",
+					year: year || "All years",
+					platform: platform || "All platforms",
+				},
+			});
+		}
+
+		// Get status history for filtered leads (batched to avoid SQLite var limit)
+		// Use smaller batch size to account for additional filter parameters
+		const batchSize = 90;
+		const history: Array<{ leadId: number; toStatus: string; changedAt: string }> = [];
+
+		for (let i = 0; i < leadIds.length; i += batchSize) {
+			const batch = leadIds.slice(i, i + batchSize);
+
+			// Build conditions for this batch
+			const batchConditions = [sql`${leadStatusHistory.leadId} IN (${sql.join(batch, sql`, `)})`];
+
+			// Add stage date filter if applicable
+			if (dateType === "stage" && (month || year)) {
+				if (month && year) {
+					const monthNum = new Date(Date.parse(`${month} 1, 2000`)).getMonth() + 1;
+					const mm = monthNum.toString().padStart(2, "0");
+					batchConditions.push(sql`strftime('%m', ${leadStatusHistory.changedAt}) = ${mm}`);
+					batchConditions.push(sql`strftime('%Y', ${leadStatusHistory.changedAt}) = ${year}`);
+				} else if (year) {
+					batchConditions.push(sql`strftime('%Y', ${leadStatusHistory.changedAt}) = ${year}`);
+				}
+			}
+
+			const rows = await db
+				.select({
+					leadId: leadStatusHistory.leadId,
+					toStatus: leadStatusHistory.toStatus,
+					changedAt: leadStatusHistory.changedAt,
+				})
+				.from(leadStatusHistory)
+				.where(and(...batchConditions));
+
+			history.push(...rows);
+		}
+
+		// Calculate reached counts for each stage
+		const stageReached = new Map<string, Set<number>>();
+		const currentStatus = new Map<number, string>();
+
+		// Initialize all stages
+		for (const status of LEAD_STATUSES) {
+			stageReached.set(status, new Set());
+		}
+
+		// Process history to find leads that reached each stage
+		for (const record of history) {
+			const normalizedStatus = normalizeStatus(record.toStatus);
+			if (!stageReached.has(normalizedStatus)) {
+				stageReached.set(normalizedStatus, new Set());
+			}
+			stageReached.get(normalizedStatus)?.add(record.leadId);
+		}
+
+		// Also count current status for comparison
+		for (const lead of filteredLeads) {
+			const normalizedStatus = normalizeStatus(lead.status);
+			currentStatus.set(lead.id, normalizedStatus);
+
+			// Ensure current status is counted in reached
+			if (!stageReached.has(normalizedStatus)) {
+				stageReached.set(normalizedStatus, new Set());
+			}
+			stageReached.get(normalizedStatus)?.add(lead.id);
+		}
+
+		// Calculate sales for Closed Won leads
+		let totalClosedWonSales = 0;
+		const closedWonLeads = stageReached.get("Closed Won") || new Set();
+		for (const leadId of closedWonLeads) {
+			const lead = filteredLeads.find((l) => l.id === leadId);
+			if (lead) {
+				totalClosedWonSales += Number(lead.sales) || 0;
+			}
+		}
+
+		// Build funnel data with conversion rates
+		const funnelData = [];
+		let previousCount = leadIds.length; // Total leads as base
+
+		for (let i = 0; i < LEAD_STATUSES.length; i++) {
+			const status = LEAD_STATUSES[i];
+			const reachedSet = stageReached.get(status) || new Set();
+			const reachedCount = reachedSet.size;
+
+			// Count current status
+			let currentCount = 0;
+			for (const [_leadId, curStatus] of currentStatus) {
+				if (curStatus === status) {
+					currentCount++;
+				}
+			}
+
+			// Calculate conversion from previous stage
+			let conversionFromPrevious = 0;
+			if (i === 0) {
+				// First stage (New) - everyone starts here
+				conversionFromPrevious = 100;
+			} else if (previousCount > 0) {
+				conversionFromPrevious = Math.round((reachedCount / previousCount) * 100);
+			}
+
+			funnelData.push({
+				stage: status,
+				reachedCount,
+				currentCount,
+				totalSales: status === "Closed Won" ? totalClosedWonSales : 0,
+				conversionFromPrevious,
+			});
+
+			// For cumulative funnel, use reached count as previous for next stage
+			previousCount = reachedCount;
+		}
+
+		return c.json({
+			funnel: funnelData,
+			period: {
+				dateType,
+				month: month || "All months",
+				year: year || "All years",
+				platform: platform || "All platforms",
+			},
+		});
+	} catch (error) {
+		console.error("Error in funnel v2 analysis:", error);
+		return c.json({ error: "Failed to fetch funnel v2 data" }, 500);
 	}
 });
 
@@ -585,6 +778,20 @@ app.post("/leads", async (c) => {
 		};
 
 		const newLead = await db.insert(leads).values(leadData).returning();
+
+		// Record initial status in history
+		if (newLead[0]) {
+			await recordStatusChange(db, {
+				leadId: newLead[0].id,
+				fromStatus: "New",
+				toStatus: normalizedStatus,
+				changedAt: nowISO,
+				source: "api",
+				changedBy: null,
+				note: salesValue > 0 ? "Auto-set to Closed Won due to sales > 0" : null,
+			});
+		}
+
 		return c.json(newLead[0], 201);
 	} catch (error) {
 		console.error("Error creating lead:", error);
@@ -786,6 +993,22 @@ app.put("/leads/:id", async (c) => {
 				updateData.closedMonth = "";
 				updateData.closedYear = "";
 			}
+		}
+
+		// Record status change in history if status changed
+		if (statusChanged && updateData.status) {
+			await recordStatusChange(db, {
+				leadId: id,
+				fromStatus: current.status || "New",
+				toStatus: updateData.status,
+				changedAt: nowISO,
+				source: "api",
+				changedBy: null,
+				note:
+					finalSales > 0 && updateData.status === "Closed Won"
+						? "Auto-set to Closed Won due to sales > 0"
+						: null,
+			});
 		}
 
 		const updatedLead = await db.update(leads).set(updateData).where(eq(leads.id, id)).returning();
@@ -1023,39 +1246,70 @@ app.get("/roas", async (c) => {
 		const month = c.req.query("month");
 		const year = c.req.query("year");
 		const platform = c.req.query("platform");
+		const dateType = c.req.query("dateType") || "closed"; // Default to closed date for backward compatibility
 
-		console.log("ROAS request params:", { month, year, platform });
+		console.log("ROAS request params:", { month, year, platform, dateType });
 
-		// Build conditions for leads query (always use closed date for ROAS)
+		// Build conditions for leads query based on dateType
 		const leadConditions = [];
+		const cplConditions = []; // Separate conditions for CPL calculation
+
+		// For sales/ROAS, always use closed date
 		if (month) {
 			leadConditions.push(eq(leads.closedMonth, month));
+			if (dateType === "lead") {
+				// For CPL with lead date
+				cplConditions.push(eq(leads.month, month));
+			} else {
+				cplConditions.push(eq(leads.closedMonth, month));
+			}
 		}
 		if (year) {
 			leadConditions.push(eq(leads.closedYear, year));
+			if (dateType === "lead") {
+				// For CPL with lead date
+				cplConditions.push(
+					sql`${leads.date} IS NOT NULL AND ${leads.date} != '' AND 
+						(substr(${leads.date}, -4) = ${year} OR substr(${leads.date}, 1, 4) = ${year})`,
+				);
+			} else {
+				cplConditions.push(eq(leads.closedYear, year));
+			}
 		}
 		if (platform) {
 			leadConditions.push(eq(leads.platform, platform));
+			cplConditions.push(eq(leads.platform, platform));
 		}
 
-		// Get all leads matching criteria
+		// Get leads for sales calculation (always use closed date)
 		let salesQuery = db.select().from(leads);
 		if (leadConditions.length > 0) {
 			salesQuery = salesQuery.where(and(...leadConditions));
 		}
+		const salesLeads = await salesQuery;
 
-		const allLeads = await salesQuery;
+		// Get leads for CPL calculation (use dateType)
+		let cplQuery = db.select().from(leads);
+		if (cplConditions.length > 0) {
+			cplQuery = cplQuery.where(and(...cplConditions));
+		}
+		const cplLeads = dateType === "lead" ? await cplQuery : salesLeads;
 
 		// Calculate metrics using normalized statuses
-		const totalLeads = allLeads.length;
-		const closedLeads = allLeads.filter(
+		const totalLeadsForCPL = cplLeads.length; // Leads count based on dateType
+		const closedLeads = salesLeads.filter(
 			(lead) => normalizeStatus(lead.status) === "Closed Won",
 		).length;
-		const totalSales = allLeads
+		const totalSales = salesLeads
 			.filter((lead) => normalizeStatus(lead.status) === "Closed Won")
 			.reduce((sum, lead) => sum + (Number(lead.sales) || 0), 0);
 
-		console.log("Sales query result:", { totalSales, totalLeads, closedLeads });
+		console.log("Sales query result:", {
+			totalSales,
+			totalLeadsForCPL,
+			closedLeads,
+			dateType,
+		});
 
 		// Get advertising costs
 		let totalAdCost = 0;
@@ -1108,26 +1362,39 @@ app.get("/roas", async (c) => {
 		console.log("Final totals:", {
 			totalSales,
 			totalAdCost,
-			totalLeads,
+			totalLeadsForCPL,
 			closedLeads,
+			dateType,
 		});
 
-		// Calculate ROAS
+		// Calculate ROAS (always uses sale-date attribution)
 		const roas = totalAdCost > 0 ? totalSales / totalAdCost : 0;
-		const costPerLead = totalLeads > 0 ? totalAdCost / totalLeads : 0;
+
+		// CPL uses dateType attribution (lead-date or closed-date)
+		const costPerLead = totalLeadsForCPL > 0 ? totalAdCost / totalLeadsForCPL : 0;
+
+		// CPA always uses closed-date attribution
 		const costPerAcquisition = closedLeads > 0 ? totalAdCost / closedLeads : 0;
-		const conversionRate = totalLeads > 0 ? (closedLeads / totalLeads) * 100 : 0;
+
+		// Conversion rate based on closed leads vs total leads in period
+		const conversionRate = salesLeads.length > 0 ? (closedLeads / salesLeads.length) * 100 : 0;
 
 		return c.json({
 			roas: Number(roas.toFixed(2)),
 			totalSales,
 			totalAdCost: Number(totalAdCost.toFixed(2)),
-			totalLeads,
+			totalLeads: totalLeadsForCPL,
 			closedLeads,
 			costPerLead: Number(costPerLead.toFixed(2)),
 			costPerAcquisition: Number(costPerAcquisition.toFixed(2)),
 			conversionRate: Number(conversionRate.toFixed(2)),
+			attribution: {
+				costPerLead: dateType === "lead" ? "lead-date" : "closed-date",
+				roas: "closed-date",
+				costPerAcquisition: "closed-date",
+			},
 			period: {
+				dateType,
 				month: month || "All months",
 				year: year || "All years",
 				platform: platform || "All platforms",

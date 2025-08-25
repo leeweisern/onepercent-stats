@@ -9,6 +9,7 @@ import {
 	nowMYISO,
 } from "./datetime-utils";
 import { isWonStatus, normalizeStatus } from "./status";
+import { recordStatusChange } from "./status-history";
 
 /**
  * Status maintenance utilities for automatic lead status updates
@@ -89,6 +90,17 @@ async function promoteStaleContactedLeads(
 			const batch = leadIds.slice(i, i + batchSize);
 
 			for (const leadId of batch) {
+				// Record status change before updating
+				await recordStatusChange(db, {
+					leadId,
+					fromStatus: "Contacted",
+					toStatus: "Follow Up",
+					changedAt: nowMYISO(),
+					source: "maintenance",
+					changedBy: "system",
+					note: `Auto-promoted after ${followUpDays} days of inactivity`,
+				});
+
 				await db
 					.update(leads)
 					.set({
@@ -129,6 +141,17 @@ async function syncSalesWithStatus(db: DrizzleD1Database): Promise<number> {
 		const now = nowMYISO();
 
 		for (const lead of leadsToUpdate) {
+			// Record status change before updating
+			await recordStatusChange(db, {
+				leadId: lead.id,
+				fromStatus: lead.status || "New",
+				toStatus: "Closed Won",
+				changedAt: now,
+				source: "maintenance",
+				changedBy: "system",
+				note: `Auto-synced status due to sales > 0 (sales: ${lead.sales})`,
+			});
+
 			await db
 				.update(leads)
 				.set({
